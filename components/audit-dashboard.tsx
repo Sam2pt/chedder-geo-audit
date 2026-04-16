@@ -214,23 +214,40 @@ function DownloadGate({ result }: { result: AuditResult }) {
 
     setState("sending");
 
-    // Submit to Netlify Forms
-    try {
-      const formData = new URLSearchParams();
-      formData.append("form-name", "pdf-download");
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("company", company);
-      formData.append("website", result.domain);
-      formData.append("score", String(result.overallScore));
-      await fetch("/", {
+    // Submit to BOTH Netlify Forms AND our own API (belt and suspenders)
+    // Our API endpoint also sends email as a backup.
+    const lead = {
+      name,
+      email,
+      website: result.domain,
+      message: `PDF download requested. Company: ${company || "N/A"}`,
+      score: result.overallScore,
+      source: "pdf-download",
+    };
+
+    await Promise.allSettled([
+      // Netlify Forms submission
+      (async () => {
+        const formData = new URLSearchParams();
+        formData.append("form-name", "pdf-download");
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("company", company);
+        formData.append("website", result.domain);
+        formData.append("score", String(result.overallScore));
+        await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString(),
+        });
+      })(),
+      // Backup: hit our own API (which emails via backend + logs)
+      fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
-      });
-    } catch {
-      // Still generate the PDF even if form submission fails
-    }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      }),
+    ]);
 
     // Generate and download PDF
     const doc = generateAuditPDF(result);
@@ -430,16 +447,13 @@ function ContactCTA({ website, score }: { website: string; score: number }) {
 /* ── Executive Summary ───────────────────────────────────────────── */
 
 function ExecutiveSummary({ result }: { result: AuditResult }) {
-  // Find weakest and strongest modules
   const sortedModules = [...result.modules].sort((a, b) => a.score - b.score);
   const weakest = sortedModules[0];
   const strongest = sortedModules[sortedModules.length - 1];
 
-  // Count recommendation priorities
   const allRecs = result.modules.flatMap((m) => m.recommendations);
   const highCount = allRecs.filter((r) => r.priority === "high").length;
 
-  // Find AI citation data specifically
   const aiModule = result.modules.find((m) => m.slug === "ai-citations");
   const aiData = aiModule
     ? {
@@ -453,68 +467,74 @@ function ExecutiveSummary({ result }: { result: AuditResult }) {
       }
     : null;
 
-  // Generate summary text
   let verdict = "";
   let interpretation = "";
   const s = result.overallScore;
   if (s >= 80) {
     verdict = "Your brand is well-positioned for AI search.";
-    interpretation = `${result.domain} shows strong signals across the board. AI models have good reason to cite you, though there's always room to tighten specific areas.`;
+    interpretation = `${result.domain} shows strong signals across the board. AI models have good reason to cite you.`;
   } else if (s >= 60) {
     verdict = "Your brand has a foundation, but there's meaningful work to do.";
-    interpretation = `${result.domain} hits the basics but leaves significant opportunity on the table. The ${highCount} high-priority items below are where to focus.`;
+    interpretation = `${result.domain} hits the basics but leaves significant opportunity on the table. ${highCount} high-priority items need attention.`;
   } else if (s >= 40) {
     verdict = "Your brand is underperforming for AI visibility.";
-    interpretation = `${result.domain} has structural gaps that prevent AI models from confidently recommending you. Expect to be invisible in many relevant AI-generated answers until these are fixed.`;
+    interpretation = `${result.domain} has structural gaps preventing AI from recommending you. Expect to be invisible in most AI answers until these are fixed.`;
   } else {
     verdict = "Your brand is largely invisible to AI.";
-    interpretation = `${result.domain} scores below the threshold where AI models build confidence. Competitors with better signals will be recommended instead of you. This is urgent.`;
+    interpretation = `${result.domain} scores below the threshold where AI builds confidence. Competitors are being recommended instead. This is urgent.`;
   }
 
   return (
-    <section className="space-y-4">
-      <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white space-y-4">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">
-          Executive Summary
+    <section>
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white">
+        {/* Top row: gauge + verdict */}
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+          <div className="shrink-0 mx-auto sm:mx-0">
+            <ScoreGauge score={result.overallScore} />
+          </div>
+          <div className="flex-1 space-y-3 min-w-0">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/50 mb-1.5">
+                {result.domain}
+              </div>
+              <p className="text-[20px] sm:text-[24px] font-semibold leading-[1.3] tracking-[-0.02em]">
+                {verdict}
+              </p>
+            </div>
+            <p className="text-[14px] text-white/60 leading-[1.55]">
+              {interpretation}
+            </p>
+            <div className="grid grid-cols-3 gap-3 pt-1">
+              <div className="space-y-0.5">
+                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Grade</div>
+                <div className="text-[15px] font-semibold">{result.grade} <span className="text-white/40 font-normal text-[12px]">{gradeLabel(result.overallScore)}</span></div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Strongest</div>
+                <div className="text-[14px] font-semibold leading-snug">{strongest.name.split(" ")[0]} <span className="text-white/40 font-normal">{strongest.score}</span></div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Weakest</div>
+                <div className="text-[14px] font-semibold leading-snug">{weakest.name.split(" ")[0]} <span className="text-white/40 font-normal">{weakest.score}</span></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="text-[20px] sm:text-[22px] font-semibold leading-[1.4] tracking-[-0.02em]">
-          {verdict}
-        </p>
-        <p className="text-[15px] text-white/70 leading-[1.6]">
-          {interpretation}
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Score</div>
-            <div className="text-[20px] font-semibold tabular-nums">{result.overallScore}/100</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Strongest</div>
-            <div className="text-[14px] font-semibold leading-snug">{strongest.name.split(" ")[0]} <span className="text-white/50 font-normal">{strongest.score}</span></div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Weakest</div>
-            <div className="text-[14px] font-semibold leading-snug">{weakest.name.split(" ")[0]} <span className="text-white/50 font-normal">{weakest.score}</span></div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Priority fixes</div>
-            <div className="text-[14px] font-semibold leading-snug">{highCount} <span className="text-white/50 font-normal">high-impact</span></div>
-          </div>
-        </div>
+
         {aiData && (
-          <div className="mt-2 p-4 rounded-2xl bg-white/[0.06] border border-white/[0.08]">
+          <div className="mt-5 p-4 rounded-2xl bg-white/[0.06] border border-white/[0.08]">
             <div className="flex items-start gap-3">
-              <span className="text-[20px]">🤖</span>
+              <span className="text-[18px]">🤖</span>
               <div className="flex-1">
-                <div className="text-[13px] font-semibold text-white/90 mb-1">
-                  Live AI test result
+                <div className="text-[13px] font-semibold text-white/90 mb-0.5">
+                  Live AI test
                 </div>
                 <p className="text-[13px] text-white/60 leading-[1.55]">
                   {aiData.score >= 70
-                    ? `Perplexity mentioned your brand in ${aiData.mentionRate} out of ${aiData.totalQueries} relevant queries. You're showing up.`
+                    ? `Perplexity mentioned your brand in ${aiData.mentionRate} of ${aiData.totalQueries} queries. You're showing up.`
                     : aiData.score >= 40
-                      ? `Perplexity mentioned your brand in ${aiData.mentionRate} out of ${aiData.totalQueries} queries, but rarely prominently. Competitors are being recommended first.`
-                      : `Perplexity mentioned your brand in only ${aiData.mentionRate} out of ${aiData.totalQueries} queries. You are functionally invisible to AI search right now.`}
+                      ? `Perplexity mentioned your brand in ${aiData.mentionRate} of ${aiData.totalQueries} queries, but rarely prominently. Competitors are being recommended first.`
+                      : `Perplexity mentioned your brand in only ${aiData.mentionRate} of ${aiData.totalQueries} queries. You are functionally invisible to AI search.`}
                 </p>
               </div>
             </div>
@@ -798,23 +818,7 @@ export function AuditDashboard({
         </a>
       </nav>
 
-      {/* Hero */}
-      <section className="text-center space-y-8">
-        <div className="space-y-1.5">
-          <h1 className="text-[32px] font-semibold tracking-[-0.03em] text-foreground">{result.domain}</h1>
-          <p className="text-[14px] text-muted-foreground tracking-[-0.01em]">{result.url}</p>
-        </div>
-        <div className="flex justify-center">
-          <ScoreGauge score={result.overallScore} />
-        </div>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/[0.06]" style={{ background: c.bgLight }}>
-          <span className="text-[15px] font-semibold tracking-[-0.01em]" style={{ color: c.bg }}>{result.grade}</span>
-          <span className="w-px h-3 bg-black/10" />
-          <span className="text-[14px] text-muted-foreground font-medium tracking-[-0.01em]">{gradeLabel(result.overallScore)}</span>
-        </div>
-      </section>
-
-      {/* Executive Summary */}
+      {/* Executive Summary (now includes gauge, domain, grade) */}
       <ExecutiveSummary result={result} />
 
       {/* Competitor Comparison */}
@@ -822,29 +826,25 @@ export function AuditDashboard({
         <CompetitorComparison primary={result} competitors={result.competitors} />
       )}
 
-      {/* Score Breakdown */}
-      <section className="space-y-5">
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Score Breakdown</h2>
-        <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
-          {result.modules.map((m) => {
-            const mc = moduleColor(m.slug);
-            return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
-          })}
-        </div>
-      </section>
-
-      {/* Download PDF */}
-      <DownloadGate result={result} />
+      {/* Score Breakdown - only show when no competitors (otherwise it's redundant) */}
+      {(!result.competitors || result.competitors.length === 0) && (
+        <section className="space-y-4">
+          <h2 className="text-[20px] font-semibold tracking-[-0.02em]">Score Breakdown</h2>
+          <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
+            {result.modules.map((m) => {
+              const mc = moduleColor(m.slug);
+              return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Action Plan */}
       <ActionPlan result={result} />
 
-      {/* Contact CTA */}
-      <ContactCTA website={result.domain} score={result.overallScore} />
-
       {/* Detailed Analysis */}
-      <section className="space-y-5">
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Detailed Analysis</h2>
+      <section className="space-y-4">
+        <h2 className="text-[20px] font-semibold tracking-[-0.02em]">Detailed Analysis</h2>
         <div className="space-y-3">
           {result.modules.map((m) => (
             <ModuleCard key={m.slug} module={m} />
@@ -852,68 +852,14 @@ export function AuditDashboard({
         </div>
       </section>
 
-      {/* Pages Audited */}
-      {result.pagesAudited && result.pagesAudited.length > 1 && (
-        <section className="space-y-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Pages Audited</h2>
-          <div className="p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-            <div className="space-y-2">
-              {result.pagesAudited.map((page, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-[13px]">
-                  <div className="w-[18px] h-[18px] rounded-full bg-[#6366f1]/8 flex items-center justify-center shrink-0">
-                    <span className="text-[10px] font-bold text-[#6366f1] tabular-nums">{i + 1}</span>
-                  </div>
-                  <span className="text-muted-foreground truncate">{page.replace(/^https?:\/\//, "")}</span>
-                  {i === 0 && <span className="text-[11px] font-medium text-muted-foreground/50 px-1.5 py-0.5 rounded bg-foreground/[0.03]">homepage</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Combined Take Action (PDF + Agency CTA) */}
+      <TakeAction result={result} />
 
-      {/* Methodology */}
-      <section className="space-y-4">
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">How This Works</h2>
-        <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
-          <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#34c759]">What We Check</div>
-            <p className="text-[14px] text-foreground leading-[1.6] tracking-[-0.005em]">
-              This audit analyzes your website{"'"}s <strong>technical readiness for AI citation</strong>. We crawl up to 5 pages and check the on-site factors that determine whether AI models can find, understand, and cite your content.
-            </p>
-          </div>
-
-          <div className="h-px bg-black/[0.04]" />
-
-          <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ec4899]">External Signals (We Check These Too)</div>
-            <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
-              We also check your brand against <strong>Wikipedia</strong>, <strong>Reddit</strong>, and (optionally) <strong>Google</strong>. These are the external sources AI models cross-reference when generating answers.
-            </p>
-          </div>
-
-          <div className="h-px bg-black/[0.04]" />
-
-          <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ff9f0a]">What This Doesn{"'"}t Cover Yet</div>
-            <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
-              Direct AI citation testing (ChatGPT, Perplexity, Google AI Overviews), full backlink analysis, and comprehensive brand monitoring across news and podcasts are coming soon.
-            </p>
-          </div>
-
-          <div className="h-px bg-black/[0.04]" />
-
-          <p className="text-[13px] text-muted-foreground leading-[1.6]">
-            Think of this audit as your <strong>GEO technical health check</strong>. Are the doors open for AI to find and cite you? Getting <em>recommended</em> also depends on your content quality, reputation, and authority across the broader internet.
-          </p>
-        </div>
-      </section>
+      {/* Compact meta info (pages audited + methodology) */}
+      <MetaInfo result={result} />
 
       {/* Footer */}
-      <footer className="text-center pb-10 pt-6 space-y-4">
-        <p className="text-[12px] text-muted-foreground/40">
-          Audited {new Date(result.timestamp).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} &middot; {result.pagesAudited?.length || 1} page{(result.pagesAudited?.length || 1) > 1 ? "s" : ""} analyzed
-        </p>
+      <footer className="text-center pb-10 pt-4">
         <a
           href="https://twopointtechnologies.com"
           target="_blank"
@@ -927,5 +873,63 @@ export function AuditDashboard({
         </a>
       </footer>
     </div>
+  );
+}
+
+/* ── Combined Take Action (PDF + Agency) ─────────────────────────── */
+
+function TakeAction({ result }: { result: AuditResult }) {
+  return (
+    <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <DownloadGate result={result} />
+      <ContactCTA website={result.domain} score={result.overallScore} />
+    </section>
+  );
+}
+
+/* ── Meta Info (pages + methodology, compact) ────────────────────── */
+
+function MetaInfo({ result }: { result: AuditResult }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors border-t border-black/[0.04]"
+      >
+        <span className="flex items-center gap-3">
+          <span className="font-medium">Audit details &amp; methodology</span>
+          <span className="text-muted-foreground/50">
+            {result.pagesAudited?.length || 1} page{(result.pagesAudited?.length || 1) > 1 ? "s" : ""} &middot; {new Date(result.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </span>
+        </span>
+        <svg className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="pb-4 pt-1 space-y-4">
+          {result.pagesAudited && result.pagesAudited.length > 1 && (
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 mb-2">Pages audited</div>
+              <div className="space-y-1.5">
+                {result.pagesAudited.map((page, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[13px]">
+                    <span className="text-[11px] font-semibold text-muted-foreground/40 tabular-nums w-4 text-right">{i + 1}</span>
+                    <span className="text-muted-foreground truncate">{page.replace(/^https?:\/\//, "")}</span>
+                    {i === 0 && <span className="text-[10px] font-medium text-muted-foreground/40 uppercase tracking-wider">homepage</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="text-[13px] text-muted-foreground leading-[1.6]">
+            Chedder audits the on-site factors AI models use to decide which brands to recommend: structured data, meta tags, content quality, AI crawler access, trust signals. We also test real queries on Perplexity and check your presence on Wikipedia and Reddit. A complete strategy also requires backlinks and broader brand monitoring not covered here.
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
