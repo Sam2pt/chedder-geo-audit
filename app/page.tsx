@@ -77,26 +77,29 @@ export default function Home() {
   }
 
   return (
-    <main className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <main className="flex-1 relative overflow-hidden">
       {/* Background blobs */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-[-40%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[#0071e3]/[0.04] blur-[100px]" />
-        <div className="absolute bottom-[-30%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#34c759]/[0.04] blur-[100px]" />
-        <div className="absolute top-[20%] right-[-20%] w-[40%] h-[40%] rounded-full bg-[#af52de]/[0.03] blur-[100px]" />
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[#0071e3]/[0.04] blur-[100px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#34c759]/[0.04] blur-[100px]" />
+        <div className="absolute top-[10%] right-[-20%] w-[40%] h-[40%] rounded-full bg-[#af52de]/[0.03] blur-[100px]" />
       </div>
 
-      <div className="w-full max-w-[560px] text-center space-y-12">
+      {/* ───── HERO ───── */}
+      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <div className="w-full max-w-[620px] text-center space-y-10">
         {/* Brand */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.04] border border-foreground/[0.06] text-[13px] text-muted-foreground font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#34c759]" />
-            GEO Audit Tool
+            <span className="w-1.5 h-1.5 rounded-full bg-[#34c759] animate-pulse" />
+            Chedder · Built by Two Point Technologies
           </div>
-          <h1 className="text-[48px] sm:text-[64px] font-semibold tracking-[-0.03em] leading-[1] text-foreground">
-            Chedder
+          <h1 className="text-[44px] sm:text-[62px] font-semibold tracking-[-0.035em] leading-[1.02] text-foreground">
+            When AI answers,<br/>
+            <span className="bg-gradient-to-r from-[#0071e3] via-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">is your brand mentioned?</span>
           </h1>
-          <p className="text-[19px] sm:text-[21px] leading-[1.5] text-muted-foreground font-normal max-w-[420px] mx-auto tracking-[-0.01em]">
-            See how your brand performs in AI-generated answers across ChatGPT, Perplexity, and Google AI.
+          <p className="text-[18px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[520px] mx-auto tracking-[-0.01em]">
+            ChatGPT, Perplexity, and Google AI are rewriting how people find brands. Chedder tests whether AI recommends <em>you</em> — and tells you exactly how to fix it.
           </p>
         </div>
 
@@ -200,46 +203,227 @@ export default function Home() {
           )}
         </form>
 
-        {/* What we analyze */}
-        {(
-          <div className="space-y-5">
-            <div className="grid grid-cols-5 gap-4">
-              {[
-                { icon: "structured_data", label: "Structured\nData" },
-                { icon: "meta", label: "Meta\nTags" },
-                { icon: "content", label: "Content\nQuality" },
-                { icon: "technical", label: "AI\nCrawlers" },
-                { icon: "authority", label: "Trust\nSignals" },
-              ].map((item) => (
-                <div
-                  key={item.icon}
-                  className="flex flex-col items-center gap-2 group cursor-default"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-foreground/[0.03] border border-foreground/[0.04] flex items-center justify-center transition-all duration-200 group-hover:bg-foreground/[0.06] group-hover:border-foreground/[0.08] group-hover:scale-105">
-                    <FeatureIcon type={item.icon} />
-                  </div>
-                  <span className="text-[11px] leading-[1.3] text-muted-foreground text-center whitespace-pre-line font-medium">
-                    {item.label}
-                  </span>
+        {/* Trust signals */}
+        <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
+          <div className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            Free · no signup
+          </div>
+          <div className="flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            Results in 30 seconds
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            Real AI queries tested
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={() => document.getElementById("why")?.scrollIntoView({ behavior: "smooth" })}
+            className="text-[13px] text-muted-foreground/60 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+          >
+            Why this matters now
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+      </div>
+      </section>
+
+      {/* ───── WHY THIS MATTERS ───── */}
+      <section id="why" className="px-6 py-24 border-t border-black/[0.04]">
+        <div className="max-w-[900px] mx-auto space-y-16">
+          <div className="text-center space-y-4">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0071e3]">The Shift</div>
+            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+              Search is becoming conversation.<br/>
+              Your brand needs a seat at that table.
+            </h2>
+            <p className="text-[17px] text-muted-foreground max-w-[600px] mx-auto leading-[1.6]">
+              People aren&apos;t clicking through 10 blue links anymore. They&apos;re asking AI, and trusting the first answer.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { stat: "47%", label: "of Google searches now show AI Overviews", color: "#0071e3" },
+              { stat: "1 in 4", label: "buyers start product research with ChatGPT", color: "#8b5cf6" },
+              { stat: "0", label: "clicks needed for AI to answer a question", color: "#ec4899" },
+            ].map((s, i) => (
+              <div key={i} className="p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <div className="text-[44px] font-semibold tracking-[-0.03em] leading-none" style={{ color: s.color }}>
+                  {s.stat}
                 </div>
-              ))}
+                <p className="text-[14px] text-muted-foreground leading-[1.5] mt-3">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white space-y-4">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/60">The problem</p>
+            <p className="text-[22px] sm:text-[26px] font-medium leading-[1.4] tracking-[-0.02em]">
+              If ChatGPT, Perplexity, or Google AI doesn&apos;t mention you when a customer asks,
+              <span className="text-white/50"> you&apos;ve lost the sale before you knew it happened.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ───── WHAT CHEDDER DOES ───── */}
+      <section className="px-6 py-24 border-t border-black/[0.04]">
+        <div className="max-w-[900px] mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#8b5cf6]">The Audit</div>
+            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+              7 signals. One clear score.<br/>
+              A real action plan.
+            </h2>
+            <p className="text-[17px] text-muted-foreground max-w-[600px] mx-auto leading-[1.6]">
+              Chedder checks every factor AI models use to decide which brands to recommend — then tells you exactly what to fix.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              {
+                color: "#14b8a6",
+                title: "Real AI citation testing",
+                desc: "We ask Perplexity 5 real questions about your category and check if your brand appears — with exact verbatim excerpts.",
+                badge: "Killer feature",
+              },
+              {
+                color: "#ec4899",
+                title: "External brand signals",
+                desc: "Wikipedia, Reddit, and web presence — the sources AI models cross-reference when they answer.",
+              },
+              {
+                color: "#6366f1",
+                title: "Structured data audit",
+                desc: "Schema.org, JSON-LD, FAQ markup — the data that AI parses directly from your pages.",
+              },
+              {
+                color: "#f59e0b",
+                title: "AI crawler access",
+                desc: "GPTBot, ClaudeBot, Google-Extended — are your pages even reachable by the bots that train these models?",
+              },
+              {
+                color: "#0ea5e9",
+                title: "Meta & content quality",
+                desc: "Title tags, descriptions, FAQs, headings, lists — the formats AI prefers to cite verbatim.",
+              },
+              {
+                color: "#10b981",
+                title: "Trust & authority signals",
+                desc: "E-E-A-T factors: authorship, contact info, social proof, legal pages — why AI trusts you as a source.",
+              },
+            ].map((f, i) => (
+              <div key={i} className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-shadow">
+                <div className="flex items-start gap-3">
+                  <div className="w-1 self-stretch rounded-full mt-0.5" style={{ background: f.color }} />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{f.title}</h3>
+                      {f.badge && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${f.color}15`, color: f.color }}>
+                          {f.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[13px] text-muted-foreground leading-[1.55]">{f.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── HOW IT WORKS ───── */}
+      <section className="px-6 py-24 border-t border-black/[0.04]">
+        <div className="max-w-[900px] mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#34c759]">How It Works</div>
+            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+              From URL to action plan in 30 seconds.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s — even both side-by-side." },
+              { num: "2", title: "Chedder audits everything", desc: "Crawls 5 pages, tests Perplexity, checks Wikipedia and Reddit, scores every signal." },
+              { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
+            ].map((step, i) => (
+              <div key={i} className="relative p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#8b5cf6] text-white flex items-center justify-center text-[18px] font-bold mb-4">
+                  {step.num}
+                </div>
+                <h3 className="text-[17px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
+                <p className="text-[14px] text-muted-foreground leading-[1.55]" dangerouslySetInnerHTML={{ __html: step.desc }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── AGENCY CTA ───── */}
+      <section className="px-6 py-24 border-t border-black/[0.04]">
+        <div className="max-w-[900px] mx-auto">
+          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-[#6366f1]/[0.08] via-[#ec4899]/[0.06] to-[#14b8a6]/[0.08] border border-black/[0.06] space-y-6">
+            <div className="space-y-3">
+              <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#8b5cf6]">Need help fixing it?</div>
+              <h2 className="text-[30px] sm:text-[38px] font-semibold tracking-[-0.03em] leading-[1.15] max-w-[680px]">
+                The audit is free. The implementation is where our GEO agency comes in.
+              </h2>
+              <p className="text-[16px] text-muted-foreground leading-[1.6] max-w-[620px]">
+                Two Point Technologies builds AI visibility strategies for brands that want to dominate in the ChatGPT/Perplexity/Google AI era. We take your audit and turn it into a 90-day plan — then execute it.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <a
+                href="https://twopointtechnologies.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-11 px-5 rounded-xl bg-[#1d1d1f] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.97]"
+              >
+                Talk to our team
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="h-11 px-5 rounded-xl bg-white border border-black/[0.08] text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-black/[0.02] active:scale-[0.97]"
+              >
+                Run a free audit first
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {/* Made by 2pt */}
-        <a
-          href="https://twopointtechnologies.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 pt-8 group"
-        >
-          <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
-          <span className="text-[12px] text-muted-foreground/40 group-hover:text-muted-foreground transition-colors font-medium">
-            Made by Two Point Technologies
-          </span>
-        </a>
-      </div>
+      {/* ───── FOOTER ───── */}
+      <footer className="px-6 py-10 border-t border-black/[0.04]">
+        <div className="max-w-[900px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <a
+            href="https://twopointtechnologies.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 group"
+          >
+            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
+            <span className="text-[13px] text-muted-foreground/60 group-hover:text-muted-foreground transition-colors font-medium">
+              Chedder · Made by Two Point Technologies
+            </span>
+          </a>
+          <div className="flex items-center gap-4 text-[12px] text-muted-foreground/50">
+            <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">twopointtechnologies.com</a>
+            <a href="mailto:sam@twopointtechnologies.com" className="hover:text-foreground transition-colors">sam@twopointtechnologies.com</a>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
