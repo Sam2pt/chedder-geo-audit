@@ -64,11 +64,328 @@ function rootDomain(host: string): string {
   return parts.slice(-2).join(".");
 }
 
+/* ── Engine abstraction ──────────────────────────────────────────── */
+
+type EngineName = "perplexity" | "openai" | "brave";
+
+interface EngineResponse {
+  content: string;
+  citations: string[];
+}
+
+interface Engine {
+  name: EngineName;
+  label: string;
+  ask: (query: string) => Promise<EngineResponse | null>;
+  /** True if calls must be serialized (free-tier rate limits, etc.) */
+  sequential?: boolean;
+}
+
+function configuredEngines(): Engine[] {
+  const engines: Engine[] = [];
+  const ppx = process.env.PERPLEXITY_API_KEY;
+  const oai = process.env.OPENAI_API_KEY;
+  const brv = process.env.BRAVE_API_KEY;
+
+  if (ppx) {
+    engines.push({
+      name: "perplexity",
+      label: "Perplexity",
+      ask: (q) => askPerplexity(q, ppx),
+    });
+  }
+  if (oai) {
+    engines.push({
+      name: "openai",
+      label: "ChatGPT",
+      ask: (q) => askOpenAI(q, oai),
+    });
+  }
+  if (brv) {
+    engines.push({
+      name: "brave",
+      label: "Brave",
+      ask: (q) => askBrave(q, brv),
+      // Free-tier Brave Search is 1 req/sec
+      sequential: true,
+    });
+  }
+  return engines;
+}
+
+/* ── Perplexity ──────────────────────────────────────────────────── */
+
+interface PerplexityResponse {
+  id: string;
+  choices?: Array<{
+    message?: {
+      role: string;
+      content: string;
+    };
+  }>;
+  citations?: string[];
+  search_results?: Array<{ title: string; url: string; snippet?: string }>;
+}
+
+async function askPerplexity(
+  query: string,
+  apiKey: string
+): Promise<EngineResponse | null> {
+  try {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [{ role: "user", content: query }],
+        max_tokens: 500,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!res.ok) {
+      console.error(
+        `Perplexity API error: ${res.status} ${await res.text().catch(() => "")}`
+      );
+      return null;
+    }
+
+    const data: PerplexityResponse = await res.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    const citations =
+      data.citations ||
+      data.search_results?.map((r) => r.url).filter(Boolean) ||
+      [];
+
+    return { content, citations };
+  } catch (e) {
+    console.error("Perplexity request failed:", e);
+    return null;
+  }
+}
+
+/* ── OpenAI (Responses API + web_search_preview) ─────────────────── */
+
+interface OpenAIResponse {
+  output?: Array<{
+    type: string;
+    role?: string;
+    content?: Array<{
+      type: string;
+      text?: string;
+      annotations?: Array<{
+        type: string;
+        url?: string;
+        title?: string;
+        start_index?: number;
+        end_index?: number;
+      }>;
+    }>;
+  }>;
+  output_text?: string; // convenience field some SDK variants emit
+}
+
+async function askOpenAI(
+  query: string,
+  apiKey: string
+): Promise<EngineResponse | null> {
+  try {
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        tools: [{ type: "web_search_preview" }],
+        input: query,
+      }),
+      // Web search can take a while
+      signal: AbortSignal.timeout(45000),
+    });
+
+    if (!res.ok) {
+      console.error(
+        `OpenAI API error: ${res.status} ${await res.text().catch(() => "")}`
+      );
+      return null;
+    }
+
+    const data: OpenAIResponse = await res.json();
+
+    // Collect text + url_citation annotations from each message output
+    let content = "";
+    const citations: string[] = [];
+
+    if (Array.isArray(data.output)) {
+      for (const item of data.output) {
+        if (item.type !== "message" || !Array.isArray(item.content)) continue;
+        for (const c of item.content) {
+          if (c.type === "output_text" && typeof c.text === "string") {
+            content += (content ? "\n" : "") + c.text;
+          }
+          if (Array.isArray(c.annotations)) {
+            for (const ann of c.annotations) {
+              if (ann.type === "url_citation" && ann.url) {
+                citations.push(ann.url);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Fallback to convenience field
+    if (!content && typeof data.output_text === "string") {
+      content = data.output_text;
+    }
+
+    if (!content && citations.length === 0) {
+      // Model returned nothing usable — treat as failure
+      return null;
+    }
+
+    // Dedupe citations, preserve order
+    const seen = new Set<string>();
+    const dedupedCitations = citations.filter((u) => {
+      if (seen.has(u)) return false;
+      seen.add(u);
+      return true;
+    });
+
+    return { content, citations: dedupedCitations };
+  } catch (e) {
+    console.error("OpenAI request failed:", e);
+    return null;
+  }
+}
+
+/* ── Brave (web search + optional summarizer) ────────────────────── */
+
+interface BraveWebResult {
+  url?: string;
+  title?: string;
+  description?: string;
+}
+
+interface BraveSearchResponse {
+  web?: { results?: BraveWebResult[] };
+  summarizer?: { key?: string };
+}
+
+interface BraveSummarizerChunk {
+  type?: string;
+  data?:
+    | string
+    | {
+        title?: string;
+        url?: string;
+        [k: string]: unknown;
+      };
+}
+
+interface BraveSummarizerResponse {
+  status?: string;
+  summary?: BraveSummarizerChunk[];
+  enrichments?: {
+    raw?: string;
+    summary?: Array<{ text?: string }>;
+  };
+}
+
+async function askBrave(
+  query: string,
+  apiKey: string
+): Promise<EngineResponse | null> {
+  try {
+    const searchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
+      query
+    )}&summary=1&count=10`;
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        "X-Subscription-Token": apiKey,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!searchRes.ok) {
+      console.error(
+        `Brave Search API error: ${searchRes.status} ${await searchRes
+          .text()
+          .catch(() => "")}`
+      );
+      return null;
+    }
+
+    const searchData: BraveSearchResponse = await searchRes.json();
+    const webResults = searchData.web?.results || [];
+
+    // All citations = top-10 organic URLs (always present)
+    const citations: string[] = [];
+    for (const r of webResults.slice(0, 10)) {
+      if (r.url) citations.push(r.url);
+    }
+
+    // Try the summarizer if Brave offered a key for this query
+    const summaryKey = searchData.summarizer?.key;
+    if (summaryKey) {
+      try {
+        const sumUrl = `https://api.search.brave.com/res/v1/summarizer/search?key=${encodeURIComponent(
+          summaryKey
+        )}&entity_info=1`;
+        const sumRes = await fetch(sumUrl, {
+          headers: {
+            "X-Subscription-Token": apiKey,
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(20000),
+        });
+        if (sumRes.ok) {
+          const sumData: BraveSummarizerResponse = await sumRes.json();
+          const parts: string[] = [];
+          if (Array.isArray(sumData.summary)) {
+            for (const chunk of sumData.summary) {
+              if (typeof chunk.data === "string") parts.push(chunk.data);
+            }
+          }
+          const content = parts.join(" ").trim();
+          if (content) return { content, citations };
+        }
+      } catch (e) {
+        console.error("Brave summarizer request failed:", e);
+      }
+    }
+
+    // Fallback: concat top-3 snippets as "content". No AI summary for this query.
+    const snippets = webResults
+      .slice(0, 3)
+      .map((r) => r.description)
+      .filter((d): d is string => typeof d === "string" && d.length > 0)
+      .join(" ");
+
+    if (!snippets && citations.length === 0) return null;
+    return { content: snippets, citations };
+  } catch (e) {
+    console.error("Brave request failed:", e);
+    return null;
+  }
+}
+
+/* ── Competitor extraction ───────────────────────────────────────── */
+
+type TaggedResponse = {
+  engine: EngineName;
+  spec: { scenario: string; query: string };
+  response: EngineResponse | null;
+};
+
 function extractCompetitorsFromResponses(
-  responses: Array<{
-    spec: { scenario: string; query: string };
-    response: { content: string; citations: string[] } | null;
-  }>,
+  responses: TaggedResponse[],
   ownDomain: string
 ): AICompetitor[] {
   const ownRoot = rootDomain(ownDomain);
@@ -106,82 +423,24 @@ function extractCompetitorsFromResponses(
     }
   }
 
-  // Convert to AICompetitor[] with mentions = distinct queries
   return Array.from(counts.values())
     .map((c) => ({
       domain: c.domain,
       mentions: c.queries.size,
       queries: Array.from(c.queries).slice(0, 3),
     }))
-    .filter((c) => c.mentions >= 1) // must appear in at least 1 query
+    .filter((c) => c.mentions >= 1)
     .sort((a, b) => b.mentions - a.mentions)
     .slice(0, 6);
 }
 
-interface PerplexityResponse {
-  id: string;
-  choices?: Array<{
-    message?: {
-      role: string;
-      content: string;
-    };
-  }>;
-  citations?: string[];
-  search_results?: Array<{ title: string; url: string; snippet?: string }>;
-}
-
-async function askPerplexity(
-  query: string,
-  apiKey: string
-): Promise<{ content: string; citations: string[] } | null> {
-  try {
-    const res = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [{ role: "user", content: query }],
-        max_tokens: 500,
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!res.ok) {
-      console.error(
-        `Perplexity API error: ${res.status} ${await res.text().catch(() => "")}`
-      );
-      return null;
-    }
-
-    const data: PerplexityResponse = await res.json();
-    const content = data.choices?.[0]?.message?.content || "";
-    const citations =
-      data.citations ||
-      data.search_results?.map((r) => r.url).filter(Boolean) ||
-      [];
-
-    return { content, citations };
-  } catch (e) {
-    console.error("Perplexity request failed:", e);
-    return null;
-  }
-}
+/* ── Query generation (unchanged from single-engine version) ────── */
 
 interface QuerySpec {
-  /** User-facing description shown in the UI */
   scenario: string;
-  /** The actual prompt sent to Perplexity */
   query: string;
 }
 
-/**
- * Generate category-relevant queries based on domain & brand.
- * Each query has a user-friendly "scenario" description for the UI
- * and the actual prompt sent to Perplexity.
- */
 function generateQueries(
   brand: string,
   domain: string,
@@ -189,13 +448,11 @@ function generateQueries(
 ): QuerySpec[] {
   const queries: QuerySpec[] = [];
 
-  // 1: Direct brand query (does AI know about them)
   queries.push({
     scenario: `When someone asks AI about ${brand}`,
     query: `Tell me about ${brand} (${domain}). What do they do and what are they known for?`,
   });
 
-  // 2: Category "best" query (do they surface organically)
   if (category) {
     queries.push({
       scenario: `When someone asks for the best ${category}`,
@@ -208,19 +465,16 @@ function generateQueries(
     });
   }
 
-  // 3: Alternatives query (competitive positioning)
   queries.push({
     scenario: `When someone asks for alternatives to ${brand}`,
     query: `What are the best alternatives to ${brand}? List the top options with pros and cons.`,
   });
 
-  // 4: Trust/review query
   queries.push({
     scenario: `When someone asks if ${brand} is trustworthy`,
     query: `Is ${brand} a trusted and well-reviewed company? What do customers say about them?`,
   });
 
-  // 5: Specific category leadership
   if (category) {
     queries.push({
       scenario: `When someone asks which companies lead the ${category} market`,
@@ -236,9 +490,8 @@ function generateQueries(
   return queries;
 }
 
-/**
- * Check whether the brand appears in the AI response.
- */
+/* ── Citation analysis ───────────────────────────────────────────── */
+
 function analyzeCitation(
   content: string,
   citations: string[],
@@ -261,10 +514,11 @@ function analyzeCitation(
     lowerContent.includes(lowerDomain);
 
   const cited = citations.some(
-    (c) => c.toLowerCase().includes(lowerDomain) || c.toLowerCase().includes(domainBase)
+    (c) =>
+      c.toLowerCase().includes(lowerDomain) ||
+      c.toLowerCase().includes(domainBase)
   );
 
-  // Check if brand appears in first 30% of response (prominent) or later
   let position: "prominent" | "mentioned" | "absent" = "absent";
   let excerpt: string | null = null;
 
@@ -278,7 +532,6 @@ function analyzeCitation(
         ? "prominent"
         : "mentioned";
 
-    // Extract ~200 char window around first mention
     const start = Math.max(0, firstMentionIdx - 80);
     const end = Math.min(content.length, firstMentionIdx + 200);
     excerpt = content.slice(start, end).trim();
@@ -289,17 +542,16 @@ function analyzeCitation(
   return { mentioned, cited, position, excerpt };
 }
 
+/* ── Main analyzer ───────────────────────────────────────────────── */
+
 export async function analyzeAICitations(
   brand: string,
   domain: string,
   metaDescription: string | null
 ): Promise<{ module: ModuleResult; competitors: AICompetitor[] } | null> {
-  const apiKey = process.env.PERPLEXITY_API_KEY;
-  if (!apiKey) {
-    return null; // gracefully skip if not configured
-  }
+  const engines = configuredEngines();
+  if (engines.length === 0) return null; // no keys configured → skip module
 
-  // Spend cap check
   const cap = await checkSpendCap();
   if (!cap.allowed || cap.remainingQueriesToday <= 0) {
     return {
@@ -325,10 +577,9 @@ export async function analyzeAICitations(
     };
   }
 
-  // Try to derive category from meta description (cheap heuristic)
+  // Derive a category from meta description (cheap heuristic)
   let category: string | null = null;
   if (metaDescription) {
-    // Look for common category words
     const categoryPatterns = [
       /(\w+) (platform|software|tool|service|solution|app|api)/i,
       /(best|leading|top) (\w+ ?\w*)/i,
@@ -344,56 +595,75 @@ export async function analyzeAICitations(
   }
 
   const allQueries = generateQueries(brand, domain, category);
-  const queries = allQueries.slice(0, cap.remainingQueriesToday);
 
-  // Run queries in parallel
-  const responses = await Promise.all(
-    queries.map(async (q) => {
-      const r = await askPerplexity(q.query, apiKey);
-      return { spec: q, response: r };
-    })
+  // Distribute the daily query budget across engines. cap.remainingQueriesToday
+  // is the total daily allowance; each engine runs up to perEngine queries.
+  const perEngine = Math.max(
+    1,
+    Math.min(
+      allQueries.length,
+      Math.floor(cap.remainingQueriesToday / engines.length)
+    )
   );
+  const queries = allQueries.slice(0, perEngine);
 
-  const usedQueries = responses.filter((r) => r.response !== null).length;
-  await recordSpend(usedQueries);
-
-  // Analyze each response
-  const findings: Finding[] = [];
-  const recommendations: Recommendation[] = [];
-  let score = 0;
-  let mentionCount = 0;
-  let prominentCount = 0;
-  let citedCount = 0;
-
-  // Helper: extract recommended brand domains from a response (for "don't show up" context)
-  const pickTopCitedBrands = (citations: string[]): string[] => {
-    const brands: string[] = [];
-    for (const url of citations) {
-      try {
-        const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
-        const root = rootDomain(host);
-        if (NON_COMPETITOR_DOMAINS.has(root) || NON_COMPETITOR_DOMAINS.has(host)) continue;
-        if (root === rootDomain(domain.replace(/^www\./, ""))) continue;
-        if (!brands.includes(root)) brands.push(root);
-        if (brands.length >= 3) break;
-      } catch {
-        // skip
+  // Fan out across engines. Engines marked `sequential` (Brave free tier)
+  // run their queries one at a time with a small delay to respect rate limits.
+  const runEngine = async (engine: Engine): Promise<TaggedResponse[]> => {
+    const out: TaggedResponse[] = [];
+    if (engine.sequential) {
+      for (const q of queries) {
+        const response = await engine.ask(q.query);
+        out.push({ engine: engine.name, spec: q, response });
+        // Respect 1 req/sec on Brave free tier
+        await new Promise((r) => setTimeout(r, 1100));
       }
+      return out;
     }
-    return brands;
+    const settled = await Promise.all(
+      queries.map(async (q) => ({
+        engine: engine.name,
+        spec: q,
+        response: await engine.ask(q.query),
+      }))
+    );
+    return settled;
   };
 
-  // Helper: produce a clean snippet from the AI response for the "not mentioned" case.
-  // We want to show what AI ACTUALLY said instead so users see the competitive reality.
+  const perEngineResults = await Promise.all(engines.map(runEngine));
+  const results = perEngineResults.flat();
+
+  const usedQueries = results.filter((r) => r.response !== null).length;
+  await recordSpend(usedQueries);
+
+  /* ── Build findings (tagged per engine) ────────────────────────── */
+
+  const findings: Finding[] = [];
+  const recommendations: Recommendation[] = [];
+
+  // Per-engine aggregate counters (used for per-engine score + recs)
+  const byEngine: Record<
+    EngineName,
+    { total: number; answered: number; mentioned: number; prominent: number; cited: number }
+  > = {
+    perplexity: { total: 0, answered: 0, mentioned: 0, prominent: 0, cited: 0 },
+    openai: { total: 0, answered: 0, mentioned: 0, prominent: 0, cited: 0 },
+    brave: { total: 0, answered: 0, mentioned: 0, prominent: 0, cited: 0 },
+  };
+
+  const engineLabelOf = (name: EngineName): string => {
+    const e = engines.find((x) => x.name === name);
+    return e?.label || name;
+  };
+
   const firstSnippet = (content: string, maxLen = 260): string => {
     const cleaned = content
-      .replace(/\[\d+\]/g, "") // strip [1] citation markers
-      .replace(/^#+\s*/gm, "") // strip markdown headings
-      .replace(/\*\*/g, "") // strip bold markers
+      .replace(/\[\d+\]/g, "")
+      .replace(/^#+\s*/gm, "")
+      .replace(/\*\*/g, "")
       .replace(/\s+/g, " ")
       .trim();
     if (cleaned.length <= maxLen) return cleaned;
-    // Prefer to cut at sentence boundary
     const sliced = cleaned.slice(0, maxLen);
     const lastStop = Math.max(
       sliced.lastIndexOf(". "),
@@ -404,7 +674,6 @@ export async function analyzeAICitations(
     return sliced.trimEnd() + "...";
   };
 
-  // Clean an already-extracted excerpt (used for prominent/mentioned cases)
   const cleanExcerpt = (raw: string | null): string | undefined => {
     if (!raw) return undefined;
     const cleaned = raw
@@ -415,11 +684,10 @@ export async function analyzeAICitations(
     return cleaned || undefined;
   };
 
-  // Pick the first citation URL from the response (Perplexity source link)
   const firstCitation = (citations: string[]): string | undefined => {
     for (const url of citations) {
       try {
-        new URL(url); // validate
+        new URL(url);
         return url;
       } catch {
         // skip
@@ -428,15 +696,39 @@ export async function analyzeAICitations(
     return undefined;
   };
 
-  for (const { spec, response } of responses) {
+  const pickTopCitedBrands = (citations: string[]): string[] => {
+    const brands: string[] = [];
+    for (const url of citations) {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+        const root = rootDomain(host);
+        if (NON_COMPETITOR_DOMAINS.has(root) || NON_COMPETITOR_DOMAINS.has(host))
+          continue;
+        if (root === rootDomain(domain.replace(/^www\./, ""))) continue;
+        if (!brands.includes(root)) brands.push(root);
+        if (brands.length >= 3) break;
+      } catch {
+        // skip
+      }
+    }
+    return brands;
+  };
+
+  for (const { engine, spec, response } of results) {
+    const engineLabel = engineLabelOf(engine);
+    const scenarioLabel = `${engineLabel} · ${spec.scenario}`;
+    const eb = byEngine[engine];
+    eb.total++;
+
     if (!response) {
       findings.push({
-        label: spec.scenario,
+        label: scenarioLabel,
         status: "warn",
-        detail: "AI query failed. We will retry next audit.",
+        detail: `${engineLabel} query failed. We will retry next audit.`,
       });
       continue;
     }
+    eb.answered++;
 
     const analysis = analyzeCitation(
       response.content,
@@ -446,22 +738,22 @@ export async function analyzeAICitations(
     );
 
     if (analysis.position === "prominent") {
-      prominentCount++;
-      mentionCount++;
+      eb.mentioned++;
+      eb.prominent++;
       findings.push({
-        label: spec.scenario,
+        label: scenarioLabel,
         status: "pass",
-        detail: `${brand} is mentioned prominently in the answer.`,
+        detail: `${brand} is mentioned prominently in the ${engineLabel} answer.`,
         excerpt: cleanExcerpt(analysis.excerpt),
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
       });
     } else if (analysis.position === "mentioned") {
-      mentionCount++;
+      eb.mentioned++;
       findings.push({
-        label: spec.scenario,
+        label: scenarioLabel,
         status: "warn",
-        detail: `${brand} is mentioned, but not among the top recommendations.`,
+        detail: `${brand} is mentioned, but not among the top recommendations in the ${engineLabel} answer.`,
         excerpt: cleanExcerpt(analysis.excerpt),
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
@@ -470,10 +762,12 @@ export async function analyzeAICitations(
       const recommended = pickTopCitedBrands(response.citations);
       const detail =
         recommended.length > 0
-          ? `${brand} is not mentioned. AI recommended ${recommended.join(", ")} instead.`
-          : `${brand} is not mentioned in the answer.`;
+          ? `${brand} is not mentioned by ${engineLabel}. It recommended ${recommended.join(
+              ", "
+            )} instead.`
+          : `${brand} is not mentioned in the ${engineLabel} answer.`;
       findings.push({
-        label: spec.scenario,
+        label: scenarioLabel,
         status: "fail",
         detail,
         excerpt: firstSnippet(response.content),
@@ -482,28 +776,56 @@ export async function analyzeAICitations(
       });
     }
 
-    if (analysis.cited) citedCount++;
+    if (analysis.cited) eb.cited++;
   }
 
-  // Calculate score
-  if (responses.length > 0) {
-    const mentionRate = mentionCount / responses.length;
-    const prominentRate = prominentCount / responses.length;
-    const citationRate = citedCount / responses.length;
+  /* ── Score (averaged across engines that actually ran) ─────────── */
 
-    score = Math.round(
+  const engineScores: number[] = [];
+  const engineSummary: string[] = [];
+  let totalMentioned = 0;
+  let totalProminent = 0;
+  let totalCited = 0;
+  let totalAnswered = 0;
+
+  for (const engine of engines) {
+    const eb = byEngine[engine.name];
+    if (eb.total === 0) continue;
+    const denom = eb.total;
+    const mentionRate = eb.mentioned / denom;
+    const prominentRate = eb.prominent / denom;
+    const citationRate = eb.cited / denom;
+    const engineScore = Math.round(
       mentionRate * 40 + prominentRate * 40 + citationRate * 20
     );
+    engineScores.push(engineScore);
+    engineSummary.push(
+      `${engine.label} ${eb.mentioned}/${eb.total}`
+    );
+    totalMentioned += eb.mentioned;
+    totalProminent += eb.prominent;
+    totalCited += eb.cited;
+    totalAnswered += eb.answered;
   }
 
-  // Recommendations based on results
-  if (mentionCount === 0) {
+  const score =
+    engineScores.length > 0
+      ? Math.round(
+          engineScores.reduce((a, b) => a + b, 0) / engineScores.length
+        )
+      : 0;
+
+  /* ── Recommendations ───────────────────────────────────────────── */
+
+  if (totalMentioned === 0 && totalAnswered > 0) {
     recommendations.push({
       priority: "high",
       title: "Your Brand Is Invisible to AI",
-      description: `Perplexity did not mention ${brand} in any response. This is a critical GEO issue. Focus on earning authoritative mentions on Wikipedia, Reddit, G2, news publications, and industry directories.`,
+      description: `None of the AI engines we tested (${engines
+        .map((e) => e.label)
+        .join(", ")}) mentioned ${brand}. Focus on earning authoritative mentions on Wikipedia, Reddit, G2, news publications, and industry directories.`,
     });
-  } else if (prominentCount === 0) {
+  } else if (totalProminent === 0 && totalMentioned > 0) {
     recommendations.push({
       priority: "high",
       title: "Improve Prominence in AI Responses",
@@ -511,7 +833,7 @@ export async function analyzeAICitations(
     });
   }
 
-  if (citedCount === 0 && mentionCount > 0) {
+  if (totalCited === 0 && totalMentioned > 0) {
     recommendations.push({
       priority: "high",
       title: "Your Site Isn't Being Cited Directly",
@@ -519,8 +841,38 @@ export async function analyzeAICitations(
     });
   }
 
-  // Extract AI-perceived competitors from the citations
-  const aiCompetitors = extractCompetitorsFromResponses(responses, domain);
+  // Flag per-engine gaps so users see which engines they're weak on
+  if (engines.length > 1) {
+    const weakEngines = engines
+      .map((e) => ({ label: e.label, eb: byEngine[e.name] }))
+      .filter(({ eb }) => eb.total > 0 && eb.mentioned === 0);
+    if (
+      weakEngines.length > 0 &&
+      weakEngines.length < engines.length // don't duplicate the "invisible everywhere" rec
+    ) {
+      recommendations.push({
+        priority: "medium",
+        title: `Missing from ${weakEngines.map((w) => w.label).join(", ")}`,
+        description: `You appear in some AI engines but not others. Different engines weight different signals — ${weakEngines
+          .map((w) => w.label)
+          .join(
+            ", "
+          )} lean harder on recent web content, structured data, and high-authority backlinks. Publish fresh content that targets your core categories and earn links from industry publications.`,
+      });
+    }
+  }
+
+  /* ── Merge competitors across all engines ──────────────────────── */
+
+  const aiCompetitors = extractCompetitorsFromResponses(results, domain);
+
+  const engineList = engines.map((e) => e.label).join(", ");
+  const description =
+    engines.length > 1
+      ? `Real queries tested across ${engineList} — ${engineSummary.join(
+          " · "
+        )}`
+      : `Real queries tested on ${engineList} (${usedQueries}/${results.length} queries ran)`;
 
   return {
     module: {
@@ -528,7 +880,7 @@ export async function analyzeAICitations(
       slug: "ai-citations",
       score,
       icon: "🤖",
-      description: `Real queries tested on Perplexity (${usedQueries}/${queries.length} queries ran)`,
+      description,
       findings,
       recommendations,
     },

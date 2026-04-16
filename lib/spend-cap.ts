@@ -1,19 +1,26 @@
 import { getStore } from "@netlify/blobs";
 
-// Perplexity Sonar pricing (approximate, conservative estimate):
-// ~$1 per 1,000 queries = $0.001 per query
-const COST_PER_QUERY_USD = 0.001;
+// Blended cost per AI query across supported engines:
+//   Perplexity Sonar  ≈ $0.001/query
+//   OpenAI Responses + web_search_preview  ≈ $0.025/query (tool call dominates)
+//   Brave summarizer  ≈ $0.025/query
+// Weighted midpoint we use for budgeting. Err on the higher side so the cap is safe.
+const COST_PER_QUERY_USD = parseFloat(
+  process.env.AI_COST_PER_QUERY_USD || "0.015"
+);
 
 // Defaults. overridable via env vars
+// NOTE: MAX_AI_QUERIES_PER_AUDIT is "per engine" — with 3 engines at 5 queries each
+// that's 15 API calls per audit (~$0.22 worst-case).
 const MAX_QUERIES_PER_AUDIT = parseInt(
   process.env.MAX_AI_QUERIES_PER_AUDIT || "5",
   10
 );
 const MAX_DAILY_SPEND_USD = parseFloat(
-  process.env.MAX_DAILY_AI_SPEND_USD || "2"
+  process.env.MAX_DAILY_AI_SPEND_USD || "5"
 );
 const MAX_MONTHLY_SPEND_USD = parseFloat(
-  process.env.MAX_MONTHLY_AI_SPEND_USD || "30"
+  process.env.MAX_MONTHLY_AI_SPEND_USD || "60"
 );
 
 export interface SpendCheckResult {

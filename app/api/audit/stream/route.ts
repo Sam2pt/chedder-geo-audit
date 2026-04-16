@@ -165,7 +165,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
   const brand = extractBrandName($home, parsedUrl.hostname);
   const metaDescription = $home('meta[name="description"]').attr("content")?.trim() || null;
 
-  emit({ type: "stage", name: "ai", detail: "Testing Perplexity AI citations" });
+  emit({ type: "stage", name: "ai", detail: "Testing AI citations across engines" });
   const aiPromise = analyzeAICitations(brand, parsedUrl.hostname, metaDescription);
 
   const externalResult = await externalPromise;
