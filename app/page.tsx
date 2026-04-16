@@ -1,16 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 
 export default function Home() {
+  // inline helper — updates URL to /a/<slug> without a full navigation
+  function updateUrlWithSlug(slug: string | undefined) {
+    if (!slug || typeof window === "undefined") return;
+    try {
+      window.history.replaceState({}, "", `/a/${slug}`);
+    } catch {
+      // ignore
+    }
+  }
+
   const [url, setUrl] = useState("");
   const [competitors, setCompetitors] = useState<string[]>([]);
   const [showCompetitors, setShowCompetitors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AuditResult | null>(null);
+  // Streaming progress: labels for each module/stage as they complete
+  const [progress, setProgress] = useState<
+    Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>
+  >([]);
+  const [currentStage, setCurrentStage] = useState<string>("Starting audit...");
 
   async function handleAudit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,25 +34,92 @@ export default function Home() {
     setLoading(true);
     setError("");
     setResult(null);
+    setProgress([]);
+    setCurrentStage("Starting audit...");
 
+    const cleanCompetitors = competitors
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
+    // If the user has competitors, we fall back to the non-streaming endpoint
+    // since streaming only covers primary audits.
+    if (cleanCompetitors.length > 0) {
+      try {
+        const res = await fetch("/api/audit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim(), competitors: cleanCompetitors }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || "Something went wrong");
+          return;
+        }
+        setResult(data);
+        updateUrlWithSlug(data?.slug);
+      } catch {
+        setError("Failed to connect. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Streaming path
     try {
-      const cleanCompetitors = competitors
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0);
-      const res = await fetch("/api/audit", {
+      const res = await fetch("/api/audit/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: url.trim(),
-          competitors: cleanCompetitors,
-        }),
+        body: JSON.stringify({ url: url.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error || "Something went wrong");
+        setLoading(false);
         return;
       }
-      setResult(data);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalResult: AuditResult | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+
+        for (const frame of frames) {
+          const line = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          const payload = line.slice(5).trim();
+          if (!payload) continue;
+          try {
+            const evt = JSON.parse(payload);
+            if (evt.type === "stage") {
+              setCurrentStage(evt.detail || evt.name);
+            } else if (evt.type === "module") {
+              setProgress((prev) => [
+                ...prev,
+                { key: evt.slug, label: evt.name, status: "done", score: evt.score },
+              ]);
+            } else if (evt.type === "done") {
+              finalResult = evt.result;
+            } else if (evt.type === "error") {
+              setError(evt.message || "Audit failed");
+            }
+          } catch {
+            // ignore malformed frame
+          }
+        }
+      }
+
+      if (finalResult) {
+        setResult(finalResult);
+        updateUrlWithSlug(finalResult.slug);
+      }
     } catch {
       setError("Failed to connect. Please try again.");
     } finally {
@@ -61,7 +143,7 @@ export default function Home() {
 
   // Full-screen loading with cheese wheel
   if (loading) {
-    return <CheeseWheelLoader url={url} />;
+    return <CheeseWheelLoader url={url} stage={currentStage} progress={progress} />;
   }
 
   if (result) {
@@ -71,6 +153,9 @@ export default function Home() {
         onBack={() => {
           setResult(null);
           setUrl("");
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, "", "/");
+          }
         }}
       />
     );
@@ -427,109 +512,93 @@ export default function Home() {
   );
 }
 
-function FeatureIcon({ type }: { type: string }) {
-  const cls = "w-[18px] h-[18px] text-muted-foreground/60";
-  switch (type) {
-    case "structured_data":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.27 6.96L12 12.01l8.73-5.05" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 22.08V12" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-    case "meta":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>;
-    case "content":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>;
-    case "technical":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>;
-    case "authority":
-      return <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-    default:
-      return null;
-  }
+function scoreAccent(score: number) {
+  if (score >= 80) return "#34c759";
+  if (score >= 60) return "#5ac8fa";
+  if (score >= 40) return "#ff9f0a";
+  return "#ff453a";
 }
 
-function LoadingSpinner() {
+function CheeseWheelLoader({
+  url,
+  stage,
+  progress,
+}: {
+  url: string;
+  stage: string;
+  progress: Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>;
+}) {
   return (
-    <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
-  );
-}
+    <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
+      <div className="max-w-[520px] w-full space-y-8">
+        <div className="flex flex-col items-center text-center space-y-5">
+          {/* Cheese wheel */}
+          <div className="relative w-[120px] h-[120px]">
+            <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "3s" }}>
+              <circle cx="50" cy="50" r="45" fill="#FFB800" />
+              <line x1="50" y1="50" x2="50" y2="5" stroke="#E5A500" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="88.9" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="50" y2="95" stroke="#E5A500" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="11.1" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="11.1" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
+              <circle cx="35" cy="30" r="5" fill="#E5A500" opacity="0.6" />
+              <circle cx="65" cy="35" r="3.5" fill="#E5A500" opacity="0.6" />
+              <circle cx="55" cy="65" r="6" fill="#E5A500" opacity="0.6" />
+              <circle cx="30" cy="60" r="4" fill="#E5A500" opacity="0.6" />
+              <circle cx="70" cy="70" r="3" fill="#E5A500" opacity="0.6" />
+              <circle cx="42" cy="48" r="2.5" fill="#E5A500" opacity="0.6" />
+              <circle cx="75" cy="50" r="4.5" fill="#E5A500" opacity="0.6" />
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5A500" strokeWidth="3" />
+              <circle cx="50" cy="50" r="3" fill="#E5A500" />
+            </svg>
+          </div>
 
-const LOADING_STEPS = [
-  "Fetching pages...",
-  "Analyzing structured data...",
-  "Checking meta tags...",
-  "Evaluating content quality...",
-  "Testing AI crawlability...",
-  "Assessing trust signals...",
-  "Compiling results...",
-];
-
-function CheeseWheelLoader({ url }: { url: string }) {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i = Math.min(i + 1, LOADING_STEPS.length - 1);
-      setStep(i);
-    }, 2000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <main className="flex-1 flex flex-col items-center justify-center px-6">
-      <div className="text-center space-y-8">
-        {/* Cheese wheel */}
-        <div className="relative w-[140px] h-[140px] mx-auto">
-          {/* Spinning cheese wheel */}
-          <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "3s" }}>
-            {/* Cheese base */}
-            <circle cx="50" cy="50" r="45" fill="#FFB800" />
-            {/* Cheese wedge lines */}
-            <line x1="50" y1="50" x2="50" y2="5" stroke="#E5A500" strokeWidth="1.5" />
-            <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
-            <line x1="50" y1="50" x2="88.9" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
-            <line x1="50" y1="50" x2="50" y2="95" stroke="#E5A500" strokeWidth="1.5" />
-            <line x1="50" y1="50" x2="11.1" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
-            <line x1="50" y1="50" x2="11.1" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
-            {/* Cheese holes */}
-            <circle cx="35" cy="30" r="5" fill="#E5A500" opacity="0.6" />
-            <circle cx="65" cy="35" r="3.5" fill="#E5A500" opacity="0.6" />
-            <circle cx="55" cy="65" r="6" fill="#E5A500" opacity="0.6" />
-            <circle cx="30" cy="60" r="4" fill="#E5A500" opacity="0.6" />
-            <circle cx="70" cy="70" r="3" fill="#E5A500" opacity="0.6" />
-            <circle cx="42" cy="48" r="2.5" fill="#E5A500" opacity="0.6" />
-            <circle cx="75" cy="50" r="4.5" fill="#E5A500" opacity="0.6" />
-            {/* Outer ring */}
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5A500" strokeWidth="3" />
-            {/* Center dot */}
-            <circle cx="50" cy="50" r="3" fill="#E5A500" />
-          </svg>
+          <div className="space-y-1.5">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">
+              Analyzing {url.replace(/^https?:\/\//, "")}
+            </h2>
+            <p className="text-[14px] text-muted-foreground min-h-[20px]">
+              {stage}
+            </p>
+          </div>
         </div>
 
-        {/* Text */}
-        <div className="space-y-2">
-          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">
-            Analyzing {url.replace(/^https?:\/\//, "")}
-          </h2>
-          <p className="text-[15px] text-muted-foreground transition-all duration-300">
-            {LOADING_STEPS[step]}
-          </p>
-        </div>
-
-        {/* Progress dots */}
-        <div className="flex justify-center gap-1.5">
-          {LOADING_STEPS.map((_, i) => (
-            <div
-              key={i}
-              className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-              style={{
-                background: i <= step ? "#FFB800" : "rgba(29,29,31,0.1)",
-                transform: i === step ? "scale(1.5)" : "scale(1)",
-              }}
-            />
-          ))}
+        {/* Live module feed */}
+        <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-black/[0.05] bg-foreground/[0.02]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+              Live analysis
+            </div>
+          </div>
+          <ul className="divide-y divide-black/[0.04]">
+            {progress.length === 0 && (
+              <li className="px-4 py-3 text-[13px] text-muted-foreground/60 italic">
+                Warming up...
+              </li>
+            )}
+            {progress.map((p) => {
+              const accent = p.score !== undefined ? scoreAccent(p.score) : "#6366f1";
+              return (
+                <li key={p.key} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    <span className="text-[13.5px] font-medium text-foreground truncate">{p.label}</span>
+                  </div>
+                  {p.score !== undefined && (
+                    <span
+                      className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded-md"
+                      style={{ background: `${accent}15`, color: accent }}
+                    >
+                      {p.score}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </main>

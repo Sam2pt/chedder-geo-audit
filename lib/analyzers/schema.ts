@@ -85,6 +85,22 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
       title: "Add JSON-LD Structured Data",
       description:
         "JSON-LD is the preferred format for structured data. Add Organization, WebSite, and page-specific schemas to help AI models understand your content.",
+      snippetTarget: "Add to <head>",
+      language: "html",
+      fixSnippet: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Your Brand Name",
+  "url": "https://yourdomain.com",
+  "logo": "https://yourdomain.com/logo.png",
+  "description": "What your company does in one sentence.",
+  "sameAs": [
+    "https://twitter.com/yourbrand",
+    "https://www.linkedin.com/company/yourbrand"
+  ]
+}
+</script>`,
     });
   }
 
@@ -128,6 +144,30 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
       title: "Add Organization Schema",
       description:
         "Organization schema helps AI models identify your brand, logo, social profiles, and contact info. This is critical for brand recognition in AI answers.",
+      snippetTarget: "Add to <head>",
+      language: "html",
+      fixSnippet: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Your Brand",
+  "alternateName": "Short Brand",
+  "url": "https://yourdomain.com",
+  "logo": "https://yourdomain.com/logo.png",
+  "description": "One-sentence description of what you do.",
+  "foundingDate": "2015",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "email": "support@yourdomain.com"
+  },
+  "sameAs": [
+    "https://twitter.com/yourbrand",
+    "https://www.linkedin.com/company/yourbrand",
+    "https://github.com/yourbrand"
+  ]
+}
+</script>`,
     });
   }
 
@@ -149,6 +189,21 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
       title: "Add WebSite Schema",
       description:
         "WebSite schema helps AI understand your site structure and enables sitelinks search functionality.",
+      snippetTarget: "Add to <head>",
+      language: "html",
+      fixSnippet: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Your Site Name",
+  "url": "https://yourdomain.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://yourdomain.com/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>`,
     });
   }
 
@@ -170,6 +225,32 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
       title: "Add FAQ Schema",
       description:
         "FAQ schema is one of the most effective ways to get cited by AI. Add structured FAQ content to increase chances of appearing in AI-generated answers.",
+      snippetTarget: "Add to FAQ pages",
+      language: "html",
+      fixSnippet: `<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does [Your Brand] do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Clear, direct, AI-citable answer in 1-2 sentences."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is [Your Brand] different from competitors?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Concrete differentiator AI can quote verbatim."
+      }
+    }
+  ]
+}
+</script>`,
     });
   }
 

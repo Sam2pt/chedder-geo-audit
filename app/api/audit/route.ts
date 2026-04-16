@@ -14,6 +14,12 @@ import {
   getTopRecommendations,
 } from "@/lib/scoring";
 import { AuditResult, ModuleResult } from "@/lib/types";
+import {
+  saveAudit,
+  getBenchmarks,
+  getDomainHistory,
+  makeSlug,
+} from "@/lib/audit-store";
 
 const MAX_PAGES = 5;
 const FETCH_TIMEOUT = 10000;
@@ -52,7 +58,7 @@ function discoverLinks($: cheerio.CheerioAPI, origin: string): string[] {
   ];
 
   $("a[href]").each((_, el) => {
-    let href = $(el).attr("href") || "";
+    const href = $(el).attr("href") || "";
     if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:"))
       return;
     try {
@@ -272,10 +278,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      ...primary,
+    // Persist + enrich with benchmarks and history.
+    // These run in parallel; if blobs aren't available, we degrade silently.
+    const slug = makeSlug(primary.domain);
+    const primaryWithSlug: AuditResult = { ...primary, slug };
+    const [benchmarks, history] = await Promise.all([
+      getBenchmarks(primaryWithSlug),
+      getDomainHistory(primary.domain, slug),
+    ]);
+
+    const enriched: AuditResult = {
+      ...primaryWithSlug,
+      benchmarks,
+      history,
       competitors: competitorResults,
-    });
+    };
+
+    // Save (updates benchmarks + appends history) — don't block the response on failure
+    await saveAudit(enriched).catch(() => {});
+
+    return NextResponse.json(enriched);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(

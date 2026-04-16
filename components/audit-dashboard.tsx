@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AuditResult, ModuleResult, Finding, Recommendation } from "@/lib/types";
 import { generateAuditPDF } from "@/lib/generate-pdf";
+import { CodeSnippet } from "@/components/code-snippet";
 
 /* ── Module color palette ────────────────────────────────────────── */
 
@@ -26,12 +27,6 @@ function scoreColor(s: number) {
   if (s >= 70) return { bg: "#34c759", bgLight: "rgba(52,199,89,0.08)", text: "#248a3d" };
   if (s >= 40) return { bg: "#ff9f0a", bgLight: "rgba(255,159,10,0.08)", text: "#c77c02" };
   return { bg: "#ff453a", bgLight: "rgba(255,69,58,0.08)", text: "#d70015" };
-}
-
-function gradeLabel(s: number) {
-  if (s >= 70) return "Good AI Visibility";
-  if (s >= 40) return "Needs Improvement";
-  return "Low AI Visibility";
 }
 
 /* ── Score Gauge ──────────────────────────────────────────────────── */
@@ -134,9 +129,16 @@ function PriorityTag({ priority }: { priority: Recommendation["priority"] }) {
 
 /* ── Module Card ──────────────────────────────────────────────────── */
 
-function ModuleCard({ module }: { module: ModuleResult }) {
+function ModuleCard({
+  module,
+  benchmark,
+}: {
+  module: ModuleResult;
+  benchmark?: { median: number; count: number };
+}) {
   const [open, setOpen] = useState(false);
   const mc = moduleColor(module.slug);
+  const delta = benchmark && benchmark.count >= 5 ? module.score - benchmark.median : null;
 
   return (
     <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -155,9 +157,20 @@ function ModuleCard({ module }: { module: ModuleResult }) {
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-[20px] font-semibold tabular-nums tracking-[-0.02em]" style={{ color: mc.accent }}>
-            {module.score}
-          </span>
+          <div className="flex flex-col items-end leading-none">
+            <span className="text-[20px] font-semibold tabular-nums tracking-[-0.02em]" style={{ color: mc.accent }}>
+              {module.score}
+            </span>
+            {delta !== null && (
+              <span
+                className="text-[10px] font-semibold tabular-nums mt-1"
+                style={{ color: delta >= 0 ? "#248a3d" : "#ff453a" }}
+                title={`Median: ${benchmark!.median} · based on ${benchmark!.count} audits`}
+              >
+                {delta >= 0 ? "+" : ""}{delta} vs median
+              </span>
+            )}
+          </div>
           <svg
             className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
@@ -171,9 +184,21 @@ function ModuleCard({ module }: { module: ModuleResult }) {
         <div className="px-5 pb-5 space-y-5">
           <div className="h-px bg-black/[0.04]" />
 
-          <div className="h-[5px] rounded-full bg-foreground/[0.04] overflow-hidden">
+          <div className="relative h-[5px] rounded-full bg-foreground/[0.04] overflow-visible">
             <div className="h-full rounded-full animate-bar" style={{ width: `${module.score}%`, background: `linear-gradient(90deg, ${mc.accent}70, ${mc.accent})` }} />
+            {benchmark && benchmark.count >= 5 && (
+              <div
+                className="absolute top-[-4px] bottom-[-4px] w-[2px] bg-foreground/40 rounded-full"
+                style={{ left: `${benchmark.median}%` }}
+                title={`Median: ${benchmark.median}`}
+              />
+            )}
           </div>
+          {benchmark && benchmark.count >= 5 && (
+            <div className="text-[11px] text-muted-foreground -mt-3">
+              Median across {benchmark.count} audits: <span className="tabular-nums font-semibold text-foreground/80">{benchmark.median}</span>
+            </div>
+          )}
 
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 mb-3">Findings</div>
@@ -195,18 +220,47 @@ function ModuleCard({ module }: { module: ModuleResult }) {
               <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 mb-3">Recommendations</div>
               <div className="space-y-2">
                 {module.recommendations.map((r, i) => (
-                  <div key={i} className="p-3.5 rounded-xl border border-black/[0.03] space-y-1.5" style={{ background: mc.light }}>
-                    <div className="flex items-center gap-2">
-                      <PriorityTag priority={r.priority} />
-                      <span className="text-[13px] font-semibold text-foreground tracking-[-0.01em]">{r.title}</span>
-                    </div>
-                    <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{r.description}</p>
-                  </div>
+                  <ModuleRecItem key={i} rec={r} color={mc} />
                 ))}
               </div>
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function ModuleRecItem({ rec, color }: { rec: Recommendation; color: { accent: string; light: string } }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="p-3.5 rounded-xl border border-black/[0.03] space-y-1.5" style={{ background: color.light }}>
+      <div className="flex items-center gap-2">
+        <PriorityTag priority={rec.priority} />
+        <span className="text-[13px] font-semibold text-foreground tracking-[-0.01em]">{rec.title}</span>
+      </div>
+      <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{rec.description}</p>
+      {rec.fixSnippet && (
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-foreground/70 hover:text-foreground transition-colors"
+            style={{ color: expanded ? color.accent : undefined }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-90 transition-transform" : "transition-transform"}>
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+            {expanded ? "Hide" : "Show"} fix
+          </button>
+          {expanded && (
+            <CodeSnippet
+              code={rec.fixSnippet}
+              language={rec.language || "html"}
+              target={rec.snippetTarget}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -399,351 +453,6 @@ function ChatPopup({ result }: { result: AuditResult }) {
         </div>
       )}
     </>
-  );
-}
-
-/* ── Gated PDF Download (kept for potential fallback) ────────────── */
-
-function DownloadGate({ result }: { result: AuditResult }) {
-  const [state, setState] = useState<"idle" | "sending" | "done">("idle");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
-
-  async function handleDownload(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-
-    setState("sending");
-
-    // Submit to BOTH Netlify Forms AND our own API (belt and suspenders)
-    // Our API endpoint also sends email as a backup.
-    const lead = {
-      name,
-      email,
-      website: result.domain,
-      message: `PDF download requested. Company: ${company || "N/A"}`,
-      score: result.overallScore,
-      source: "pdf-download",
-    };
-
-    await Promise.allSettled([
-      // Netlify Forms submission
-      (async () => {
-        const formData = new URLSearchParams();
-        formData.append("form-name", "pdf-download");
-        formData.append("name", name);
-        formData.append("email", email);
-        formData.append("company", company);
-        formData.append("website", result.domain);
-        formData.append("score", String(result.overallScore));
-        await fetch("/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData.toString(),
-        });
-      })(),
-      // Backup: hit our own API (which emails via backend + logs)
-      fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lead),
-      }),
-    ]);
-
-    // Generate and download PDF
-    const doc = generateAuditPDF(result);
-    doc.save(`${result.domain}-geo-audit.pdf`);
-    setState("done");
-  }
-
-  if (state === "done") {
-    return (
-      <section>
-        <div className="p-6 rounded-2xl bg-[#f5f5f7] border border-black/[0.04] text-center space-y-3">
-          <div className="w-10 h-10 rounded-full bg-[#34c759]/10 flex items-center justify-center mx-auto">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-[#34c759]">
-              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <p className="text-[14px] font-semibold text-foreground">PDF downloaded</p>
-          <p className="text-[13px] text-muted-foreground">Check your downloads folder for <strong>{result.domain}-geo-audit.pdf</strong></p>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section>
-      <div className="p-6 rounded-2xl bg-[#f5f5f7] border border-black/[0.04] space-y-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-foreground/[0.06] flex items-center justify-center shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-foreground/60" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <path d="M14 2v6h6"/>
-              <path d="M12 18v-6"/>
-              <path d="m9 15 3 3 3-3"/>
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-[16px] font-semibold tracking-[-0.02em]">Download Full Audit Report</h3>
-            <p className="text-[13px] text-muted-foreground mt-0.5">Get a PDF with all scores, findings, and recommendations you can share with your team.</p>
-          </div>
-        </div>
-
-        <form name="pdf-download" onSubmit={handleDownload} className="space-y-3" data-netlify="true" netlify-honeypot="bot-field">
-          <input type="hidden" name="form-name" value="pdf-download" />
-          <input type="hidden" name="website" value={result.domain} />
-          <input type="hidden" name="score" value={result.overallScore} />
-          <p className="hidden"><label>Don&apos;t fill this out: <input name="bot-field" /></label></p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              required
-              className="h-10 px-3.5 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Work email"
-              required
-              className="h-10 px-3.5 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
-            />
-          </div>
-          <input
-            type="text"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="Company name (optional)"
-            className="w-full h-10 px-3.5 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
-          />
-          <button
-            type="submit"
-            disabled={state === "sending" || !name.trim() || !email.trim()}
-            className="w-full h-10 rounded-xl bg-[#1d1d1f] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <path d="M7 10l5 5 5-5"/>
-              <path d="M12 15V3"/>
-            </svg>
-            {state === "sending" ? "Generating..." : "Download PDF Report"}
-          </button>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-/* ── Contact Form ────────────────────────────────────────────────── */
-
-function ContactCTA({ website, score }: { website: string; score: number }) {
-  const [formState, setFormState] = useState<"idle" | "sending" | "sent">("idle");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-
-    setFormState("sending");
-    try {
-      const formData = new URLSearchParams();
-      formData.append("form-name", "contact");
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("website", website);
-      formData.append("message", message);
-      formData.append("score", String(score));
-      await fetch("/", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
-      });
-      setFormState("sent");
-    } catch {
-      setFormState("sent");
-    }
-  }
-
-  if (formState === "sent") {
-    return (
-      <section className="space-y-4">
-        <div className="p-8 rounded-2xl bg-gradient-to-br from-[#6366f1]/[0.06] via-[#0ea5e9]/[0.04] to-[#10b981]/[0.06] border border-black/[0.06] text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-[#34c759]/10 flex items-center justify-center mx-auto">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#34c759]">
-              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <h3 className="text-[18px] font-semibold tracking-[-0.02em]">We{"'"}ll be in touch</h3>
-          <p className="text-[14px] text-muted-foreground">Our team will review your audit and reach out with a personalized GEO strategy.</p>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="space-y-4">
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-[#6366f1]/[0.06] via-[#0ea5e9]/[0.04] to-[#10b981]/[0.06] border border-black/[0.06] space-y-5">
-        <div className="space-y-2">
-          <h3 className="text-[20px] font-semibold tracking-[-0.02em]">Want expert help improving your score?</h3>
-          <p className="text-[14px] text-muted-foreground leading-[1.6]">
-            Our GEO specialists can implement these recommendations and build a comprehensive AI visibility strategy for your brand.
-          </p>
-        </div>
-
-        <form name="contact" onSubmit={handleSubmit} className="space-y-3" data-netlify="true" netlify-honeypot="bot-field">
-          <input type="hidden" name="form-name" value="contact" />
-          <input type="hidden" name="website" value={website} />
-          <input type="hidden" name="score" value={score} />
-          <p className="hidden"><label>Don&apos;t fill this out: <input name="bot-field" /></label></p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              required
-              className="h-11 px-4 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-[#6366f1]/30 focus:ring-1 focus:ring-[#6366f1]/20 transition-all"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              required
-              className="h-11 px-4 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-[#6366f1]/30 focus:ring-1 focus:ring-[#6366f1]/20 transition-all"
-            />
-          </div>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Tell us about your goals (optional)"
-            rows={3}
-            className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-[#6366f1]/30 focus:ring-1 focus:ring-[#6366f1]/20 transition-all resize-none"
-          />
-          <button
-            type="submit"
-            disabled={formState === "sending" || !name.trim() || !email.trim()}
-            className="w-full h-11 rounded-xl bg-[#1d1d1f] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-40"
-          >
-            {formState === "sending" ? "Sending..." : "Get a Free GEO Strategy Call"}
-          </button>
-          <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 group">
-            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-5 rounded transition-opacity group-hover:opacity-80" />
-            <span className="text-[11px] text-muted-foreground/40 group-hover:text-muted-foreground transition-colors font-medium">
-              Powered by Two Point Technologies
-            </span>
-          </a>
-        </form>
-      </div>
-    </section>
-  );
-}
-
-/* ── Executive Summary ───────────────────────────────────────────── */
-
-function ExecutiveSummary({ result }: { result: AuditResult }) {
-  const sortedModules = [...result.modules].sort((a, b) => a.score - b.score);
-  const weakest = sortedModules[0];
-  const strongest = sortedModules[sortedModules.length - 1];
-
-  const allRecs = result.modules.flatMap((m) => m.recommendations);
-  const highCount = allRecs.filter((r) => r.priority === "high").length;
-
-  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
-  const aiData = aiModule
-    ? {
-        score: aiModule.score,
-        mentionRate: aiModule.findings.filter(
-          (f) => f.status === "pass" || f.status === "warn"
-        ).length,
-        totalQueries: aiModule.findings.filter(
-          (f) => !f.label.toLowerCase().includes("spend")
-        ).length,
-      }
-    : null;
-
-  let verdict = "";
-  let interpretation = "";
-  const s = result.overallScore;
-  if (s >= 80) {
-    verdict = "Your brand is well-positioned for AI search.";
-    interpretation = `${result.domain} shows strong signals across the board. AI models have good reason to cite you.`;
-  } else if (s >= 60) {
-    verdict = "Your brand has a foundation, but there's meaningful work to do.";
-    interpretation = `${result.domain} hits the basics but leaves significant opportunity on the table. ${highCount} high-priority items need attention.`;
-  } else if (s >= 40) {
-    verdict = "Your brand is underperforming for AI visibility.";
-    interpretation = `${result.domain} has structural gaps preventing AI from recommending you. Expect to be invisible in most AI answers until these are fixed.`;
-  } else {
-    verdict = "Your brand is largely invisible to AI.";
-    interpretation = `${result.domain} scores below the threshold where AI builds confidence. Competitors are being recommended instead. This is urgent.`;
-  }
-
-  return (
-    <section>
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white">
-        {/* Top row: gauge + verdict */}
-        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
-          <div className="shrink-0 mx-auto sm:mx-0">
-            <ScoreGauge score={result.overallScore} variant="dark" />
-          </div>
-          <div className="flex-1 space-y-3 min-w-0">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/50 mb-1.5">
-                {result.domain}
-              </div>
-              <p className="text-[20px] sm:text-[24px] font-semibold leading-[1.3] tracking-[-0.02em]">
-                {verdict}
-              </p>
-            </div>
-            <p className="text-[14px] text-white/60 leading-[1.55]">
-              {interpretation}
-            </p>
-            <div className="grid grid-cols-3 gap-3 pt-1">
-              <div className="space-y-0.5">
-                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Grade</div>
-                <div className="text-[15px] font-semibold">{result.grade} <span className="text-white/40 font-normal text-[12px]">{gradeLabel(result.overallScore)}</span></div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Strongest</div>
-                <div className="text-[14px] font-semibold leading-snug">{strongest.name.split(" ")[0]} <span className="text-white/40 font-normal">{strongest.score}</span></div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Weakest</div>
-                <div className="text-[14px] font-semibold leading-snug">{weakest.name.split(" ")[0]} <span className="text-white/40 font-normal">{weakest.score}</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {aiData && (
-          <div className="mt-5 p-4 rounded-2xl bg-white/[0.06] border border-white/[0.08]">
-            <div className="flex items-start gap-3">
-              <span className="text-[18px]">🤖</span>
-              <div className="flex-1">
-                <div className="text-[13px] font-semibold text-white/90 mb-0.5">
-                  Live AI test
-                </div>
-                <p className="text-[13px] text-white/60 leading-[1.55]">
-                  {aiData.score >= 70
-                    ? `Perplexity mentioned your brand in ${aiData.mentionRate} of ${aiData.totalQueries} queries. You're showing up.`
-                    : aiData.score >= 40
-                      ? `Perplexity mentioned your brand in ${aiData.mentionRate} of ${aiData.totalQueries} queries, but rarely prominently. Competitors are being recommended first.`
-                      : `Perplexity mentioned your brand in only ${aiData.mentionRate} of ${aiData.totalQueries} queries. You are functionally invisible to AI search.`}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 
@@ -995,7 +704,7 @@ function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitor
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {competitors.map((c, i) => (
           <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
             <div className="w-7 h-7 rounded-lg bg-foreground/[0.06] flex items-center justify-center shrink-0">
@@ -1074,28 +783,9 @@ function ActionPlan({ result }: { result: AuditResult }) {
             </div>
           </div>
           <div className="space-y-2">
-            {quickWins.map((item, i) => {
-              const mc = moduleColor(item.moduleSlug);
-              return (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
-                      {i + 1}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <PriorityTag priority={item.rec.priority} />
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                        {item.moduleName.split(" ")[0]}
-                      </span>
-                      <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
-                    </div>
-                    <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
-                  </div>
-                </div>
-              );
-            })}
+            {quickWins.map((item, i) => (
+              <ActionItem key={`qw-${i}`} item={item} index={i} />
+            ))}
           </div>
         </div>
       )}
@@ -1116,32 +806,71 @@ function ActionPlan({ result }: { result: AuditResult }) {
             </div>
           </div>
           <div className="space-y-2">
-            {strategic.map((item, i) => {
-              const mc = moduleColor(item.moduleSlug);
-              return (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
-                      {i + 1}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <PriorityTag priority={item.rec.priority} />
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                        {item.moduleName.split(" ")[0]}
-                      </span>
-                      <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
-                    </div>
-                    <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
-                  </div>
-                </div>
-              );
-            })}
+            {strategic.map((item, i) => (
+              <ActionItem key={`st-${i}`} item={item} index={i} />
+            ))}
           </div>
         </div>
       )}
     </section>
+  );
+}
+
+/* ── Action plan item (expandable when a code snippet is available) ─── */
+
+function ActionItem({
+  item,
+  index,
+}: {
+  item: { rec: Recommendation; moduleSlug: string; moduleName: string };
+  index: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const mc = moduleColor(item.moduleSlug);
+  const hasSnippet = !!item.rec.fixSnippet;
+
+  return (
+    <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="flex items-start gap-4 p-4">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
+          <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
+            {index + 1}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <PriorityTag priority={item.rec.priority} />
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+              {item.moduleName.split(" ")[0]}
+            </span>
+            <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
+          </div>
+          <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
+          {hasSnippet && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/80 hover:text-foreground transition-colors"
+              style={{ color: expanded ? mc.accent : undefined }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-90 transition-transform" : "transition-transform"}>
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+              {expanded ? "Hide" : "Show"} the exact fix
+            </button>
+          )}
+        </div>
+      </div>
+      {hasSnippet && expanded && item.rec.fixSnippet && (
+        <div className="px-4 pb-4 -mt-1">
+          <CodeSnippet
+            code={item.rec.fixSnippet}
+            language={item.rec.language || "html"}
+            target={item.rec.snippetTarget}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1258,6 +987,813 @@ function CompetitorComparison({
   );
 }
 
+/* ── App Chrome (sticky top bar) ─────────────────────────────────── */
+
+function AppChrome({
+  result,
+  onBack,
+}: {
+  result: AuditResult;
+  onBack: () => void;
+}) {
+  const sc = scoreColor(result.overallScore);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [reauditing, setReauditing] = useState(false);
+
+  const chedderLogo = (
+    <div className="flex items-center gap-2">
+      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(0,0,0,0.12)]">
+        <svg viewBox="0 0 100 100" className="w-4 h-4">
+          <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.15"/>
+          <circle cx="34" cy="37" r="6" fill="#C88700"/>
+          <circle cx="64" cy="33" r="4" fill="#C88700"/>
+          <circle cx="58" cy="62" r="8" fill="#C88700"/>
+          <circle cx="32" cy="67" r="4" fill="#C88700"/>
+        </svg>
+      </div>
+      <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">Chedder</span>
+    </div>
+  );
+
+  async function onShare() {
+    if (!result.slug) return;
+    const shareUrl = `${window.location.origin}/a/${result.slug}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    } catch {
+      window.prompt("Copy this URL:", shareUrl);
+    }
+  }
+
+  async function onReaudit() {
+    if (reauditing) return;
+    setReauditing(true);
+    try {
+      const res = await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: result.url }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.slug) {
+        // Navigate to the new audit's URL — full reload to render from server
+        window.location.href = `/a/${data.slug}`;
+      } else {
+        setReauditing(false);
+      }
+    } catch {
+      setReauditing(false);
+    }
+  }
+
+  const canShare = !!result.slug;
+
+  return (
+    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.05]">
+      <div className="w-[90%] mx-auto h-14 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-4 min-w-0">
+          {chedderLogo}
+          <div className="hidden sm:block w-px h-5 bg-black/[0.08]" />
+          <div className="hidden sm:flex items-center gap-2 min-w-0">
+            <span className="text-[13px] text-muted-foreground">Audit for</span>
+            <span className="text-[13px] font-semibold text-foreground truncate">{result.domain}</span>
+            <span
+              className="text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-md"
+              style={{ background: sc.bgLight, color: sc.text }}
+            >
+              {result.overallScore}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {canShare && (
+            <button
+              onClick={onShare}
+              className={`h-9 px-3 rounded-lg border text-[13px] font-semibold tracking-[-0.01em] flex items-center gap-1.5 transition-colors ${
+                shareCopied
+                  ? "bg-[#34c759]/10 border-[#34c759]/30 text-[#248a3d]"
+                  : "bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/[0.06] text-foreground"
+              }`}
+              title="Copy shareable URL"
+            >
+              {shareCopied ? (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <span className="hidden sm:inline">Link copied</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                  <span className="hidden sm:inline">Share</span>
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={onReaudit}
+            disabled={reauditing}
+            className="h-9 px-3 rounded-lg bg-foreground/[0.04] hover:bg-foreground/[0.08] border border-foreground/[0.06] text-[13px] font-semibold text-foreground tracking-[-0.01em] flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-wait"
+            title="Re-run this audit to track changes"
+          >
+            <svg className={`w-3.5 h-3.5 ${reauditing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M23 4v6h-6M1 20v-6h6" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            <span className="hidden sm:inline">{reauditing ? "Re-auditing..." : "Re-audit"}</span>
+          </button>
+          <button
+            onClick={onBack}
+            className="h-9 px-3 rounded-lg bg-foreground/[0.04] hover:bg-foreground/[0.08] border border-foreground/[0.06] text-[13px] font-semibold text-foreground tracking-[-0.01em] flex items-center gap-1.5 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m-8-8h16" />
+            </svg>
+            <span className="hidden sm:inline">New audit</span>
+          </button>
+          <a
+            href="https://twopointtechnologies.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:flex items-center gap-2 group pl-2"
+          >
+            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
+          </a>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ── Document-style hero ─────────────────────────────────────────── */
+
+function AuditHero({ result }: { result: AuditResult }) {
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(result.domain)}&sz=128`;
+  const sortedModules = [...result.modules].sort((a, b) => a.score - b.score);
+  const weakest = sortedModules[0];
+  const strongest = sortedModules[sortedModules.length - 1];
+
+  // Derive a short report id from timestamp for document feel
+  const reportId = (() => {
+    try {
+      const t = new Date(result.timestamp).getTime();
+      return t.toString(36).toUpperCase().slice(-6);
+    } catch {
+      return "000000";
+    }
+  })();
+
+  const date = new Date(result.timestamp).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  let verdict = "";
+  const s = result.overallScore;
+  if (s >= 80) verdict = "Well-positioned for AI search";
+  else if (s >= 60) verdict = "Foundation in place, opportunity to grow";
+  else if (s >= 40) verdict = "Underperforming on AI visibility";
+  else verdict = "Largely invisible to AI search";
+
+  return (
+    <section className="mt-6 sm:mt-8">
+      {/* Document meta strip */}
+      <div className="flex items-center justify-between gap-3 pb-3 mb-5 border-b border-black/[0.06]">
+        <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
+          <span>Report</span>
+          <span className="text-muted-foreground/30">·</span>
+          <span>GEO Audit</span>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground/60">
+          <span className="tabular-nums">#{reportId}</span>
+          <span className="text-muted-foreground/20">·</span>
+          <span>{date}</span>
+        </div>
+      </div>
+
+      {/* Hero: favicon + title + score */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-10 items-start">
+        <div className="flex items-start gap-4 sm:gap-5 min-w-0">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center shrink-0 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={faviconUrl}
+              alt=""
+              className="w-9 h-9 sm:w-10 sm:h-10"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <h1 className="text-[28px] sm:text-[36px] font-semibold tracking-[-0.03em] leading-[1.1] text-foreground truncate">
+              {result.domain}
+            </h1>
+            <p className="text-[15px] sm:text-[17px] text-muted-foreground tracking-[-0.01em] leading-snug">
+              {verdict}
+            </p>
+            <div className="flex items-center gap-3 pt-1.5 text-[12px] text-muted-foreground/70">
+              <span>{result.pagesAudited?.length || 1} page{(result.pagesAudited?.length || 1) > 1 ? "s" : ""} audited</span>
+              <span className="text-muted-foreground/25">·</span>
+              <a href={result.url} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors truncate max-w-[260px]">
+                {result.url.replace(/^https?:\/\//, "")}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Score block */}
+        <div className="flex items-stretch gap-4 lg:gap-5">
+          <ScoreGauge score={result.overallScore} variant="light" />
+          <div className="hidden lg:flex flex-col justify-center gap-3 pr-2 min-w-[140px]">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Grade</div>
+              <div className="text-[22px] font-semibold tracking-[-0.02em] leading-none mt-1">{result.grade}</div>
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Strongest</div>
+              <div className="text-[13px] font-semibold leading-snug mt-0.5">{strongest.name.split(" ")[0]} <span className="text-muted-foreground/60 font-medium tabular-nums">{strongest.score}</span></div>
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Weakest</div>
+              <div className="text-[13px] font-semibold leading-snug mt-0.5">{weakest.name.split(" ")[0]} <span className="text-muted-foreground/60 font-medium tabular-nums">{weakest.score}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── KPI Strip ───────────────────────────────────────────────────── */
+
+function KPIStrip({ result }: { result: AuditResult }) {
+  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
+  const aiFindings = aiModule?.findings.filter(
+    (f) => !f.label.toLowerCase().includes("spend") && !f.label.toLowerCase().includes("query failed")
+  ) || [];
+  const aiMentions = aiFindings.filter((f) => f.status !== "fail").length;
+  const aiTotal = aiFindings.length;
+
+  const allRecs = result.modules.flatMap((m) => m.recommendations);
+  const highPriority = allRecs.filter((r) => r.priority === "high").length;
+
+  const aiCompetitorCount = result.aiCompetitors?.length || 0;
+
+  const benchmark = result.benchmarks;
+  const hasRank =
+    !!benchmark &&
+    benchmark.overall.count >= 5 &&
+    typeof benchmark.yourPercentile === "number";
+  const percentile = benchmark?.yourPercentile ?? 0;
+  // "Top X%" phrasing feels stronger when score is good.
+  const percentileTop = hasRank ? Math.max(1, 100 - percentile) : 0;
+  const percentileColor = !hasRank
+    ? "#6366f1"
+    : percentileTop <= 25
+      ? "#34c759"
+      : percentileTop <= 50
+        ? "#ff9f0a"
+        : "#ff453a";
+
+  const rankCard = hasRank
+    ? {
+        label: "Your Rank",
+        value: `Top ${percentileTop}%`,
+        sublabel: `of ${benchmark!.overall.count} audited brands`,
+        color: percentileColor,
+      }
+    : {
+        label: "Total Findings",
+        value: String(result.modules.reduce((acc, m) => acc + m.findings.length, 0)),
+        sublabel: "signals analyzed",
+        color: "#6366f1",
+      };
+
+  const kpis: Array<{ label: string; value: string; sublabel: string; color: string }> = [
+    {
+      label: "AI Mention Rate",
+      value: aiTotal > 0 ? `${aiMentions}/${aiTotal}` : "—",
+      sublabel: aiTotal > 0 ? "queries include you" : "no AI test run",
+      color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#34c759" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#ff9f0a" : "#ff453a",
+    },
+    {
+      label: "High-priority Fixes",
+      value: String(highPriority),
+      sublabel: highPriority === 1 ? "urgent action" : "urgent actions",
+      color: highPriority === 0 ? "#34c759" : highPriority <= 2 ? "#ff9f0a" : "#ff453a",
+    },
+    rankCard,
+    {
+      label: "AI Competitors",
+      value: String(aiCompetitorCount),
+      sublabel: aiCompetitorCount === 1 ? "brand cited instead" : "brands cited instead",
+      color: "#ec4899",
+    },
+  ];
+
+  return (
+    <section className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {kpis.map((k) => (
+        <div
+          key={k.label}
+          className="relative p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden"
+        >
+          <div
+            className="absolute inset-x-0 top-0 h-[2px]"
+            style={{ background: `linear-gradient(90deg, ${k.color}50, ${k.color})` }}
+          />
+          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+            {k.label}
+          </div>
+          <div
+            className="text-[28px] sm:text-[32px] font-semibold tracking-[-0.03em] leading-none mt-2 tabular-nums"
+            style={{ color: k.color }}
+          >
+            {k.value}
+          </div>
+          <div className="text-[11px] text-muted-foreground/80 mt-1.5">{k.sublabel}</div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/* ── Tab Nav ─────────────────────────────────────────────────────── */
+
+type TabKey = "overview" | "action" | "deep" | "competitive";
+
+function TabNav({
+  active,
+  onChange,
+  showCompetitive,
+  counts,
+}: {
+  active: TabKey;
+  onChange: (t: TabKey) => void;
+  showCompetitive: boolean;
+  counts: { action: number; deep: number; competitors: number };
+}) {
+  const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
+    { key: "overview", label: "Overview" },
+    { key: "action", label: "Action plan", count: counts.action },
+    { key: "deep", label: "Deep dive", count: counts.deep },
+    ...(showCompetitive ? [{ key: "competitive" as TabKey, label: "Competitive", count: counts.competitors }] : []),
+  ];
+
+  return (
+    <nav className="mt-8 sm:mt-10 border-b border-black/[0.06] sticky top-14 z-20 bg-[#fafafa]/90 backdrop-blur-xl">
+      <div className="flex items-stretch gap-1 overflow-x-auto scrollbar-none -mx-1 px-1">
+        {tabs.map((t) => {
+          const isActive = t.key === active;
+          return (
+            <button
+              key={t.key}
+              onClick={() => onChange(t.key)}
+              className={`relative px-4 h-11 flex items-center gap-2 text-[14px] font-medium tracking-[-0.01em] whitespace-nowrap transition-colors ${
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+              {t.count !== undefined && t.count > 0 && (
+                <span
+                  className={`text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md ${
+                    isActive
+                      ? "bg-foreground/[0.08] text-foreground"
+                      : "bg-foreground/[0.04] text-muted-foreground"
+                  }`}
+                >
+                  {t.count}
+                </span>
+              )}
+              {isActive && (
+                <span className="absolute inset-x-3 -bottom-px h-[2px] bg-foreground rounded-full" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/* ── Radar Chart (module scores) ─────────────────────────────────── */
+
+function RadarChart({ modules }: { modules: ModuleResult[] }) {
+  const size = 340;
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = 115;
+  const n = modules.length;
+  const step = (2 * Math.PI) / n;
+  const start = -Math.PI / 2;
+
+  const points = modules.map((m, i) => {
+    const angle = start + i * step;
+    const r = (m.score / 100) * maxR;
+    const outer = maxR;
+    return {
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      ox: cx + Math.cos(angle) * outer,
+      oy: cy + Math.sin(angle) * outer,
+      lx: cx + Math.cos(angle) * (outer + 30),
+      ly: cy + Math.sin(angle) * (outer + 30),
+      score: m.score,
+      name: m.name.split(/[\s&]/)[0],
+      slug: m.slug,
+      color: moduleColor(m.slug).accent,
+      angle,
+    };
+  });
+
+  const poly = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const rings = [0.25, 0.5, 0.75, 1];
+
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto max-w-[420px] mx-auto">
+        <defs>
+          <linearGradient id="radarFill" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ec4899" stopOpacity="0.12" />
+          </linearGradient>
+        </defs>
+
+        {/* rings */}
+        {rings.map((t, i) => (
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r={maxR * t}
+            fill="none"
+            stroke="#1d1d1f"
+            strokeOpacity={i === rings.length - 1 ? 0.1 : 0.05}
+            strokeDasharray={i === rings.length - 1 ? undefined : "2 3"}
+          />
+        ))}
+
+        {/* spokes */}
+        {points.map((p, i) => (
+          <line
+            key={i}
+            x1={cx}
+            y1={cy}
+            x2={p.ox}
+            y2={p.oy}
+            stroke="#1d1d1f"
+            strokeOpacity="0.06"
+          />
+        ))}
+
+        {/* data polygon */}
+        <polygon points={poly} fill="url(#radarFill)" stroke="#6366f1" strokeWidth="1.75" strokeLinejoin="round" />
+
+        {/* score dots */}
+        {points.map((p) => (
+          <g key={p.slug}>
+            <circle cx={p.x} cy={p.y} r="5" fill="white" stroke={p.color} strokeWidth="2.5" />
+          </g>
+        ))}
+
+        {/* labels */}
+        {points.map((p) => (
+          <g key={`l-${p.slug}`}>
+            <text
+              x={p.lx}
+              y={p.ly - 5}
+              textAnchor="middle"
+              className="text-[10px] font-semibold fill-foreground"
+              style={{ letterSpacing: "0.02em", textTransform: "uppercase" }}
+            >
+              {p.name}
+            </text>
+            <text
+              x={p.lx}
+              y={p.ly + 8}
+              textAnchor="middle"
+              className="text-[13px] font-bold tabular-nums"
+              style={{ fill: p.color }}
+            >
+              {p.score}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+/* ── Tab content: Overview ───────────────────────────────────────── */
+
+function LiveAITestPanel({ result }: { result: AuditResult }) {
+  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
+  if (!aiModule) return null;
+
+  const findings = aiModule.findings.filter(
+    (f) => !f.label.toLowerCase().includes("spend") && !f.label.toLowerCase().includes("query failed")
+  );
+  const passes = findings.filter((f) => f.status === "pass").length;
+  const warns = findings.filter((f) => f.status === "warn").length;
+  const fails = findings.filter((f) => f.status === "fail").length;
+  const total = findings.length;
+  const mentions = passes + warns;
+
+  let narrative = "";
+  if (aiModule.score >= 70) {
+    narrative = `Perplexity mentioned ${result.domain} in ${mentions} of ${total} queries. You're showing up where it matters.`;
+  } else if (aiModule.score >= 40) {
+    narrative = `Perplexity mentioned ${result.domain} in ${mentions} of ${total} queries, but rarely first. Competitors are being recommended ahead of you.`;
+  } else {
+    narrative = `Perplexity mentioned ${result.domain} in only ${mentions} of ${total} queries. You are functionally invisible to AI search right now.`;
+  }
+
+  return (
+    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white h-full flex flex-col">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <rect x="3" y="11" width="18" height="10" rx="2"/>
+            <circle cx="12" cy="5" r="2"/>
+            <path d="M12 7v4M8 16h0M16 16h0"/>
+          </svg>
+        </div>
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">Live AI Test</div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">Perplexity</div>
+        </div>
+      </div>
+
+      <p className="text-[14px] text-white/80 leading-[1.55] mt-4 flex-1">
+        {narrative}
+      </p>
+
+      <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
+        <div>
+          <div className="text-[20px] font-semibold tabular-nums text-[#34c759]">{passes}</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Prominent</div>
+        </div>
+        <div>
+          <div className="text-[20px] font-semibold tabular-nums text-[#ff9f0a]">{warns}</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Mentioned</div>
+        </div>
+        <div>
+          <div className="text-[20px] font-semibold tabular-nums text-[#ff453a]">{fails}</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Absent</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab({ result }: { result: AuditResult }) {
+  const hasHistory = (result.history?.length || 0) >= 1;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+      {/* Where show up / don't — full width */}
+      <div className="lg:col-span-12">
+        <WhereResults result={result} />
+      </div>
+
+      {/* Performance over time — full width, only when we have history */}
+      {hasHistory && (
+        <div className="lg:col-span-12">
+          <HistoryTimeline result={result} />
+        </div>
+      )}
+
+      {/* Radar + live AI test panel */}
+      <div className="lg:col-span-7 p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="flex items-baseline justify-between mb-4">
+          <div>
+            <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Category profile</h3>
+            <p className="text-[12px] text-muted-foreground">How you score across the {result.modules.length} GEO signals</p>
+          </div>
+        </div>
+        <RadarChart modules={result.modules} />
+      </div>
+
+      <div className="lg:col-span-5">
+        <LiveAITestPanel result={result} />
+      </div>
+    </div>
+  );
+}
+
+/* ── History timeline / performance over time ────────────────────── */
+
+function HistoryTimeline({ result }: { result: AuditResult }) {
+  const history = result.history || [];
+  // Oldest first for the chart
+  const ordered = [...history].reverse();
+  // Include the current audit at the end
+  const allPoints = [
+    ...ordered.map((h) => ({
+      slug: h.slug,
+      ts: h.timestamp,
+      score: h.overallScore,
+      isCurrent: false,
+    })),
+    { slug: result.slug || "current", ts: result.timestamp, score: result.overallScore, isCurrent: true },
+  ];
+
+  const latestPrevious = history[0]; // most recent prior audit
+  const delta = latestPrevious ? result.overallScore - latestPrevious.overallScore : 0;
+  const deltaColor = delta > 0 ? "#248a3d" : delta < 0 ? "#ff453a" : "#6e6e73";
+
+  // SVG sparkline
+  const w = 560;
+  const h = 90;
+  const padX = 12;
+  const padY = 14;
+  const xStep = allPoints.length > 1 ? (w - padX * 2) / (allPoints.length - 1) : 0;
+  const yScale = (s: number) => padY + ((100 - s) / 100) * (h - padY * 2);
+  const pts = allPoints.map((p, i) => ({ x: padX + i * xStep, y: yScale(p.score), ...p }));
+  const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${(padX + (allPoints.length - 1) * xStep).toFixed(1)},${(h - padY).toFixed(1)} L${padX},${(h - padY).toFixed(1)} Z`;
+
+  // Find biggest per-module movers since the last audit
+  let biggestGain: { slug: string; delta: number } | null = null;
+  let biggestLoss: { slug: string; delta: number } | null = null;
+  if (latestPrevious) {
+    for (const m of result.modules) {
+      const prev = latestPrevious.moduleScores[m.slug];
+      if (typeof prev !== "number") continue;
+      const d = m.score - prev;
+      if (biggestGain === null || d > biggestGain.delta) biggestGain = { slug: m.slug, delta: d };
+      if (biggestLoss === null || d < biggestLoss.delta) biggestLoss = { slug: m.slug, delta: d };
+    }
+  }
+
+  const moduleName = (slug: string) => result.modules.find((m) => m.slug === slug)?.name || slug;
+
+  return (
+    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
+        <div>
+          <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Performance over time</h3>
+          <p className="text-[12px] text-muted-foreground">
+            {history.length + 1} audit{history.length === 0 ? "" : "s"} for {result.domain}
+          </p>
+        </div>
+        {latestPrevious && (
+          <div className="flex items-center gap-2 text-[12px]">
+            <span className="text-muted-foreground">Since last audit</span>
+            <span className="font-semibold tabular-nums" style={{ color: deltaColor }}>
+              {delta > 0 ? "+" : ""}{delta}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Sparkline */}
+      <div className="relative">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[90px]" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {/* 50-line */}
+          <line
+            x1={padX}
+            y1={yScale(50)}
+            x2={w - padX}
+            y2={yScale(50)}
+            stroke="currentColor"
+            strokeOpacity="0.08"
+            strokeDasharray="3,3"
+          />
+          <path d={areaPath} fill="url(#histArea)" />
+          <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          {pts.map((p, i) => (
+            <g key={i}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={p.isCurrent ? 5 : 3.5}
+                fill={p.isCurrent ? "#6366f1" : "#fff"}
+                stroke="#6366f1"
+                strokeWidth={p.isCurrent ? 2 : 2}
+              />
+              <title>
+                {new Date(p.ts).toLocaleDateString()} · {p.score}
+              </title>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* Movers */}
+      {latestPrevious && biggestGain && biggestLoss && (biggestGain.delta !== 0 || biggestLoss.delta !== 0) && (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {biggestGain.delta > 0 && (
+            <div className="p-3 rounded-xl bg-[#34c759]/[0.06] border border-[#34c759]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#248a3d]">Biggest gain</div>
+              <div className="mt-1 text-[14px] font-semibold">
+                {moduleName(biggestGain.slug).split(" ")[0]}{" "}
+                <span className="tabular-nums text-[#248a3d]">+{biggestGain.delta}</span>
+              </div>
+            </div>
+          )}
+          {biggestLoss.delta < 0 && (
+            <div className="p-3 rounded-xl bg-[#ff453a]/[0.06] border border-[#ff453a]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#ff453a]">Regression</div>
+              <div className="mt-1 text-[14px] font-semibold">
+                {moduleName(biggestLoss.slug).split(" ")[0]}{" "}
+                <span className="tabular-nums text-[#ff453a]">{biggestLoss.delta}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Tab content: Action Plan ────────────────────────────────────── */
+
+function ActionTab({ result }: { result: AuditResult }) {
+  return (
+    <div className="max-w-[920px]">
+      <ActionPlan result={result} />
+    </div>
+  );
+}
+
+/* ── Tab content: Deep Dive ──────────────────────────────────────── */
+
+function DeepDiveTab({ result }: { result: AuditResult }) {
+  return (
+    <div className="space-y-6">
+      <div className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 mb-4">
+          Score breakdown
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          {result.modules.map((m) => {
+            const mc = moduleColor(m.slug);
+            return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-[18px] font-semibold tracking-[-0.01em]">Detailed analysis</h3>
+          <span className="text-[12px] text-muted-foreground">
+            {result.modules.reduce((a, m) => a + m.findings.length, 0)} findings across {result.modules.length} categories
+          </span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+          {result.modules.map((m) => {
+            const bench = result.benchmarks?.modules?.[m.slug];
+            return (
+              <ModuleCard
+                key={m.slug}
+                module={m}
+                benchmark={bench ? { median: bench.median, count: bench.count } : undefined}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Tab content: Competitive ────────────────────────────────────── */
+
+function CompetitiveTab({
+  result,
+  hasUserCompetitors,
+  hasAICompetitors,
+}: {
+  result: AuditResult;
+  hasUserCompetitors: boolean;
+  hasAICompetitors: boolean;
+}) {
+  return (
+    <div className="space-y-8">
+      {hasUserCompetitors && (
+        <CompetitorComparison primary={result} competitors={result.competitors!} />
+      )}
+      {hasAICompetitors && <AICompetitors competitors={result.aiCompetitors} />}
+    </div>
+  );
+}
+
 /* ── Dashboard ───────────────────────────────────────────────────── */
 
 export function AuditDashboard({
@@ -1267,59 +1803,62 @@ export function AuditDashboard({
   result: AuditResult;
   onBack: () => void;
 }) {
-  const c = scoreColor(result.overallScore);
+  const [tab, setTab] = useState<TabKey>("overview");
+
+  const hasUserCompetitors = !!(result.competitors && result.competitors.length > 0);
+  const hasAICompetitors = !!(result.aiCompetitors && result.aiCompetitors.length > 0);
+  const showCompetitive = hasUserCompetitors || hasAICompetitors;
+
+  const counts = {
+    action: result.modules.reduce((acc, m) => acc + m.recommendations.length, 0),
+    deep: result.modules.length,
+    competitors: (result.competitors?.length || 0) + (result.aiCompetitors?.length || 0),
+  };
 
   return (
-    <div className="flex-1 max-w-[680px] mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 pb-28 sm:pb-12 space-y-10 sm:space-y-12">
-      {/* Nav */}
-      <nav className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="h-9 px-4 rounded-xl bg-foreground/[0.04] border border-foreground/[0.06] text-[13px] font-semibold text-foreground tracking-[-0.01em] flex items-center gap-2 transition-all duration-200 hover:bg-foreground/[0.08] hover:border-foreground/[0.1] active:scale-[0.97]"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m-8-8h16" />
-          </svg>
-          New Audit
-        </button>
-        <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group">
-          <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-7 rounded transition-opacity group-hover:opacity-80" />
-        </a>
-      </nav>
+    <div className="flex-1 min-h-screen bg-[#fafafa]">
+      {/* Sticky app chrome */}
+      <AppChrome result={result} onBack={onBack} />
 
-      {/* Executive Summary (now includes gauge, domain, grade) */}
-      <ExecutiveSummary result={result} />
+      <div className="w-[90%] mx-auto pb-28">
+        {/* Document-style hero */}
+        <AuditHero result={result} />
 
-      {/* Where you show up / Where you don't */}
-      <WhereResults result={result} />
+        {/* KPI strip */}
+        <KPIStrip result={result} />
 
-      {/* AI Competitors (who AI thinks you compete with) */}
-      <AICompetitors competitors={result.aiCompetitors} />
+        {/* Tabbed workspace */}
+        <TabNav active={tab} onChange={setTab} showCompetitive={showCompetitive} counts={counts} />
 
-      {/* Competitor Comparison (user-added competitors) */}
-      {result.competitors && result.competitors.length > 0 && (
-        <CompetitorComparison primary={result} competitors={result.competitors} />
-      )}
+        <div className="mt-6 sm:mt-8">
+          {tab === "overview" && <OverviewTab result={result} />}
+          {tab === "action" && <ActionTab result={result} />}
+          {tab === "deep" && <DeepDiveTab result={result} />}
+          {tab === "competitive" && (
+            <CompetitiveTab
+              result={result}
+              hasUserCompetitors={hasUserCompetitors}
+              hasAICompetitors={hasAICompetitors}
+            />
+          )}
+        </div>
 
-      {/* Action Plan */}
-      <ActionPlan result={result} />
+        {/* Meta info always accessible at bottom */}
+        <div className="mt-12">
+          <MetaInfo result={result} />
+        </div>
+      </div>
 
-      {/* Technical Deep Dive (collapsed) */}
-      <TechnicalDeepDive result={result} />
-
-      {/* Floating chat popup (replaces inline download + contact sections) */}
+      {/* Floating download popup */}
       <ChatPopup result={result} />
 
-      {/* Compact meta info (pages audited + methodology) */}
-      <MetaInfo result={result} />
-
       {/* Footer */}
-      <footer className="text-center pb-10 pt-4">
+      <footer className="text-center pb-10 pt-6 border-t border-black/[0.04]">
         <a
           href="https://twopointtechnologies.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 group"
+          className="inline-flex items-center gap-2 group mt-6"
         >
           <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
           <span className="text-[12px] text-muted-foreground/40 group-hover:text-muted-foreground transition-colors font-medium">
@@ -1328,68 +1867,6 @@ export function AuditDashboard({
         </a>
       </footer>
     </div>
-  );
-}
-
-/* ── Technical Deep Dive (collapsed detailed analysis) ───────────── */
-
-function TechnicalDeepDive({ result }: { result: AuditResult }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <section className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-black/[0.01] transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-foreground/[0.04] flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-[15px] font-semibold tracking-[-0.01em]">Technical Deep Dive</h3>
-            <p className="text-[12px] text-muted-foreground">Full score breakdown and detailed analysis per category</p>
-          </div>
-        </div>
-        <svg className={`w-4 h-4 text-muted-foreground/50 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="p-5 pt-0 space-y-6">
-          <div className="h-px bg-black/[0.04]" />
-
-          {/* Score Breakdown */}
-          <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
-              Score breakdown
-            </div>
-            <div className="space-y-4 p-4 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
-              {result.modules.map((m) => {
-                const mc = moduleColor(m.slug);
-                return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
-              })}
-            </div>
-          </div>
-
-          {/* Per-module findings */}
-          <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
-              Detailed analysis
-            </div>
-            <div className="space-y-3">
-              {result.modules.map((m) => (
-                <ModuleCard key={m.slug} module={m} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
   );
 }
 

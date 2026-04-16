@@ -70,6 +70,29 @@ export function analyzeTechnical(
         priority: "high",
         title: "Unblock AI Crawlers",
         description: `Your robots.txt blocks ${blockedBots.join(", ")}. If you want to appear in AI-generated answers, allow these bots to crawl your site.`,
+        snippetTarget: "Replace in /robots.txt",
+        language: "txt",
+        fixSnippet: `# Allow AI crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Default for everyone else
+User-agent: *
+Allow: /
+
+Sitemap: https://yourdomain.com/sitemap.xml`,
       });
     } else if (blanketBlock) {
       findings.push({
@@ -82,6 +105,22 @@ export function analyzeTechnical(
         title: "Allow AI Crawlers in Robots.txt",
         description:
           "Your robots.txt blocks all crawlers. Add specific allow rules for AI bots (GPTBot, Google-Extended, ClaudeBot) if you want AI visibility.",
+        snippetTarget: "Add to /robots.txt (above the User-agent: * block)",
+        language: "txt",
+        fixSnippet: `User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /`,
       });
     } else {
       findings.push({
@@ -105,6 +144,27 @@ export function analyzeTechnical(
       title: "Add Robots.txt",
       description:
         "Create a robots.txt file to control which AI crawlers can access your content. Explicitly allow GPTBot, ClaudeBot, and other AI crawlers.",
+      snippetTarget: "Create /robots.txt at the root of your site",
+      language: "txt",
+      fixSnippet: `User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: *
+Allow: /
+
+Sitemap: https://yourdomain.com/sitemap.xml`,
     });
   }
 
@@ -127,6 +187,24 @@ export function analyzeTechnical(
       title: "Add XML Sitemap",
       description:
         "An XML sitemap helps AI crawlers discover all your content. Submit it to search engines and reference it in robots.txt.",
+      snippetTarget: "Create /sitemap.xml at the root of your site",
+      language: "html",
+      fixSnippet: `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://yourdomain.com/</loc>
+    <lastmod>2026-04-16</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://yourdomain.com/about</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yourdomain.com/pricing</loc>
+    <priority>0.8</priority>
+  </url>
+</urlset>`,
     });
   }
 
@@ -207,6 +285,13 @@ export function analyzeTechnical(
       title: "Remove Noindex Directive",
       description:
         "The noindex meta tag prevents AI crawlers from indexing this page. Remove it if you want AI visibility.",
+      snippetTarget: "Replace in <head>",
+      language: "html",
+      fixSnippet: `<!-- Remove this: -->
+<!-- <meta name="robots" content="noindex" /> -->
+
+<!-- Use this instead: -->
+<meta name="robots" content="index, follow" />`,
     });
   } else {
     findings.push({

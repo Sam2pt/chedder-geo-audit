@@ -61,6 +61,19 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
       title: "Add Social Media Links",
       description:
         "Add links to your brand's social media profiles. AI models cross-reference social presence to verify brand authority.",
+      snippetTarget: "Add to footer + Organization schema",
+      language: "html",
+      fixSnippet: `<footer>
+  <ul class="socials">
+    <li><a href="https://twitter.com/yourbrand" rel="me">Twitter / X</a></li>
+    <li><a href="https://www.linkedin.com/company/yourbrand" rel="me">LinkedIn</a></li>
+    <li><a href="https://github.com/yourbrand" rel="me">GitHub</a></li>
+    <li><a href="https://www.youtube.com/@yourbrand" rel="me">YouTube</a></li>
+  </ul>
+</footer>
+
+<!-- Also add a "sameAs" array to your Organization JSON-LD: -->
+<!--   "sameAs": ["https://twitter.com/yourbrand", ...] -->`,
     });
   }
 
@@ -111,6 +124,15 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
       title: "Add Contact Information",
       description:
         "Visible contact details are a strong trust signal. Add email, phone, and business address to your page.",
+      snippetTarget: "Add to footer or /contact page",
+      language: "html",
+      fixSnippet: `<address>
+  <strong>Your Company</strong><br />
+  123 Main Street, Suite 400<br />
+  San Francisco, CA 94102<br />
+  <a href="mailto:hello@yourdomain.com">hello@yourdomain.com</a><br />
+  <a href="tel:+14155551234">+1 (415) 555-1234</a>
+</address>`,
     });
   }
 
@@ -148,6 +170,28 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
       title: "Create an About Page",
       description:
         "An About page establishes E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness), key factors AI models use to evaluate sources.",
+      snippetTarget: "Outline for /about",
+      language: "markdown",
+      fixSnippet: `# About [Your Brand]
+
+## What we do
+One clear paragraph AI can quote directly.
+
+## Why we started
+Founding story in 2-3 sentences. Specific year, specific problem.
+
+## Who we serve
+Describe your ideal customer in their language.
+
+## The team
+- **Jane Doe**, CEO — 10 years in X, previously at Y.
+- **John Smith**, CTO — Built Z at $BIGCO.
+
+## Trust signals
+- Founded in 2020
+- SOC 2 Type II certified
+- Backed by [notable investors]
+- Featured in [TechCrunch, Forbes, etc.]`,
     });
   }
 
@@ -206,6 +250,34 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
       title: "Add Author Attribution",
       description:
         "Author information strengthens E-E-A-T signals. Add author meta tags, bylines, and author bios to your content.",
+      snippetTarget: "Add to article pages",
+      language: "html",
+      fixSnippet: `<meta name="author" content="Jane Doe" />
+
+<article>
+  <header>
+    <h1>Article Title</h1>
+    <p class="byline">
+      By <a rel="author" href="/authors/jane-doe">Jane Doe</a>
+      · Published <time datetime="2026-04-16">April 16, 2026</time>
+    </p>
+  </header>
+  <!-- article body -->
+</article>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Article Title",
+  "author": {
+    "@type": "Person",
+    "name": "Jane Doe",
+    "url": "https://yourdomain.com/authors/jane-doe"
+  },
+  "datePublished": "2026-04-16"
+}
+</script>`,
     });
   }
 

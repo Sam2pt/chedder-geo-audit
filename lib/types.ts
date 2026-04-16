@@ -10,10 +10,18 @@ export interface Finding {
   sourceUrl?: string;
 }
 
+export type SnippetLanguage = "json" | "html" | "txt" | "markdown" | "bash";
+
 export interface Recommendation {
   priority: "high" | "medium" | "low";
   title: string;
   description: string;
+  /** Optional copy-pasteable fix snippet shown in the Action Plan. */
+  fixSnippet?: string;
+  /** Language for syntax highlighting / file type hint. */
+  language?: SnippetLanguage;
+  /** Optional filename / placement hint shown above the snippet (e.g. "Add to <head>"). */
+  snippetTarget?: string;
 }
 
 export interface ModuleResult {
@@ -32,6 +40,39 @@ export interface AICompetitor {
   queries: string[]; // sample queries where it appeared
 }
 
+/**
+ * Aggregate stats for a given module slug, computed from all stored audits.
+ * Allows us to show "you're in the top X%" style context.
+ */
+export interface BenchmarkStats {
+  /** Number of audits that contributed */
+  count: number;
+  median: number;
+  p25: number;
+  p75: number;
+  p90: number;
+}
+
+export interface BenchmarkData {
+  /** Per-module percentile/median stats, keyed by module slug. */
+  modules: Record<string, BenchmarkStats>;
+  /** Overall score stats across all audits. */
+  overall: BenchmarkStats;
+  /** The audit's own percentile rank (0-100) among stored audits. */
+  yourPercentile?: number;
+}
+
+/**
+ * A compact history entry summarizing a past audit for trend display.
+ * Full audits are stored separately under their slug.
+ */
+export interface HistoryEntry {
+  slug: string;
+  timestamp: string;
+  overallScore: number;
+  moduleScores: Record<string, number>;
+}
+
 export interface AuditResult {
   url: string;
   domain: string;
@@ -43,4 +84,10 @@ export interface AuditResult {
   timestamp: string;
   competitors?: AuditResult[];
   aiCompetitors?: AICompetitor[];
+  /** Short slug for shareable URL /a/[slug] — set after persistence. */
+  slug?: string;
+  /** Benchmark context populated when the audit is saved. */
+  benchmarks?: BenchmarkData;
+  /** Past audits of the same domain, most recent first (excluding this one). */
+  history?: HistoryEntry[];
 }

@@ -29,6 +29,9 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
       title: "Add a Single H1 Heading",
       description:
         "Every page should have exactly one H1 that clearly describes the page topic. AI models use H1 as the primary content signal.",
+      snippetTarget: "Add near top of page body",
+      language: "html",
+      fixSnippet: `<h1>Clear, Descriptive Topic of This Page</h1>`,
     });
   } else {
     findings.push({
@@ -137,6 +140,14 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
       title: "Add Structured Lists",
       description:
         "Bullet points and numbered lists are preferred by AI models for extracting and presenting information.",
+      snippetTarget: "Example: key features list",
+      language: "html",
+      fixSnippet: `<h2>Key features</h2>
+<ul>
+  <li><strong>Fast setup:</strong> live in under 10 minutes.</li>
+  <li><strong>No vendor lock-in:</strong> export your data anytime.</li>
+  <li><strong>SOC 2 certified:</strong> enterprise-ready security.</li>
+</ul>`,
     });
   }
 
@@ -182,6 +193,36 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
       title: "Add an FAQ Section",
       description:
         "FAQ content is one of the top signals for AI citation. Add a frequently asked questions section with clear question-answer pairs.",
+      snippetTarget: "Add HTML + JSON-LD together",
+      language: "html",
+      fixSnippet: `<section id="faq">
+  <h2>Frequently Asked Questions</h2>
+  <div>
+    <h3>What does [Brand] do?</h3>
+    <p>Direct answer AI can quote in 1-2 sentences.</p>
+  </div>
+  <div>
+    <h3>How is [Brand] different from alternatives?</h3>
+    <p>Concrete differentiator, e.g. "We're the only X that does Y."</p>
+  </div>
+  <div>
+    <h3>Who is [Brand] built for?</h3>
+    <p>Describe the ideal customer in their words.</p>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What does [Brand] do?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Direct answer." } },
+    { "@type": "Question", "name": "How is [Brand] different?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Concrete differentiator." } }
+  ]
+}
+</script>`,
     });
   }
 
