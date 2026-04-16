@@ -34,7 +34,7 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "H1 Heading",
       status: "warn",
-      detail: `Found ${h1s.length} H1 headings — should be exactly 1`,
+      detail: `Found ${h1s.length} H1 headings, should be exactly 1`,
     });
     score += 5;
     recommendations.push({
@@ -48,14 +48,14 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Content Structure (H2s)",
       status: "pass",
-      detail: `${h2s.length} H2 subheadings — good content structure`,
+      detail: `${h2s.length} H2 subheadings, good content structure`,
     });
     score += 10;
   } else if (h2s.length === 1) {
     findings.push({
       label: "Content Structure (H2s)",
       status: "warn",
-      detail: "Only 1 H2 — consider adding more sections",
+      detail: "Only 1 H2, consider adding more sections",
     });
     score += 5;
   } else {
@@ -80,14 +80,14 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Content Length",
       status: "pass",
-      detail: `~${wordCount} words — comprehensive content`,
+      detail: `~${wordCount} words, comprehensive content`,
     });
     score += 15;
   } else if (wordCount >= 300) {
     findings.push({
       label: "Content Length",
       status: "warn",
-      detail: `~${wordCount} words — could be more comprehensive`,
+      detail: `~${wordCount} words, could be more comprehensive`,
     });
     score += 8;
     recommendations.push({
@@ -100,7 +100,7 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Content Length",
       status: "fail",
-      detail: `~${wordCount} words — very thin content`,
+      detail: `~${wordCount} words, very thin content`,
     });
     recommendations.push({
       priority: "high",
@@ -116,14 +116,14 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Lists",
       status: "pass",
-      detail: `${lists.length} lists found — AI-friendly format`,
+      detail: `${lists.length} lists found. AI-friendly format`,
     });
     score += 10;
   } else if (lists.length === 1) {
     findings.push({
       label: "Lists",
       status: "warn",
-      detail: "1 list found — add more structured content",
+      detail: "1 list found, add more structured content",
     });
     score += 5;
   } else {
@@ -146,7 +146,7 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Data Tables",
       status: "pass",
-      detail: `${tables.length} table(s) found — great for AI data extraction`,
+      detail: `${tables.length} table(s) found, great for AI data extraction`,
     });
     score += 10;
   }
@@ -168,7 +168,7 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "FAQ Content",
       status: "pass",
-      detail: "FAQ section detected — excellent for AI citations",
+      detail: "FAQ section detected, excellent for AI citations",
     });
     score += 15;
   } else {
@@ -192,7 +192,7 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     findings.push({
       label: "Internal Linking",
       status: "pass",
-      detail: `${internalLinks} internal links — helps AI crawl and understand site structure`,
+      detail: `${internalLinks} internal links, helps AI crawl and understand site structure`,
     });
     score += 10;
   } else {

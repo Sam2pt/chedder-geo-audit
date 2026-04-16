@@ -194,7 +194,7 @@ async function checkReddit(
   domain: string
 ): Promise<RedditResult | null> {
   try {
-    // Search for posts mentioning the domain — much more precise than brand name alone
+    // Search for posts mentioning the domain, much more precise than brand name alone
     const domainBase = domain.replace(/^www\./, "");
     const query = encodeURIComponent(`"${domainBase}"`);
     const res = await fetch(
@@ -326,7 +326,7 @@ export async function analyzeExternal(
   // Wikipedia findings
   if (wiki.exists) {
     const preview = wiki.extract
-      ? ` — "${wiki.extract.slice(0, 120)}${wiki.extract.length > 120 ? "..." : ""}"`
+      ? `. "${wiki.extract.slice(0, 120)}${wiki.extract.length > 120 ? "..." : ""}"`
       : "";
     findings.push({
       label: "Wikipedia Article",
@@ -380,7 +380,7 @@ export async function analyzeExternal(
       priority: "medium",
       title: "Grow Reddit Discussion",
       description:
-        "AI models weight organic Reddit discussions highly. Engage authentically in relevant subreddits — do not astroturf, which is detected and penalized.",
+        "AI models weight organic Reddit discussions highly. Engage authentically in relevant subreddits, do not astroturf, which is detected and penalized.",
     });
   } else {
     findings.push({
@@ -409,7 +409,7 @@ export async function analyzeExternal(
       findings.push({
         label: "Google Web Mentions",
         status: "warn",
-        detail: `~${google.totalResults.toLocaleString()} results — moderate presence`,
+        detail: `~${google.totalResults.toLocaleString()} results, moderate presence`,
       });
       score += 15;
       recommendations.push({

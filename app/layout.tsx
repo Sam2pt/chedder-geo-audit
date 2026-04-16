@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Chedder — GEO Audit",
+  title: "Chedder · GEO Audit",
   description:
     "See how your brand performs in AI-generated answers. Actionable insights for Generative Engine Optimization.",
 };

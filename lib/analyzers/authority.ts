@@ -147,7 +147,7 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
       priority: "medium",
       title: "Create an About Page",
       description:
-        "An About page establishes E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) — key factors AI models use to evaluate sources.",
+        "An About page establishes E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness), key factors AI models use to evaluate sources.",
     });
   }
 
@@ -247,7 +247,7 @@ export function analyzeAuthority($: CheerioAPI, url: string): ModuleResult {
     findings.push({
       label: "Current Copyright",
       status: "pass",
-      detail: `© ${currentYear} found — site appears maintained`,
+      detail: `© ${currentYear} found, site appears maintained`,
     });
     score += 5;
   }

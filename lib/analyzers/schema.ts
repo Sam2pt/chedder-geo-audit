@@ -156,7 +156,7 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
     findings.push({
       label: "FAQ Schema",
       status: "pass",
-      detail: "FAQPage schema found — excellent for AI citation",
+      detail: "FAQPage schema found, excellent for AI citation",
     });
     score += 15;
   } else {

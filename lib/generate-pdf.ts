@@ -42,7 +42,7 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`${result.grade} — ${scoreLabel(result.overallScore)}`, W - margin, 40, { align: "right" });
+  doc.text(`${result.grade}. ${scoreLabel(result.overallScore)}`, W - margin, 40, { align: "right" });
 
   y = 60;
 
@@ -141,7 +141,7 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(29, 29, 31);
-    doc.text(`${m.name} — ${m.score}/100`, margin, y);
+    doc.text(`${m.name}. ${m.score}/100`, margin, y);
     y += 3;
 
     // Color bar
@@ -183,7 +183,7 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
       doc.setFont("helvetica", "normal");
       doc.setTextColor(120, 120, 125);
       const detailLines = doc.splitTextToSize(f.detail, contentW - 50);
-      doc.text(` — ${detailLines[0]}`, margin + 6 + doc.getTextWidth(f.label), y);
+      doc.text(`. ${detailLines[0]}`, margin + 6 + doc.getTextWidth(f.label), y);
       if (detailLines.length > 1) {
         y += 4;
         doc.text(detailLines.slice(1), margin + 6, y);
@@ -207,7 +207,7 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
 
   doc.setFont("helvetica", "normal");
   doc.setTextColor(180, 180, 180);
-  doc.text("Made by Two Point Technologies — twopointtechnologies.com", W - margin, pageH - 8, { align: "right" });
+  doc.text("Made by Two Point Technologies, twopointtechnologies.com", W - margin, pageH - 8, { align: "right" });
 
   return doc;
 }

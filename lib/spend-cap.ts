@@ -4,7 +4,7 @@ import { getStore } from "@netlify/blobs";
 // ~$1 per 1,000 queries = $0.001 per query
 const COST_PER_QUERY_USD = 0.001;
 
-// Defaults — overridable via env vars
+// Defaults. overridable via env vars
 const MAX_QUERIES_PER_AUDIT = parseInt(
   process.env.MAX_AI_QUERIES_PER_AUDIT || "5",
   10
@@ -46,7 +46,7 @@ async function writeUsage(key: string, count: number) {
     const store = getStore({ name: "spend" });
     await store.set(key, String(count));
   } catch {
-    // blob store unavailable — fail silently; caps won't persist but
+    // blob store unavailable. fail silently; caps won't persist but
     // the per-audit cap still applies
   }
 }

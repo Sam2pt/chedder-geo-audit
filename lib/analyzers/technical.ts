@@ -75,7 +75,7 @@ export function analyzeTechnical(
       findings.push({
         label: "AI Bot Access",
         status: "fail",
-        detail: "Blanket disallow for all bots — AI crawlers are blocked",
+        detail: "Blanket disallow for all bots. AI crawlers are blocked",
       });
       recommendations.push({
         priority: "high",
@@ -135,7 +135,7 @@ export function analyzeTechnical(
     findings.push({
       label: "HTTPS",
       status: "pass",
-      detail: "Site uses HTTPS — trusted connection",
+      detail: "Site uses HTTPS, trusted connection",
     });
     score += 15;
   } else {
@@ -200,7 +200,7 @@ export function analyzeTechnical(
     findings.push({
       label: "Indexing",
       status: "fail",
-      detail: "Page has noindex directive — AI crawlers will skip this page",
+      detail: "Page has noindex directive. AI crawlers will skip this page",
     });
     recommendations.push({
       priority: "high",
@@ -244,14 +244,14 @@ export function analyzeTechnical(
     findings.push({
       label: "Resource Count",
       status: "pass",
-      detail: `${scripts} scripts, ${stylesheets} stylesheets — lightweight`,
+      detail: `${scripts} scripts, ${stylesheets} stylesheets, lightweight`,
     });
     score += 10;
   } else {
     findings.push({
       label: "Resource Count",
       status: "warn",
-      detail: `${scripts} scripts, ${stylesheets} stylesheets — may impact crawl speed`,
+      detail: `${scripts} scripts, ${stylesheets} stylesheets, may impact crawl speed`,
     });
     score += 5;
   }

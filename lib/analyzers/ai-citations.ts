@@ -233,7 +233,7 @@ export async function analyzeAICitations(
       findings.push({
         label: "Query Failed",
         status: "warn",
-        detail: `"${query.slice(0, 60)}..." — API error`,
+        detail: `"${query.slice(0, 60)}...". API error`,
       });
       continue;
     }

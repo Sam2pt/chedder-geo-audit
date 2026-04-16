@@ -99,7 +99,7 @@ export default function Home() {
             <span className="bg-gradient-to-r from-[#0071e3] via-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">is your brand mentioned?</span>
           </h1>
           <p className="text-[18px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[520px] mx-auto tracking-[-0.01em]">
-            ChatGPT, Perplexity, and Google AI are rewriting how people find brands. Chedder tests whether AI recommends <em>you</em> — and tells you exactly how to fix it.
+            ChatGPT, Perplexity, and Google AI are rewriting how people find brands. Chedder tests whether AI recommends <em>you</em>, and tells you exactly how to fix it.
           </p>
         </div>
 
@@ -282,7 +282,7 @@ export default function Home() {
               A real action plan.
             </h2>
             <p className="text-[17px] text-muted-foreground max-w-[600px] mx-auto leading-[1.6]">
-              Chedder checks every factor AI models use to decide which brands to recommend — then tells you exactly what to fix.
+              Chedder checks every factor AI models use to decide which brands to recommend, then tells you exactly what to fix.
             </p>
           </div>
 
@@ -291,33 +291,33 @@ export default function Home() {
               {
                 color: "#14b8a6",
                 title: "Real AI citation testing",
-                desc: "We ask Perplexity 5 real questions about your category and check if your brand appears — with exact verbatim excerpts.",
+                desc: "We ask Perplexity 5 real questions about your category and check if your brand appears, with exact verbatim excerpts.",
                 badge: "Killer feature",
               },
               {
                 color: "#ec4899",
                 title: "External brand signals",
-                desc: "Wikipedia, Reddit, and web presence — the sources AI models cross-reference when they answer.",
+                desc: "Wikipedia, Reddit, and web presence. The sources AI models cross-reference when they answer.",
               },
               {
                 color: "#6366f1",
                 title: "Structured data audit",
-                desc: "Schema.org, JSON-LD, FAQ markup — the data that AI parses directly from your pages.",
+                desc: "Schema.org, JSON-LD, FAQ markup. The data that AI parses directly from your pages.",
               },
               {
                 color: "#f59e0b",
                 title: "AI crawler access",
-                desc: "GPTBot, ClaudeBot, Google-Extended — are your pages even reachable by the bots that train these models?",
+                desc: "GPTBot, ClaudeBot, Google-Extended. Are your pages even reachable by the bots that train these models?",
               },
               {
                 color: "#0ea5e9",
                 title: "Meta & content quality",
-                desc: "Title tags, descriptions, FAQs, headings, lists — the formats AI prefers to cite verbatim.",
+                desc: "Title tags, descriptions, FAQs, headings, lists. The formats AI prefers to cite verbatim.",
               },
               {
                 color: "#10b981",
                 title: "Trust & authority signals",
-                desc: "E-E-A-T factors: authorship, contact info, social proof, legal pages — why AI trusts you as a source.",
+                desc: "E-E-A-T factors: authorship, contact info, social proof, legal pages. These are why AI trusts you as a source.",
               },
             ].map((f, i) => (
               <div key={i} className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-shadow">
@@ -353,7 +353,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s — even both side-by-side." },
+              { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s, even both side-by-side." },
               { num: "2", title: "Chedder audits everything", desc: "Crawls 5 pages, tests Perplexity, checks Wikipedia and Reddit, scores every signal." },
               { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
             ].map((step, i) => (
@@ -379,7 +379,7 @@ export default function Home() {
                 The audit is free. The implementation is where our GEO agency comes in.
               </h2>
               <p className="text-[16px] text-muted-foreground leading-[1.6] max-w-[620px]">
-                Two Point Technologies builds AI visibility strategies for brands that want to dominate in the ChatGPT/Perplexity/Google AI era. We take your audit and turn it into a 90-day plan — then execute it.
+                Two Point Technologies builds AI visibility strategies for brands that want to dominate in the ChatGPT/Perplexity/Google AI era. We take your audit and turn it into a 90-day plan, then execute it.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 items-center">
@@ -420,7 +420,6 @@ export default function Home() {
           </a>
           <div className="flex items-center gap-4 text-[12px] text-muted-foreground/50">
             <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">twopointtechnologies.com</a>
-            <a href="mailto:sam@twopointtechnologies.com" className="hover:text-foreground transition-colors">sam@twopointtechnologies.com</a>
           </div>
         </div>
       </footer>

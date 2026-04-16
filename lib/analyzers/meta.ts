@@ -14,14 +14,14 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
       findings.push({
         label: "Page Title",
         status: "pass",
-        detail: `"${title}" (${len} chars — optimal)`,
+        detail: `"${title}" (${len} chars, optimal)`,
       });
       score += 15;
     } else {
       findings.push({
         label: "Page Title",
         status: "warn",
-        detail: `"${title}" (${len} chars — ${len < 30 ? "too short" : "too long"})`,
+        detail: `"${title}" (${len} chars. ${len < 30 ? "too short" : "too long"})`,
       });
       score += 8;
       recommendations.push({
@@ -53,14 +53,14 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
       findings.push({
         label: "Meta Description",
         status: "pass",
-        detail: `${len} chars — optimal length`,
+        detail: `${len} chars, optimal length`,
       });
       score += 15;
     } else {
       findings.push({
         label: "Meta Description",
         status: "warn",
-        detail: `${len} chars — ${len < 120 ? "too short, add more detail" : "too long, may be truncated"}`,
+        detail: `${len} chars. ${len < 120 ? "too short, add more detail" : "too long, may be truncated"}`,
       });
       score += 8;
       recommendations.push({

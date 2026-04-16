@@ -171,7 +171,7 @@ function ModuleCard({ module }: { module: ModuleResult }) {
                   <StatusIcon status={f.status} />
                   <div className="text-[13px] leading-[1.5] tracking-[-0.005em]">
                     <span className="font-medium text-foreground">{f.label}</span>
-                    <span className="text-muted-foreground"> &mdash; {f.detail}</span>
+                    <span className="text-muted-foreground">: {f.detail}</span>
                   </div>
                 </div>
               ))}
@@ -427,6 +427,235 @@ function ContactCTA({ website, score }: { website: string; score: number }) {
   );
 }
 
+/* ── Executive Summary ───────────────────────────────────────────── */
+
+function ExecutiveSummary({ result }: { result: AuditResult }) {
+  // Find weakest and strongest modules
+  const sortedModules = [...result.modules].sort((a, b) => a.score - b.score);
+  const weakest = sortedModules[0];
+  const strongest = sortedModules[sortedModules.length - 1];
+
+  // Count recommendation priorities
+  const allRecs = result.modules.flatMap((m) => m.recommendations);
+  const highCount = allRecs.filter((r) => r.priority === "high").length;
+
+  // Find AI citation data specifically
+  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
+  const aiData = aiModule
+    ? {
+        score: aiModule.score,
+        mentionRate: aiModule.findings.filter(
+          (f) => f.status === "pass" || f.status === "warn"
+        ).length,
+        totalQueries: aiModule.findings.filter(
+          (f) => !f.label.toLowerCase().includes("spend")
+        ).length,
+      }
+    : null;
+
+  // Generate summary text
+  let verdict = "";
+  let interpretation = "";
+  const s = result.overallScore;
+  if (s >= 80) {
+    verdict = "Your brand is well-positioned for AI search.";
+    interpretation = `${result.domain} shows strong signals across the board. AI models have good reason to cite you, though there's always room to tighten specific areas.`;
+  } else if (s >= 60) {
+    verdict = "Your brand has a foundation, but there's meaningful work to do.";
+    interpretation = `${result.domain} hits the basics but leaves significant opportunity on the table. The ${highCount} high-priority items below are where to focus.`;
+  } else if (s >= 40) {
+    verdict = "Your brand is underperforming for AI visibility.";
+    interpretation = `${result.domain} has structural gaps that prevent AI models from confidently recommending you. Expect to be invisible in many relevant AI-generated answers until these are fixed.`;
+  } else {
+    verdict = "Your brand is largely invisible to AI.";
+    interpretation = `${result.domain} scores below the threshold where AI models build confidence. Competitors with better signals will be recommended instead of you. This is urgent.`;
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white space-y-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">
+          Executive Summary
+        </div>
+        <p className="text-[20px] sm:text-[22px] font-semibold leading-[1.4] tracking-[-0.02em]">
+          {verdict}
+        </p>
+        <p className="text-[15px] text-white/70 leading-[1.6]">
+          {interpretation}
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Score</div>
+            <div className="text-[20px] font-semibold tabular-nums">{result.overallScore}/100</div>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Strongest</div>
+            <div className="text-[14px] font-semibold leading-snug">{strongest.name.split(" ")[0]} <span className="text-white/50 font-normal">{strongest.score}</span></div>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Weakest</div>
+            <div className="text-[14px] font-semibold leading-snug">{weakest.name.split(" ")[0]} <span className="text-white/50 font-normal">{weakest.score}</span></div>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/50 font-medium uppercase tracking-wider">Priority fixes</div>
+            <div className="text-[14px] font-semibold leading-snug">{highCount} <span className="text-white/50 font-normal">high-impact</span></div>
+          </div>
+        </div>
+        {aiData && (
+          <div className="mt-2 p-4 rounded-2xl bg-white/[0.06] border border-white/[0.08]">
+            <div className="flex items-start gap-3">
+              <span className="text-[20px]">🤖</span>
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-white/90 mb-1">
+                  Live AI test result
+                </div>
+                <p className="text-[13px] text-white/60 leading-[1.55]">
+                  {aiData.score >= 70
+                    ? `Perplexity mentioned your brand in ${aiData.mentionRate} out of ${aiData.totalQueries} relevant queries. You're showing up.`
+                    : aiData.score >= 40
+                      ? `Perplexity mentioned your brand in ${aiData.mentionRate} out of ${aiData.totalQueries} queries, but rarely prominently. Competitors are being recommended first.`
+                      : `Perplexity mentioned your brand in only ${aiData.mentionRate} out of ${aiData.totalQueries} queries. You are functionally invisible to AI search right now.`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ── Action Plan (split recommendations) ─────────────────────────── */
+
+function ActionPlan({ result }: { result: AuditResult }) {
+  // Gather all recs with their source module for context
+  const allRecs: Array<{ rec: Recommendation; moduleSlug: string; moduleName: string }> = [];
+  for (const m of result.modules) {
+    for (const r of m.recommendations) {
+      allRecs.push({ rec: r, moduleSlug: m.slug, moduleName: m.name });
+    }
+  }
+
+  // Dedupe by title
+  const seen = new Set<string>();
+  const deduped = allRecs.filter((r) => {
+    if (seen.has(r.rec.title)) return false;
+    seen.add(r.rec.title);
+    return true;
+  });
+
+  // Quick Wins: technical + on-page fixes (schema, meta, technical, content modules) with medium/low priority OR high-priority fixes that are quick to implement
+  const quickWinSlugs = new Set(["schema", "meta", "technical", "content"]);
+  const quickWins = deduped.filter((r) => quickWinSlugs.has(r.moduleSlug));
+
+  // Strategic: external signals, authority, AI citations (harder, take time)
+  const strategicSlugs = new Set(["external", "authority", "ai-citations"]);
+  const strategic = deduped.filter((r) => strategicSlugs.has(r.moduleSlug));
+
+  // Sort each by priority
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  quickWins.sort((a, b) => priorityOrder[a.rec.priority] - priorityOrder[b.rec.priority]);
+  strategic.sort((a, b) => priorityOrder[a.rec.priority] - priorityOrder[b.rec.priority]);
+
+  if (quickWins.length === 0 && strategic.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Your Action Plan</h2>
+        <span className="text-[13px] font-medium text-muted-foreground">
+          {deduped.length} total
+        </span>
+      </div>
+
+      {/* Quick Wins */}
+      {quickWins.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#248a3d]">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-semibold tracking-[-0.01em]">Quick Wins</h3>
+              <p className="text-[12px] text-muted-foreground leading-tight">Technical changes you can implement this week</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {quickWins.map((item, i) => {
+              const mc = moduleColor(item.moduleSlug);
+              return (
+                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
+                      {i + 1}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <PriorityTag priority={item.rec.priority} />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {item.moduleName.split(" ")[0]}
+                      </span>
+                      <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
+                    </div>
+                    <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Strategic Priorities */}
+      {strategic.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#8b5cf6]/10 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#7c3aed]">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-semibold tracking-[-0.01em]">Strategic Priorities</h3>
+              <p className="text-[12px] text-muted-foreground leading-tight">Longer-term work that compounds over months</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {strategic.map((item, i) => {
+              const mc = moduleColor(item.moduleSlug);
+              return (
+                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
+                      {i + 1}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <PriorityTag priority={item.rec.priority} />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {item.moduleName.split(" ")[0]}
+                      </span>
+                      <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
+                    </div>
+                    <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ── Competitor Comparison ───────────────────────────────────────── */
 
 function CompetitorComparison({
@@ -585,6 +814,9 @@ export function AuditDashboard({
         </div>
       </section>
 
+      {/* Executive Summary */}
+      <ExecutiveSummary result={result} />
+
       {/* Competitor Comparison */}
       {result.competitors && result.competitors.length > 0 && (
         <CompetitorComparison primary={result} competitors={result.competitors} />
@@ -604,31 +836,8 @@ export function AuditDashboard({
       {/* Download PDF */}
       <DownloadGate result={result} />
 
-      {/* Top Recommendations */}
-      {result.topRecommendations.length > 0 && (
-        <section className="space-y-5">
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Top Recommendations</h2>
-            <span className="text-[13px] font-medium text-muted-foreground">{result.topRecommendations.length} items</span>
-          </div>
-          <div className="space-y-2.5">
-            {result.topRecommendations.map((r, i) => (
-              <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="w-7 h-7 rounded-lg bg-foreground/[0.04] flex items-center justify-center shrink-0">
-                  <span className="text-[13px] font-bold text-muted-foreground/50 tabular-nums">{i + 1}</span>
-                </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <PriorityTag priority={r.priority} />
-                    <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{r.title}</span>
-                  </div>
-                  <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{r.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Action Plan */}
+      <ActionPlan result={result} />
 
       {/* Contact CTA */}
       <ContactCTA website={result.domain} score={result.overallScore} />
@@ -679,7 +888,7 @@ export function AuditDashboard({
           <div className="space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ec4899]">External Signals (We Check These Too)</div>
             <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
-              We also check your brand against <strong>Wikipedia</strong>, <strong>Reddit</strong>, and (optionally) <strong>Google</strong> — the external sources AI models frequently cross-reference when generating answers.
+              We also check your brand against <strong>Wikipedia</strong>, <strong>Reddit</strong>, and (optionally) <strong>Google</strong>. These are the external sources AI models cross-reference when generating answers.
             </p>
           </div>
 
@@ -688,14 +897,14 @@ export function AuditDashboard({
           <div className="space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ff9f0a]">What This Doesn{"'"}t Cover Yet</div>
             <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
-              Direct AI citation testing (ChatGPT, Perplexity, Google AI Overviews), full backlink analysis, and comprehensive brand monitoring across news and podcasts — coming soon.
+              Direct AI citation testing (ChatGPT, Perplexity, Google AI Overviews), full backlink analysis, and comprehensive brand monitoring across news and podcasts are coming soon.
             </p>
           </div>
 
           <div className="h-px bg-black/[0.04]" />
 
           <p className="text-[13px] text-muted-foreground leading-[1.6]">
-            Think of this audit as your <strong>GEO technical health check</strong> — are the doors open for AI to find and cite you? Getting <em>recommended</em> also depends on your content quality, reputation, and authority across the broader internet.
+            Think of this audit as your <strong>GEO technical health check</strong>. Are the doors open for AI to find and cite you? Getting <em>recommended</em> also depends on your content quality, reputation, and authority across the broader internet.
           </p>
         </div>
       </section>
