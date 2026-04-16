@@ -29,4 +29,5 @@ export interface AuditResult {
   topRecommendations: Recommendation[];
   pagesAudited: string[];
   timestamp: string;
+  competitors?: AuditResult[];
 }

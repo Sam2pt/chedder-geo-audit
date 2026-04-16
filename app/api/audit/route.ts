@@ -6,6 +6,8 @@ import { analyzeContent } from "@/lib/analyzers/content";
 import { analyzeTechnical } from "@/lib/analyzers/technical";
 import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal } from "@/lib/analyzers/external";
+import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
+import { extractBrandName } from "@/lib/analyzers/external";
 import {
   calculateOverallScore,
   getGrade,
@@ -63,7 +65,6 @@ function discoverLinks($: cheerio.CheerioAPI, origin: string): string[] {
     }
   });
 
-  // Sort so priority pages come first
   const urls = [...found];
   urls.sort((a, b) => {
     const aP = priority.findIndex((p) => a.toLowerCase().includes(p));
@@ -73,11 +74,10 @@ function discoverLinks($: cheerio.CheerioAPI, origin: string): string[] {
     return aScore - bScore;
   });
 
-  return urls.slice(0, MAX_PAGES - 1); // leave room for homepage
+  return urls.slice(0, MAX_PAGES - 1);
 }
 
 function mergeModules(all: ModuleResult[][]): ModuleResult[] {
-  // Group by slug, pick the best score, and merge unique findings/recommendations
   const bySlug = new Map<string, ModuleResult[]>();
   for (const modules of all) {
     for (const m of modules) {
@@ -88,156 +88,189 @@ function mergeModules(all: ModuleResult[][]): ModuleResult[] {
 
   const merged: ModuleResult[] = [];
   for (const [, instances] of bySlug) {
-    // Use the best score (most optimized page)
     const best = instances.reduce((a, b) => (a.score >= b.score ? a : b));
-
-    // Deduplicate findings by label
     const seenFindings = new Set<string>();
-    const allFindings = instances.flatMap((i) => i.findings);
-    const uniqueFindings = allFindings.filter((f) => {
-      if (seenFindings.has(f.label)) return false;
-      seenFindings.add(f.label);
-      return true;
-    });
-
-    // Deduplicate recommendations by title
+    const uniqueFindings = instances
+      .flatMap((i) => i.findings)
+      .filter((f) => {
+        if (seenFindings.has(f.label)) return false;
+        seenFindings.add(f.label);
+        return true;
+      });
     const seenRecs = new Set<string>();
-    const allRecs = instances.flatMap((i) => i.recommendations);
-    const uniqueRecs = allRecs.filter((r) => {
-      if (seenRecs.has(r.title)) return false;
-      seenRecs.add(r.title);
-      return true;
-    });
-
+    const uniqueRecs = instances
+      .flatMap((i) => i.recommendations)
+      .filter((r) => {
+        if (seenRecs.has(r.title)) return false;
+        seenRecs.add(r.title);
+        return true;
+      });
     merged.push({
       ...best,
       findings: uniqueFindings,
       recommendations: uniqueRecs,
     });
   }
-
   return merged;
+}
+
+async function auditSingleUrl(
+  rawUrl: string,
+  options: { skipAI?: boolean } = {}
+): Promise<AuditResult | { error: string }> {
+  let normalizedUrl = rawUrl.trim();
+  if (!normalizedUrl.startsWith("http")) {
+    normalizedUrl = "https://" + normalizedUrl;
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(normalizedUrl);
+  } catch {
+    return { error: `Invalid URL: ${rawUrl}` };
+  }
+
+  const homePage = await fetchPage(normalizedUrl).catch(() => null);
+  if (!homePage) {
+    return { error: `Could not reach ${parsedUrl.hostname}` };
+  }
+
+  // robots.txt + sitemap
+  let robotsTxt: string | null = null;
+  let sitemapExists = false;
+  try {
+    const [robotsRes, sitemapRes] = await Promise.allSettled([
+      fetch(`${parsedUrl.origin}/robots.txt`, {
+        signal: AbortSignal.timeout(5000),
+      }),
+      fetch(`${parsedUrl.origin}/sitemap.xml`, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+      }),
+    ]);
+    if (robotsRes.status === "fulfilled" && robotsRes.value.ok) {
+      robotsTxt = await robotsRes.value.text();
+    }
+    if (sitemapRes.status === "fulfilled" && sitemapRes.value.ok) {
+      sitemapExists = true;
+    }
+  } catch {
+    // ignore
+  }
+
+  const technicalCtx = {
+    robotsTxt,
+    sitemapExists,
+    responseHeaders: homePage.headers,
+    url: normalizedUrl,
+  };
+
+  const $home = cheerio.load(homePage.html);
+  const externalPromise = analyzeExternal($home, parsedUrl.hostname);
+
+  // AI citation testing runs in parallel (skipped for competitors to save cost)
+  let aiCitationsPromise: Promise<ModuleResult | null> | null = null;
+  if (!options.skipAI) {
+    const brand = extractBrandName($home, parsedUrl.hostname);
+    const metaDescription =
+      $home('meta[name="description"]').attr("content")?.trim() || null;
+    aiCitationsPromise = analyzeAICitations(
+      brand,
+      parsedUrl.hostname,
+      metaDescription
+    );
+  }
+
+  const homeModules = [
+    analyzeSchema($home),
+    analyzeMeta($home),
+    analyzeContent($home),
+    analyzeTechnical($home, technicalCtx),
+    analyzeAuthority($home, normalizedUrl),
+  ];
+
+  const internalLinks = discoverLinks($home, parsedUrl.origin);
+  const pagesAudited = [normalizedUrl];
+  const allModuleSets: ModuleResult[][] = [homeModules];
+
+  const pageResults = await Promise.allSettled(
+    internalLinks.map((link) => fetchPage(link))
+  );
+
+  for (let i = 0; i < pageResults.length; i++) {
+    const r = pageResults[i];
+    if (r.status !== "fulfilled" || !r.value) continue;
+    const $ = cheerio.load(r.value.html);
+    pagesAudited.push(internalLinks[i]);
+    allModuleSets.push([
+      analyzeSchema($),
+      analyzeMeta($),
+      analyzeContent($),
+    ]);
+  }
+
+  const modules = mergeModules(allModuleSets);
+  const externalResult = await externalPromise;
+  modules.push(externalResult);
+
+  if (aiCitationsPromise) {
+    const aiCitationsResult = await aiCitationsPromise;
+    if (aiCitationsResult) {
+      modules.push(aiCitationsResult);
+    }
+  }
+
+  const overallScore = calculateOverallScore(modules);
+
+  return {
+    url: normalizedUrl,
+    domain: parsedUrl.hostname,
+    overallScore,
+    grade: getGrade(overallScore),
+    modules,
+    topRecommendations: getTopRecommendations(modules),
+    pagesAudited,
+    timestamp: new Date().toISOString(),
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
+    const body = await req.json();
+    const { url, competitors } = body as {
+      url: string;
+      competitors?: string[];
+    };
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    let normalizedUrl = url.trim();
-    if (!normalizedUrl.startsWith("http")) {
-      normalizedUrl = "https://" + normalizedUrl;
+    // Primary audit (required)
+    const primary = await auditSingleUrl(url);
+    if ("error" in primary) {
+      return NextResponse.json({ error: primary.error }, { status: 422 });
     }
 
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(normalizedUrl);
-    } catch {
-      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
-    }
+    // Competitor audits (optional, up to 3)
+    let competitorResults: AuditResult[] = [];
+    if (Array.isArray(competitors) && competitors.length > 0) {
+      const validCompetitors = competitors
+        .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+        .slice(0, 3);
 
-    // ── Fetch homepage ──────────────────────────────────────────────
-    const homePage = await fetchPage(normalizedUrl).catch(() => null);
-    if (!homePage) {
-      return NextResponse.json(
-        { error: "Could not reach site. Check the URL and try again." },
-        { status: 422 }
+      const results = await Promise.all(
+        validCompetitors.map((c) => auditSingleUrl(c, { skipAI: true }))
+      );
+      competitorResults = results.filter(
+        (r): r is AuditResult => !("error" in r)
       );
     }
 
-    // ── Fetch robots.txt & sitemap ──────────────────────────────────
-    let robotsTxt: string | null = null;
-    let sitemapExists = false;
-    try {
-      const [robotsRes, sitemapRes] = await Promise.allSettled([
-        fetch(`${parsedUrl.origin}/robots.txt`, {
-          signal: AbortSignal.timeout(5000),
-        }),
-        fetch(`${parsedUrl.origin}/sitemap.xml`, {
-          method: "HEAD",
-          signal: AbortSignal.timeout(5000),
-        }),
-      ]);
-      if (robotsRes.status === "fulfilled" && robotsRes.value.ok) {
-        robotsTxt = await robotsRes.value.text();
-      }
-      if (sitemapRes.status === "fulfilled" && sitemapRes.value.ok) {
-        sitemapExists = true;
-      }
-    } catch {
-      // ignore
-    }
-
-    const technicalCtx = {
-      robotsTxt,
-      sitemapExists,
-      responseHeaders: homePage.headers,
-      url: normalizedUrl,
-    };
-
-    // ── Analyze homepage ────────────────────────────────────────────
-    const $home = cheerio.load(homePage.html);
-
-    // External signals (Wikipedia, Reddit, optional Google) — async
-    const externalPromise = analyzeExternal($home, parsedUrl.hostname);
-
-    const homeModules = [
-      analyzeSchema($home),
-      analyzeMeta($home),
-      analyzeContent($home),
-      analyzeTechnical($home, technicalCtx),
-      analyzeAuthority($home, normalizedUrl),
-    ];
-
-    // ── Discover & crawl internal pages ─────────────────────────────
-    const internalLinks = discoverLinks($home, parsedUrl.origin);
-    const pagesAudited = [normalizedUrl];
-    const allModuleSets: ModuleResult[][] = [homeModules];
-
-    const pageResults = await Promise.allSettled(
-      internalLinks.map((link) => fetchPage(link))
-    );
-
-    for (let i = 0; i < pageResults.length; i++) {
-      const r = pageResults[i];
-      if (r.status !== "fulfilled" || !r.value) continue;
-
-      const $ = cheerio.load(r.value.html);
-      const pageUrl = internalLinks[i];
-      pagesAudited.push(pageUrl);
-
-      allModuleSets.push([
-        analyzeSchema($),
-        analyzeMeta($),
-        analyzeContent($),
-        // Technical & authority only need to run once (site-wide)
-      ]);
-    }
-
-    // ── Merge results ───────────────────────────────────────────────
-    const modules = mergeModules(allModuleSets);
-
-    // Wait for external signals and add as its own module
-    const externalResult = await externalPromise;
-    modules.push(externalResult);
-
-    const overallScore = calculateOverallScore(modules);
-
-    const result: AuditResult = {
-      url: normalizedUrl,
-      domain: parsedUrl.hostname,
-      overallScore,
-      grade: getGrade(overallScore),
-      modules,
-      topRecommendations: getTopRecommendations(modules),
-      pagesAudited,
-      timestamp: new Date().toISOString(),
-    };
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...primary,
+      competitors: competitorResults,
+    });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(

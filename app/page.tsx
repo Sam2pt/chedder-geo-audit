@@ -6,6 +6,8 @@ import { AuditDashboard } from "@/components/audit-dashboard";
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [competitors, setCompetitors] = useState<string[]>([]);
+  const [showCompetitors, setShowCompetitors] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AuditResult | null>(null);
@@ -19,10 +21,16 @@ export default function Home() {
     setResult(null);
 
     try {
+      const cleanCompetitors = competitors
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0);
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({
+          url: url.trim(),
+          competitors: cleanCompetitors,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -35,6 +43,20 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function addCompetitor() {
+    if (competitors.length < 3) {
+      setCompetitors([...competitors, ""]);
+    }
+  }
+
+  function removeCompetitor(i: number) {
+    setCompetitors(competitors.filter((_, idx) => idx !== i));
+  }
+
+  function updateCompetitor(i: number, val: string) {
+    setCompetitors(competitors.map((c, idx) => (idx === i ? val : c)));
   }
 
   // Full-screen loading with cheese wheel
@@ -108,6 +130,70 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Competitors */}
+          {!showCompetitors ? (
+            <button
+              type="button"
+              onClick={() => {
+                setShowCompetitors(true);
+                addCompetitor();
+              }}
+              className="text-[13px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Compare against competitors
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">Competitors (up to 3)</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCompetitors(false);
+                    setCompetitors([]);
+                  }}
+                  className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Remove all
+                </button>
+              </div>
+              {competitors.map((c, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={c}
+                    onChange={(e) => updateCompetitor(i, e.target.value)}
+                    placeholder={`Competitor ${i + 1} URL...`}
+                    className="flex-1 h-11 px-4 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCompetitor(i)}
+                    className="w-9 h-9 rounded-lg bg-foreground/[0.04] hover:bg-foreground/[0.08] text-muted-foreground transition-colors flex items-center justify-center"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              ))}
+              {competitors.length < 3 && (
+                <button
+                  type="button"
+                  onClick={addCompetitor}
+                  className="text-[13px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Add another
+                </button>
+              )}
+            </div>
+          )}
 
           {error && (
             <p className="text-[14px] text-[#ff3b30] font-medium">{error}</p>

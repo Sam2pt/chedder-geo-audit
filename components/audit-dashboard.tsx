@@ -13,6 +13,7 @@ const MODULE_COLORS: Record<string, { accent: string; light: string; dark: strin
   technical: { accent: "#f59e0b", light: "rgba(245,158,11,0.08)",  dark: "#d97706" },
   authority: { accent: "#10b981", light: "rgba(16,185,129,0.08)",  dark: "#059669" },
   external:  { accent: "#ec4899", light: "rgba(236,72,153,0.08)",  dark: "#db2777" },
+  "ai-citations": { accent: "#14b8a6", light: "rgba(20,184,166,0.08)", dark: "#0d9488" },
 };
 
 function moduleColor(slug: string) {
@@ -426,6 +427,119 @@ function ContactCTA({ website, score }: { website: string; score: number }) {
   );
 }
 
+/* ── Competitor Comparison ───────────────────────────────────────── */
+
+function CompetitorComparison({
+  primary,
+  competitors,
+}: {
+  primary: AuditResult;
+  competitors: AuditResult[];
+}) {
+  const all = [primary, ...competitors];
+  const modules = primary.modules.map((m) => m.slug);
+
+  return (
+    <section className="space-y-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Competitor Comparison</h2>
+        <span className="text-[13px] font-medium text-muted-foreground">
+          {competitors.length} competitor{competitors.length > 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Overall score comparison */}
+      <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
+          Overall GEO Score
+        </div>
+        <div className="space-y-3">
+          {all.map((site, i) => {
+            const sc = scoreColor(site.overallScore);
+            const isWinner = site.overallScore === Math.max(...all.map((s) => s.overallScore));
+            const isPrimary = i === 0;
+            return (
+              <div key={site.domain}>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`text-[14px] font-semibold truncate ${isPrimary ? "text-foreground" : "text-muted-foreground"}`}>
+                      {site.domain}
+                    </span>
+                    {isPrimary && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-foreground/[0.06] text-muted-foreground">
+                        You
+                      </span>
+                    )}
+                    {isWinner && !isPrimary && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#34c759]/10 text-[#248a3d]">
+                        Leader
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] font-medium text-muted-foreground">{site.grade}</span>
+                    <span className="text-[16px] font-semibold tabular-nums tracking-[-0.01em]" style={{ color: sc.bg }}>
+                      {site.overallScore}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-[6px] rounded-full bg-foreground/[0.04] overflow-hidden">
+                  <div className="h-full rounded-full animate-bar" style={{ width: `${site.overallScore}%`, background: `linear-gradient(90deg, ${sc.bg}80, ${sc.bg})` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Per-module comparison */}
+      <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
+          Category Breakdown
+        </div>
+        <div className="space-y-4">
+          {modules.map((slug) => {
+            const mc = moduleColor(slug);
+            const moduleName = primary.modules.find((m) => m.slug === slug)?.name || slug;
+            const scores = all.map((site) => ({
+              domain: site.domain,
+              score: site.modules.find((m) => m.slug === slug)?.score ?? 0,
+            }));
+            const maxScore = Math.max(...scores.map((s) => s.score));
+            return (
+              <div key={slug} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-4 rounded-full" style={{ background: mc.accent }} />
+                  <span className="text-[13px] font-semibold text-foreground tracking-[-0.01em]">{moduleName}</span>
+                </div>
+                <div className="space-y-1.5 pl-3">
+                  {scores.map((s, i) => {
+                    const isPrimary = i === 0;
+                    const isLeader = s.score === maxScore;
+                    return (
+                      <div key={s.domain} className="flex items-center gap-2">
+                        <span className={`text-[12px] w-[140px] truncate ${isPrimary ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                          {s.domain}
+                        </span>
+                        <div className="flex-1 h-[4px] rounded-full bg-foreground/[0.04] overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.score}%`, background: mc.accent, opacity: isPrimary ? 1 : 0.5 }} />
+                        </div>
+                        <span className={`text-[12px] font-semibold tabular-nums w-7 text-right ${isLeader ? "text-foreground" : "text-muted-foreground"}`} style={{ color: isLeader ? mc.accent : undefined }}>
+                          {s.score}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── Dashboard ───────────────────────────────────────────────────── */
 
 export function AuditDashboard({
@@ -470,6 +584,11 @@ export function AuditDashboard({
           <span className="text-[14px] text-muted-foreground font-medium tracking-[-0.01em]">{gradeLabel(result.overallScore)}</span>
         </div>
       </section>
+
+      {/* Competitor Comparison */}
+      {result.competitors && result.competitors.length > 0 && (
+        <CompetitorComparison primary={result} competitors={result.competitors} />
+      )}
 
       {/* Score Breakdown */}
       <section className="space-y-5">
