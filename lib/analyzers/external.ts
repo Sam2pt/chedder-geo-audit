@@ -226,24 +226,61 @@ interface RedditResult {
   topPost?: { title: string; subreddit: string; score: number; url: string };
 }
 
+async function fetchRedditSearch(url: string): Promise<unknown | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        // Reddit throttles generic/short user agents. Their API guidance asks for
+        // platform:appname:version + contact. Keep it honest — we're read-only.
+        "User-Agent":
+          "web:ai.chedder.2pt:v1.0 (by /u/chedder_audit; contact sam@twopointtechnologies.com)",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[external] Reddit ${new URL(url).host} HTTP ${res.status} ${res.statusText}`
+      );
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.warn(
+      `[external] Reddit fetch error:`,
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+}
+
 async function checkReddit(
   brand: string,
   domain: string
 ): Promise<RedditResult | null> {
   try {
-    // Search for posts mentioning the domain, much more precise than brand name alone
+    // Search for posts mentioning the domain — more precise than brand name alone.
     const domainBase = domain.replace(/^www\./, "");
     const query = encodeURIComponent(`"${domainBase}"`);
-    const res = await fetch(
+
+    // Try www.reddit.com first, then old.reddit.com as a fallback. Netlify's
+    // shared egress IPs are increasingly throttled by Reddit's main search
+    // endpoint; the "old." hostname tends to succeed when the primary
+    // rate-limits us out.
+    const candidates = [
       `https://www.reddit.com/search.json?q=${query}&limit=25&sort=relevance`,
-      {
-        headers: { "User-Agent": "ChedderBot/1.0 (https://chedder.2pt.ai)" },
-        signal: AbortSignal.timeout(5000),
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const posts = data?.data?.children || [];
+      `https://old.reddit.com/search.json?q=${query}&limit=25&sort=relevance`,
+    ];
+
+    let data: unknown = null;
+    for (const attempt of candidates) {
+      data = await fetchRedditSearch(attempt);
+      if (data) break;
+    }
+    if (!data) return null;
+
+    const posts =
+      (data as { data?: { children?: unknown[] } })?.data?.children || [];
 
     // Filter posts to only those that actually mention the brand/domain in title or body
     const domainLower = domainBase.toLowerCase();

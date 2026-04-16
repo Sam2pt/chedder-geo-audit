@@ -528,6 +528,20 @@ function WhereResults({ result }: { result: AuditResult }) {
                   </div>
                 </div>
               )}
+              {/* Reddit topPost discussion if present */}
+              {externalModule?.findings
+                .filter((f) => f.label.toLowerCase().includes("top reddit"))
+                .map((f, i) => (
+                  <div key={`rt-${i}`} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+                    <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <div className="text-[13px] leading-snug min-w-0 flex-1">
+                      <div className="font-semibold text-foreground">Top Reddit thread</div>
+                      <div className="text-[12px] text-muted-foreground mt-0.5 leading-[1.5]">{f.detail}</div>
+                    </div>
+                  </div>
+                ))}
             </>
           )}
         </div>
@@ -545,7 +559,7 @@ function WhereResults({ result }: { result: AuditResult }) {
         </div>
 
         <div className="space-y-2">
-          {invisible.length === 0 && (!wikiFinding || wikiFinding.status === "pass") && (!redditFinding || redditFinding.status !== "fail") ? (
+          {invisible.length === 0 && (!wikiFinding || wikiFinding.status === "pass") && (!redditFinding || redditFinding.status === "pass") ? (
             <p className="text-[13px] text-muted-foreground italic">Nothing critical here. Nice work.</p>
           ) : (
             <>
@@ -563,14 +577,18 @@ function WhereResults({ result }: { result: AuditResult }) {
                   </div>
                 </div>
               )}
-              {redditFinding?.status === "fail" && (
+              {redditFinding && redditFinding.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#ff453a]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                  <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center shrink-0 mt-0.5 ${redditFinding.status === "fail" ? "bg-[#ff453a]/20" : "bg-[#ff9f0a]/20"}`}>
+                    {redditFinding.status === "fail" ? (
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                    ) : (
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#c77c02]"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                    )}
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Reddit</span>
-                    <span className="text-muted-foreground">: No organic discussions found</span>
+                    <span className="text-muted-foreground">: {redditFinding.detail}</span>
                   </div>
                 </div>
               )}
