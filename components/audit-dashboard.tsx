@@ -36,7 +36,13 @@ function gradeLabel(s: number) {
 
 /* ── Score Gauge ──────────────────────────────────────────────────── */
 
-function ScoreGauge({ score }: { score: number }) {
+function ScoreGauge({
+  score,
+  variant = "light",
+}: {
+  score: number;
+  variant?: "light" | "dark";
+}) {
   const c = scoreColor(score);
   const radius = 80;
   const stroke = 10;
@@ -45,16 +51,22 @@ function ScoreGauge({ score }: { score: number }) {
   const arcLen = circ * 0.75;
   const offset = arcLen - (score / 100) * arcLen;
 
+  const isDark = variant === "dark";
+  const trackStroke = isDark ? "#ffffff" : "#1d1d1f";
+  const trackOpacity = isDark ? 0.14 : 0.06;
+  const numberColor = isDark ? "text-white" : "text-foreground";
+  const subColor = isDark ? "text-white/60" : "text-muted-foreground";
+
   return (
     <div className="relative inline-flex items-center justify-center w-[200px] h-[200px]">
-      <div className="absolute inset-4 rounded-full pulse-glow" style={{ background: `radial-gradient(circle, ${c.bg}10 0%, transparent 70%)` }} />
+      <div className="absolute inset-4 rounded-full pulse-glow" style={{ background: `radial-gradient(circle, ${c.bg}20 0%, transparent 70%)` }} />
       <svg width={200} height={200} className="rotate-[135deg]">
-        <circle cx={100} cy={100} r={nr} fill="none" stroke="#1d1d1f" strokeOpacity={0.06} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} />
-        <circle cx={100} cy={100} r={nr} fill="none" stroke={c.bg} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} strokeDashoffset={offset} className="transition-all duration-[1.2s] ease-out" style={{ filter: `drop-shadow(0 0 8px ${c.bg}50)` }} />
+        <circle cx={100} cy={100} r={nr} fill="none" stroke={trackStroke} strokeOpacity={trackOpacity} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} />
+        <circle cx={100} cy={100} r={nr} fill="none" stroke={c.bg} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} strokeDashoffset={offset} className="transition-all duration-[1.2s] ease-out" style={{ filter: `drop-shadow(0 0 8px ${c.bg}70)` }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-        <span className="text-[52px] font-semibold tracking-[-0.04em] text-foreground leading-none">{score}</span>
-        <span className="text-[13px] text-muted-foreground mt-1">out of 100</span>
+        <span className={`text-[52px] font-semibold tracking-[-0.04em] leading-none ${numberColor}`}>{score}</span>
+        <span className={`text-[13px] mt-1 ${subColor}`}>out of 100</span>
       </div>
     </div>
   );
@@ -490,7 +502,7 @@ function ExecutiveSummary({ result }: { result: AuditResult }) {
         {/* Top row: gauge + verdict */}
         <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
           <div className="shrink-0 mx-auto sm:mx-0">
-            <ScoreGauge score={result.overallScore} />
+            <ScoreGauge score={result.overallScore} variant="dark" />
           </div>
           <div className="flex-1 space-y-3 min-w-0">
             <div>
