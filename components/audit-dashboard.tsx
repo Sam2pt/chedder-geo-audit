@@ -723,11 +723,70 @@ function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitor
   );
 }
 
-/* ── Action Plan (split recommendations) ─────────────────────────── */
+/* ── Action Plan (roadmap with phases + priority sequence) ──────── */
+
+type Horizon = "now" | "soon" | "later";
+
+const HORIZON_META: Record<
+  Horizon,
+  {
+    label: string;
+    timeframe: string;
+    blurb: string;
+    accent: string;
+    light: string;
+    ring: string;
+  }
+> = {
+  now: {
+    label: "Now",
+    timeframe: "This week",
+    blurb: "Copy-paste fixes and tag edits. No roadmap required.",
+    accent: "#34c759",
+    light: "rgba(52,199,89,0.1)",
+    ring: "rgba(52,199,89,0.28)",
+  },
+  soon: {
+    label: "Next",
+    timeframe: "2–4 weeks",
+    blurb: "A small content or dev cycle — structured pages, contact blocks, robots rules.",
+    accent: "#ff9f0a",
+    light: "rgba(255,159,10,0.1)",
+    ring: "rgba(255,159,10,0.28)",
+  },
+  later: {
+    label: "Later",
+    timeframe: "This quarter",
+    blurb: "Authority signals, external mentions, AI citation wins — compounding work.",
+    accent: "#8b5cf6",
+    light: "rgba(139,92,246,0.1)",
+    ring: "rgba(139,92,246,0.28)",
+  },
+};
+
+const FAST_MODULES = new Set(["schema", "meta", "technical", "content"]);
+
+function classifyHorizon(
+  moduleSlug: string,
+  priority: Recommendation["priority"]
+): Horizon {
+  const fast = FAST_MODULES.has(moduleSlug);
+  if (fast && priority === "high") return "now";
+  if (fast) return "soon";
+  if (priority === "high") return "soon";
+  return "later";
+}
+
+type RoadmapItem = {
+  rec: Recommendation;
+  moduleSlug: string;
+  moduleName: string;
+  seq: number;
+};
 
 function ActionPlan({ result }: { result: AuditResult }) {
-  // Gather all recs with their source module for context
-  const allRecs: Array<{ rec: Recommendation; moduleSlug: string; moduleName: string }> = [];
+  // Gather all recs with their source module
+  const allRecs: Array<Omit<RoadmapItem, "seq">> = [];
   for (const m of result.modules) {
     for (const r of m.recommendations) {
       allRecs.push({ rec: r, moduleSlug: m.slug, moduleName: m.name });
@@ -742,99 +801,140 @@ function ActionPlan({ result }: { result: AuditResult }) {
     return true;
   });
 
-  // Quick Wins: technical + on-page fixes (schema, meta, technical, content modules) with medium/low priority OR high-priority fixes that are quick to implement
-  const quickWinSlugs = new Set(["schema", "meta", "technical", "content"]);
-  const quickWins = deduped.filter((r) => quickWinSlugs.has(r.moduleSlug));
+  if (deduped.length === 0) return null;
 
-  // Strategic: external signals, authority, AI citations (harder, take time)
-  const strategicSlugs = new Set(["external", "authority", "ai-citations"]);
-  const strategic = deduped.filter((r) => strategicSlugs.has(r.moduleSlug));
-
-  // Sort each by priority
+  // Bucket by horizon, sort each by priority
   const priorityOrder = { high: 0, medium: 1, low: 2 };
-  quickWins.sort((a, b) => priorityOrder[a.rec.priority] - priorityOrder[b.rec.priority]);
-  strategic.sort((a, b) => priorityOrder[a.rec.priority] - priorityOrder[b.rec.priority]);
+  const buckets: Record<Horizon, Array<Omit<RoadmapItem, "seq">>> = {
+    now: [],
+    soon: [],
+    later: [],
+  };
+  for (const item of deduped) {
+    buckets[classifyHorizon(item.moduleSlug, item.rec.priority)].push(item);
+  }
+  (Object.keys(buckets) as Horizon[]).forEach((h) => {
+    buckets[h].sort(
+      (a, b) => priorityOrder[a.rec.priority] - priorityOrder[b.rec.priority]
+    );
+  });
 
-  if (quickWins.length === 0 && strategic.length === 0) {
-    return null;
+  // Assign a global sequence so users see a single ordered list 1..N
+  const phaseOrder: Horizon[] = ["now", "soon", "later"];
+  let seq = 0;
+  const phases: Array<{ key: Horizon; items: RoadmapItem[] }> = [];
+  for (const key of phaseOrder) {
+    const items: RoadmapItem[] = buckets[key].map((it) => ({
+      ...it,
+      seq: ++seq,
+    }));
+    if (items.length > 0) phases.push({ key, items });
   }
 
   return (
     <section className="space-y-5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Your Action Plan</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">
+          Your Roadmap
+        </h2>
         <span className="text-[13px] font-medium text-muted-foreground">
-          {deduped.length} total
+          {deduped.length} step{deduped.length === 1 ? "" : "s"} · ordered by priority
         </span>
       </div>
 
-      {/* Quick Wins */}
-      {quickWins.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#248a3d]">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-[16px] font-semibold tracking-[-0.01em]">Quick Wins</h3>
-              <p className="text-[12px] text-muted-foreground leading-tight">Technical changes you can implement this week</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {quickWins.map((item, i) => (
-              <ActionItem key={`qw-${i}`} item={item} index={i} />
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="relative pl-10 sm:pl-12">
+        {/* Vertical spine */}
+        <div className="pointer-events-none absolute left-4 sm:left-5 top-3 bottom-3 w-px bg-foreground/[0.09]" />
 
-      {/* Strategic Priorities */}
-      {strategic.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#8b5cf6]/10 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#7c3aed]">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-[16px] font-semibold tracking-[-0.01em]">Strategic Priorities</h3>
-              <p className="text-[12px] text-muted-foreground leading-tight">Longer-term work that compounds over months</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {strategic.map((item, i) => (
-              <ActionItem key={`st-${i}`} item={item} index={i} />
-            ))}
-          </div>
+        <div className="space-y-8">
+          {phases.map(({ key, items }) => {
+            const meta = HORIZON_META[key];
+            return (
+              <div key={key} className="relative">
+                {/* Phase milestone marker */}
+                <div
+                  className="absolute -left-[30px] sm:-left-[34px] top-0 w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{
+                    background: meta.light,
+                    boxShadow: `0 0 0 4px var(--background), 0 0 0 5px ${meta.ring}`,
+                  }}
+                  aria-hidden
+                >
+                  <span
+                    className="text-[13px] font-bold tabular-nums"
+                    style={{ color: meta.accent }}
+                  >
+                    {items.length}
+                  </span>
+                </div>
+
+                {/* Phase header */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-0.5 rounded"
+                      style={{ background: meta.light, color: meta.accent }}
+                    >
+                      {meta.label}
+                    </span>
+                    <h3 className="text-[16px] font-semibold tracking-[-0.01em]">
+                      {meta.timeframe}
+                    </h3>
+                  </div>
+                  <p className="text-[12.5px] text-muted-foreground leading-[1.55] mt-1">
+                    {meta.blurb}
+                  </p>
+                </div>
+
+                {/* Items in this phase */}
+                <div className="space-y-2">
+                  {items.map((it) => (
+                    <ActionItem
+                      key={`${key}-${it.seq}`}
+                      item={it}
+                      seq={it.seq}
+                      accent={meta.accent}
+                      light={meta.light}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </section>
   );
 }
 
-/* ── Action plan item (expandable when a code snippet is available) ─── */
+/* ── Roadmap action item (expandable when a code snippet is available) ─ */
 
 function ActionItem({
   item,
-  index,
+  seq,
+  accent,
+  light,
 }: {
   item: { rec: Recommendation; moduleSlug: string; moduleName: string };
-  index: number;
+  seq: number;
+  accent: string;
+  light: string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const mc = moduleColor(item.moduleSlug);
   const hasSnippet = !!item.rec.fixSnippet;
 
   return (
     <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
       <div className="flex items-start gap-4 p-4">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: mc.light }}>
-          <span className="text-[13px] font-bold tabular-nums" style={{ color: mc.accent }}>
-            {index + 1}
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: light }}
+        >
+          <span
+            className="text-[13px] font-bold tabular-nums"
+            style={{ color: accent }}
+          >
+            {seq}
           </span>
         </div>
         <div className="flex-1 min-w-0 space-y-1.5">
@@ -843,17 +943,33 @@ function ActionItem({
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
               {item.moduleName.split(" ")[0]}
             </span>
-            <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">{item.rec.title}</span>
+            <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">
+              {item.rec.title}
+            </span>
           </div>
-          <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">{item.rec.description}</p>
+          <p className="text-[13px] text-muted-foreground leading-[1.55] tracking-[-0.005em]">
+            {item.rec.description}
+          </p>
           {hasSnippet && (
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-foreground/80 hover:text-foreground transition-colors"
-              style={{ color: expanded ? mc.accent : undefined }}
+              style={{ color: expanded ? accent : undefined }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={expanded ? "rotate-90 transition-transform" : "transition-transform"}>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={
+                  expanded ? "rotate-90 transition-transform" : "transition-transform"
+                }
+              >
                 <path d="M9 18l6-6-6-6" />
               </svg>
               {expanded ? "Hide" : "Show"} the exact fix
