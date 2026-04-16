@@ -2,11 +2,12 @@ import { ModuleResult, Recommendation } from "./types";
 
 export function calculateOverallScore(modules: ModuleResult[]): number {
   const weights: Record<string, number> = {
-    schema: 0.25,
-    meta: 0.15,
-    content: 0.25,
-    technical: 0.2,
-    authority: 0.15,
+    schema: 0.2,
+    meta: 0.1,
+    content: 0.2,
+    technical: 0.15,
+    authority: 0.1,
+    external: 0.25,
   };
 
   let totalWeight = 0;

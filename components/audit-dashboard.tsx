@@ -12,6 +12,7 @@ const MODULE_COLORS: Record<string, { accent: string; light: string; dark: strin
   content:   { accent: "#8b5cf6", light: "rgba(139,92,246,0.08)",  dark: "#7c3aed" },
   technical: { accent: "#f59e0b", light: "rgba(245,158,11,0.08)",  dark: "#d97706" },
   authority: { accent: "#10b981", light: "rgba(16,185,129,0.08)",  dark: "#059669" },
+  external:  { accent: "#ec4899", light: "rgba(236,72,153,0.08)",  dark: "#db2777" },
 };
 
 function moduleColor(slug: string) {
@@ -557,9 +558,18 @@ export function AuditDashboard({
           <div className="h-px bg-black/[0.04]" />
 
           <div className="space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ff9f0a]">What This Doesn{"'"}t Cover</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ec4899]">External Signals (We Check These Too)</div>
             <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
-              A complete GEO strategy also requires actual AI citation testing, domain authority analysis, brand mention monitoring, and content freshness tracking — factors beyond a page crawl.
+              We also check your brand against <strong>Wikipedia</strong>, <strong>Reddit</strong>, and (optionally) <strong>Google</strong> — the external sources AI models frequently cross-reference when generating answers.
+            </p>
+          </div>
+
+          <div className="h-px bg-black/[0.04]" />
+
+          <div className="space-y-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#ff9f0a]">What This Doesn{"'"}t Cover Yet</div>
+            <p className="text-[14px] text-muted-foreground leading-[1.6] tracking-[-0.005em]">
+              Direct AI citation testing (ChatGPT, Perplexity, Google AI Overviews), full backlink analysis, and comprehensive brand monitoring across news and podcasts — coming soon.
             </p>
           </div>
 

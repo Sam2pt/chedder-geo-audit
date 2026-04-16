@@ -5,6 +5,7 @@ import { analyzeMeta } from "@/lib/analyzers/meta";
 import { analyzeContent } from "@/lib/analyzers/content";
 import { analyzeTechnical } from "@/lib/analyzers/technical";
 import { analyzeAuthority } from "@/lib/analyzers/authority";
+import { analyzeExternal } from "@/lib/analyzers/external";
 import {
   calculateOverallScore,
   getGrade,
@@ -179,6 +180,10 @@ export async function POST(req: NextRequest) {
 
     // ── Analyze homepage ────────────────────────────────────────────
     const $home = cheerio.load(homePage.html);
+
+    // External signals (Wikipedia, Reddit, optional Google) — async
+    const externalPromise = analyzeExternal($home, parsedUrl.hostname);
+
     const homeModules = [
       analyzeSchema($home),
       analyzeMeta($home),
@@ -214,6 +219,11 @@ export async function POST(req: NextRequest) {
 
     // ── Merge results ───────────────────────────────────────────────
     const modules = mergeModules(allModuleSets);
+
+    // Wait for external signals and add as its own module
+    const externalResult = await externalPromise;
+    modules.push(externalResult);
+
     const overallScore = calculateOverallScore(modules);
 
     const result: AuditResult = {
