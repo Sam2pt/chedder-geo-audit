@@ -69,14 +69,43 @@ async function fetchWikiSummary(title: string) {
   return res.json();
 }
 
+// Reject candidate titles whose base (the part before any disambiguator
+// like " (company)") doesn't obviously correspond to the brand. Prevents
+// Wikipedia search fallbacks returning unrelated pages just because they
+// mention the brand name somewhere in the article body.
+function titleMatchesBrand(title: string, brand: string): boolean {
+  const brandLower = brand.toLowerCase().trim();
+  if (!brandLower) return false;
+  // Strip parenthetical disambiguator: "Foo (company)" → "foo"
+  const base = title
+    .toLowerCase()
+    .replace(/\s*\([^)]+\)\s*$/, "")
+    .trim();
+  if (base === brandLower) return true;
+  // Allow "Foo, Inc.", "Foo Corp", etc.
+  if (base.startsWith(brandLower + " ") || base.startsWith(brandLower + ",")) {
+    return true;
+  }
+  // Allow brand as last word too — e.g. "The Foo" → match "Foo" brands.
+  if (base.endsWith(" " + brandLower)) return true;
+  return false;
+}
+
 async function checkWikipedia(
   brand: string,
   domain: string
 ): Promise<WikipediaResult> {
   try {
-    // First try direct title lookup
+    // First try direct title lookup — accept only if the returned title
+    // still looks like it's about our brand (Wikipedia redirects liberally).
     const direct = await fetchWikiSummary(brand);
-    if (direct && direct.type !== "disambiguation" && direct.extract) {
+    if (
+      direct &&
+      direct.type !== "disambiguation" &&
+      direct.extract &&
+      direct.title &&
+      titleMatchesBrand(direct.title, brand)
+    ) {
       return {
         exists: true,
         title: direct.title,
@@ -90,7 +119,9 @@ async function checkWikipedia(
     if (
       companyAttempt &&
       companyAttempt.type !== "disambiguation" &&
-      companyAttempt.extract
+      companyAttempt.extract &&
+      companyAttempt.title &&
+      titleMatchesBrand(companyAttempt.title, brand)
     ) {
       return {
         exists: true,
@@ -116,6 +147,10 @@ async function checkWikipedia(
 
     if (candidates.length === 0) return { exists: false };
 
+    // HARD FILTER: drop candidates whose title doesn't look like our brand.
+    const relevant = candidates.filter((c) => titleMatchesBrand(c.title, brand));
+    if (relevant.length === 0) return { exists: false };
+
     // Score candidates: prefer ones where title starts with brand name
     // and snippet mentions the domain or typical company words
     const domainBase = domain.replace(/^www\./, "").split(".")[0].toLowerCase();
@@ -135,7 +170,7 @@ async function checkWikipedia(
     let bestMatch: { title: string; snippet: string } | null = null;
     let bestScore = -1;
 
-    for (const cand of candidates) {
+    for (const cand of relevant) {
       let score = 0;
       const titleLower = cand.title.toLowerCase();
       const snippet = cand.snippet.toLowerCase();
@@ -165,7 +200,9 @@ async function checkWikipedia(
     if (
       !summary ||
       !summary.extract ||
-      summary.type === "disambiguation"
+      summary.type === "disambiguation" ||
+      !summary.title ||
+      !titleMatchesBrand(summary.title, brand)
     ) {
       return { exists: false };
     }

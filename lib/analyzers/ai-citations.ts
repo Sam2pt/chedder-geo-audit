@@ -438,6 +438,57 @@ function generateQueries(
 
 /* ── Citation analysis ───────────────────────────────────────────── */
 
+// Phrases that mean the engine is refusing / saying it doesn't know the brand.
+// Matched case-insensitively anywhere in the response.
+const REFUSAL_PHRASES = [
+  "does not appear",
+  "doesn't appear",
+  "couldn't find",
+  "could not find",
+  "no direct information",
+  "no information about",
+  "don't have information",
+  "do not have information",
+  "don't have details",
+  "do not have details",
+  "no specific information",
+  "not in the provided",
+  "not in the search results",
+  "not mentioned in",
+  "unable to find",
+  "no matches for",
+  "no results for",
+  "i'm not aware of",
+  "i am not aware of",
+  "i'm not familiar with",
+  "i am not familiar with",
+  "no direct match",
+  "not found in",
+  "doesn't exist in",
+];
+
+function isRefusalAboutBrand(
+  content: string,
+  brandTokens: string[]
+): boolean {
+  const lower = content.toLowerCase();
+  // If any refusal phrase appears within 200 chars of a brand token, it's
+  // almost certainly the engine saying it doesn't know the brand.
+  for (const token of brandTokens) {
+    let idx = lower.indexOf(token);
+    while (idx !== -1) {
+      const windowStart = Math.max(0, idx - 200);
+      const windowEnd = Math.min(lower.length, idx + token.length + 200);
+      const slice = lower.slice(windowStart, windowEnd);
+      for (const phrase of REFUSAL_PHRASES) {
+        if (slice.includes(phrase)) return true;
+      }
+      idx = lower.indexOf(token, idx + 1);
+    }
+  }
+  return false;
+}
+
 function analyzeCitation(
   content: string,
   citations: string[],
@@ -454,10 +505,21 @@ function analyzeCitation(
   const lowerDomain = domain.toLowerCase();
   const domainBase = lowerDomain.replace(/^www\./, "").split(".")[0];
 
-  const mentioned =
+  const brandTokens = [lowerBrand, domainBase, lowerDomain].filter(
+    (t, i, a) => t && a.indexOf(t) === i
+  );
+
+  const substringHit =
     lowerContent.includes(lowerBrand) ||
     lowerContent.includes(domainBase) ||
     lowerContent.includes(lowerDomain);
+
+  // If the engine is refusing/disclaiming about this brand near every mention,
+  // treat it as absent regardless of substring presence. This avoids false
+  // positives like "Chedder does not appear in the results" being scored as
+  // a prominent mention just because the word "Chedder" is in the text.
+  const refused = substringHit && isRefusalAboutBrand(content, brandTokens);
+  const mentioned = substringHit && !refused;
 
   const cited = citations.some(
     (c) =>
@@ -468,6 +530,22 @@ function analyzeCitation(
   let position: "prominent" | "mentioned" | "absent" = "absent";
   let excerpt: string | null = null;
 
+  // Build an excerpt centred on the first brand mention whether or not we
+  // counted it as a real mention — it's useful context either way.
+  if (substringHit) {
+    const firstMentionIdx = Math.max(
+      lowerContent.indexOf(lowerBrand),
+      lowerContent.indexOf(domainBase)
+    );
+    if (firstMentionIdx >= 0) {
+      const start = Math.max(0, firstMentionIdx - 80);
+      const end = Math.min(content.length, firstMentionIdx + 200);
+      excerpt = content.slice(start, end).trim();
+      if (start > 0) excerpt = "..." + excerpt;
+      if (end < content.length) excerpt = excerpt + "...";
+    }
+  }
+
   if (mentioned) {
     const firstMentionIdx = Math.max(
       lowerContent.indexOf(lowerBrand),
@@ -477,12 +555,6 @@ function analyzeCitation(
       firstMentionIdx >= 0 && firstMentionIdx < content.length * 0.3
         ? "prominent"
         : "mentioned";
-
-    const start = Math.max(0, firstMentionIdx - 80);
-    const end = Math.min(content.length, firstMentionIdx + 200);
-    excerpt = content.slice(start, end).trim();
-    if (start > 0) excerpt = "..." + excerpt;
-    if (end < content.length) excerpt = excerpt + "...";
   }
 
   return { mentioned, cited, position, excerpt };
@@ -707,8 +779,15 @@ export async function analyzeAICitations(
       });
     } else {
       const recommended = pickTopCitedBrands(response.citations);
-      const detail =
-        recommended.length > 0
+      // If analyzeCitation returned an excerpt, the brand name appeared in
+      // the text but was refused (e.g. "X does not appear in results"). Use
+      // that excerpt so the user sees exactly how the engine disclaimed it.
+      const excerpt = analysis.excerpt
+        ? cleanExcerpt(analysis.excerpt)
+        : firstSnippet(response.content);
+      const detail = analysis.excerpt
+        ? `${engineLabel} did not recognize ${brand} in its answer.`
+        : recommended.length > 0
           ? `${brand} is not mentioned by ${engineLabel}. It recommended ${recommended.join(
               ", "
             )} instead.`
@@ -717,7 +796,7 @@ export async function analyzeAICitations(
         label: scenarioLabel,
         status: "fail",
         detail,
-        excerpt: firstSnippet(response.content),
+        excerpt,
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
       });
