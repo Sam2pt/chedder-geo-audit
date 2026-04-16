@@ -792,10 +792,10 @@ function WhereResults({ result }: { result: AuditResult }) {
           ) : (
             <>
               {showsUp.map((f, i) => (
-                <AIQueryItem key={i} scenario={f.label} detail={f.detail} status="strong" />
+                <AIQueryItem key={i} finding={f} status="strong" />
               ))}
               {showsUpButWeak.map((f, i) => (
-                <AIQueryItem key={`w-${i}`} scenario={f.label} detail={f.detail} status="weak" />
+                <AIQueryItem key={`w-${i}`} finding={f} status="weak" />
               ))}
               {wikiFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
@@ -841,7 +841,7 @@ function WhereResults({ result }: { result: AuditResult }) {
           ) : (
             <>
               {invisible.map((f, i) => (
-                <AIQueryItem key={i} scenario={f.label} detail={f.detail} status="missing" />
+                <AIQueryItem key={i} finding={f} status="missing" />
               ))}
               {wikiFinding?.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
@@ -874,18 +874,17 @@ function WhereResults({ result }: { result: AuditResult }) {
 }
 
 function AIQueryItem({
-  scenario,
-  detail,
+  finding,
   status,
 }: {
-  scenario: string;
-  detail: string;
+  finding: Finding;
   status: "strong" | "weak" | "missing";
 }) {
+  const [open, setOpen] = useState(false);
   const colors = {
-    strong: { bg: "bg-[#34c759]/20", text: "text-[#248a3d]" },
-    weak: { bg: "bg-[#ff9f0a]/20", text: "text-[#c77c02]" },
-    missing: { bg: "bg-[#ff453a]/20", text: "text-[#d70015]" },
+    strong: { bg: "bg-[#34c759]/20", text: "text-[#248a3d]", quoteAccent: "#34c759" },
+    weak: { bg: "bg-[#ff9f0a]/20", text: "text-[#c77c02]", quoteAccent: "#ff9f0a" },
+    missing: { bg: "bg-[#ff453a]/20", text: "text-[#d70015]", quoteAccent: "#ff453a" },
   };
   const icons = {
     strong: <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>,
@@ -893,19 +892,84 @@ function AIQueryItem({
     missing: <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>,
   };
   const c = colors[status];
+  const hasExcerpt = !!finding.excerpt;
 
   return (
-    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-      <div className={`w-[16px] h-[16px] rounded-full ${c.bg} flex items-center justify-center shrink-0 mt-0.5`}>
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className={c.text}>
-          {icons[status]}
-        </svg>
-      </div>
-      <div className="text-[13px] leading-snug min-w-0 flex-1">
-        <div className="font-semibold text-foreground">{scenario}</div>
-        <div className="text-[12px] text-muted-foreground mt-0.5 leading-[1.5]">{detail}</div>
-      </div>
+    <div className="rounded-xl bg-white/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => hasExcerpt && setOpen(!open)}
+        className={`w-full flex items-start gap-2.5 p-3 text-left ${hasExcerpt ? "hover:bg-white/80 transition-colors" : "cursor-default"}`}
+      >
+        <div className={`w-[16px] h-[16px] rounded-full ${c.bg} flex items-center justify-center shrink-0 mt-0.5`}>
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className={c.text}>
+            {icons[status]}
+          </svg>
+        </div>
+        <div className="text-[13px] leading-snug min-w-0 flex-1">
+          <div className="font-semibold text-foreground">{finding.label}</div>
+          <div className="text-[12px] text-muted-foreground mt-0.5 leading-[1.5]">{finding.detail}</div>
+          {hasExcerpt && !open && (
+            <div className="text-[11px] text-muted-foreground/70 mt-1.5 flex items-center gap-1 font-medium">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9l-7 7-7-7"/></svg>
+              See what AI said
+            </div>
+          )}
+        </div>
+      </button>
+
+      {hasExcerpt && open && (
+        <div className="px-3 pb-3">
+          <div className="rounded-lg bg-white p-3 border-l-[3px] relative" style={{ borderLeftColor: c.quoteAccent }}>
+            <div className="absolute top-2 right-2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill={c.quoteAccent} fillOpacity="0.2">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+              </svg>
+            </div>
+            <p className="text-[12.5px] text-foreground/80 leading-[1.65] italic pr-5">
+              <HighlightedText text={finding.excerpt!} highlight={finding.highlight} />
+            </p>
+            {finding.sourceUrl && (
+              <div className="mt-2 pt-2 border-t border-black/[0.04] flex items-center gap-1.5">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground/60">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <a
+                  href={finding.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-muted-foreground/70 hover:text-foreground truncate transition-colors"
+                >
+                  {finding.sourceUrl.replace(/^https?:\/\//, "").slice(0, 60)}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+/**
+ * Render text with case-insensitive highlighting of a substring.
+ */
+function HighlightedText({ text, highlight }: { text: string; highlight?: string }) {
+  if (!highlight) return <>{text}</>;
+  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <strong key={i} className="font-bold text-foreground not-italic bg-foreground/[0.06] px-0.5 rounded-sm">{part}</strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
   );
 }
 

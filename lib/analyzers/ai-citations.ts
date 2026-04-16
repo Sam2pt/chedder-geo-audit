@@ -383,6 +383,51 @@ export async function analyzeAICitations(
     return brands;
   };
 
+  // Helper: produce a clean snippet from the AI response for the "not mentioned" case.
+  // We want to show what AI ACTUALLY said instead so users see the competitive reality.
+  const firstSnippet = (content: string, maxLen = 260): string => {
+    const cleaned = content
+      .replace(/\[\d+\]/g, "") // strip [1] citation markers
+      .replace(/^#+\s*/gm, "") // strip markdown headings
+      .replace(/\*\*/g, "") // strip bold markers
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleaned.length <= maxLen) return cleaned;
+    // Prefer to cut at sentence boundary
+    const sliced = cleaned.slice(0, maxLen);
+    const lastStop = Math.max(
+      sliced.lastIndexOf(". "),
+      sliced.lastIndexOf("! "),
+      sliced.lastIndexOf("? ")
+    );
+    if (lastStop > maxLen * 0.5) return sliced.slice(0, lastStop + 1);
+    return sliced.trimEnd() + "...";
+  };
+
+  // Clean an already-extracted excerpt (used for prominent/mentioned cases)
+  const cleanExcerpt = (raw: string | null): string | undefined => {
+    if (!raw) return undefined;
+    const cleaned = raw
+      .replace(/\[\d+\]/g, "")
+      .replace(/\*\*/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return cleaned || undefined;
+  };
+
+  // Pick the first citation URL from the response (Perplexity source link)
+  const firstCitation = (citations: string[]): string | undefined => {
+    for (const url of citations) {
+      try {
+        new URL(url); // validate
+        return url;
+      } catch {
+        // skip
+      }
+    }
+    return undefined;
+  };
+
   for (const { spec, response } of responses) {
     if (!response) {
       findings.push({
@@ -407,6 +452,9 @@ export async function analyzeAICitations(
         label: spec.scenario,
         status: "pass",
         detail: `${brand} is mentioned prominently in the answer.`,
+        excerpt: cleanExcerpt(analysis.excerpt),
+        highlight: brand,
+        sourceUrl: firstCitation(response.citations),
       });
     } else if (analysis.position === "mentioned") {
       mentionCount++;
@@ -414,6 +462,9 @@ export async function analyzeAICitations(
         label: spec.scenario,
         status: "warn",
         detail: `${brand} is mentioned, but not among the top recommendations.`,
+        excerpt: cleanExcerpt(analysis.excerpt),
+        highlight: brand,
+        sourceUrl: firstCitation(response.citations),
       });
     } else {
       const recommended = pickTopCitedBrands(response.citations);
@@ -425,6 +476,9 @@ export async function analyzeAICitations(
         label: spec.scenario,
         status: "fail",
         detail,
+        excerpt: firstSnippet(response.content),
+        highlight: brand,
+        sourceUrl: firstCitation(response.citations),
       });
     }
 

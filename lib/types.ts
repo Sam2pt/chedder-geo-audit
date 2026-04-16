@@ -2,6 +2,12 @@ export interface Finding {
   label: string;
   status: "pass" | "warn" | "fail";
   detail: string;
+  /** Optional quoted excerpt (e.g., from an AI response). Rendered as a highlighted quote in the UI. */
+  excerpt?: string;
+  /** Optional brand name to highlight (bold) within the excerpt. */
+  highlight?: string;
+  /** Optional citation URL shown under the excerpt (e.g., Perplexity source). */
+  sourceUrl?: string;
 }
 
 export interface Recommendation {
