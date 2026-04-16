@@ -106,7 +106,7 @@ function configuredEngines(): Engine[] {
       name: "brave",
       label: "Brave",
       ask: (q) => askBrave(q, brv),
-      // Free-tier Brave Search is 1 req/sec
+      // Brave Answers plan caps at 2 req/sec — serialize to stay safely under.
       sequential: true,
     });
   }
@@ -264,37 +264,19 @@ async function askOpenAI(
   }
 }
 
-/* ── Brave (web search + optional summarizer) ────────────────────── */
+/* ── Brave Answers (OpenAI-compatible chat completions) ──────────── */
 
-interface BraveWebResult {
-  url?: string;
-  title?: string;
-  description?: string;
-}
+// Brave's Answers plan exposes an OpenAI-compatible endpoint at
+//   POST https://api.search.brave.com/res/v1/chat/completions
+// The model runs web search under the hood and returns a grounded answer.
+// It does NOT return explicit citation URLs in the response, so we only
+// measure mention/prominence — `cited` will always be false for Brave.
 
-interface BraveSearchResponse {
-  web?: { results?: BraveWebResult[] };
-  summarizer?: { key?: string };
-}
-
-interface BraveSummarizerChunk {
-  type?: string;
-  data?:
-    | string
-    | {
-        title?: string;
-        url?: string;
-        [k: string]: unknown;
-      };
-}
-
-interface BraveSummarizerResponse {
-  status?: string;
-  summary?: BraveSummarizerChunk[];
-  enrichments?: {
-    raw?: string;
-    summary?: Array<{ text?: string }>;
-  };
+interface BraveChatResponse {
+  choices?: Array<{
+    message?: { role: string; content: string };
+    finish_reason?: string;
+  }>;
 }
 
 async function askBrave(
@@ -302,74 +284,38 @@ async function askBrave(
   apiKey: string
 ): Promise<EngineResponse | null> {
   try {
-    const searchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
-      query
-    )}&summary=1&count=10`;
-    const searchRes = await fetch(searchUrl, {
-      headers: {
-        "X-Subscription-Token": apiKey,
-        Accept: "application/json",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
+    const res = await fetch(
+      "https://api.search.brave.com/res/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "brave-pro",
+          stream: false,
+          messages: [{ role: "user", content: query }],
+        }),
+        signal: AbortSignal.timeout(30000),
+      }
+    );
 
-    if (!searchRes.ok) {
+    if (!res.ok) {
       console.error(
-        `Brave Search API error: ${searchRes.status} ${await searchRes
+        `Brave Answers API error: ${res.status} ${await res
           .text()
           .catch(() => "")}`
       );
       return null;
     }
 
-    const searchData: BraveSearchResponse = await searchRes.json();
-    const webResults = searchData.web?.results || [];
+    const data: BraveChatResponse = await res.json();
+    const content = data.choices?.[0]?.message?.content?.trim() || "";
+    if (!content) return null;
 
-    // All citations = top-10 organic URLs (always present)
-    const citations: string[] = [];
-    for (const r of webResults.slice(0, 10)) {
-      if (r.url) citations.push(r.url);
-    }
-
-    // Try the summarizer if Brave offered a key for this query
-    const summaryKey = searchData.summarizer?.key;
-    if (summaryKey) {
-      try {
-        const sumUrl = `https://api.search.brave.com/res/v1/summarizer/search?key=${encodeURIComponent(
-          summaryKey
-        )}&entity_info=1`;
-        const sumRes = await fetch(sumUrl, {
-          headers: {
-            "X-Subscription-Token": apiKey,
-            Accept: "application/json",
-          },
-          signal: AbortSignal.timeout(20000),
-        });
-        if (sumRes.ok) {
-          const sumData: BraveSummarizerResponse = await sumRes.json();
-          const parts: string[] = [];
-          if (Array.isArray(sumData.summary)) {
-            for (const chunk of sumData.summary) {
-              if (typeof chunk.data === "string") parts.push(chunk.data);
-            }
-          }
-          const content = parts.join(" ").trim();
-          if (content) return { content, citations };
-        }
-      } catch (e) {
-        console.error("Brave summarizer request failed:", e);
-      }
-    }
-
-    // Fallback: concat top-3 snippets as "content". No AI summary for this query.
-    const snippets = webResults
-      .slice(0, 3)
-      .map((r) => r.description)
-      .filter((d): d is string => typeof d === "string" && d.length > 0)
-      .join(" ");
-
-    if (!snippets && citations.length === 0) return null;
-    return { content: snippets, citations };
+    // Brave Answers doesn't expose per-response citation URLs today.
+    return { content, citations: [] };
   } catch (e) {
     console.error("Brave request failed:", e);
     return null;
@@ -607,16 +553,17 @@ export async function analyzeAICitations(
   );
   const queries = allQueries.slice(0, perEngine);
 
-  // Fan out across engines. Engines marked `sequential` (Brave free tier)
-  // run their queries one at a time with a small delay to respect rate limits.
+  // Fan out across engines. Engines marked `sequential` (Brave Answers at
+  // 2 req/sec) run their queries one at a time with a small delay to stay
+  // under the rate limit.
   const runEngine = async (engine: Engine): Promise<TaggedResponse[]> => {
     const out: TaggedResponse[] = [];
     if (engine.sequential) {
       for (const q of queries) {
         const response = await engine.ask(q.query);
         out.push({ engine: engine.name, spec: q, response });
-        // Respect 1 req/sec on Brave free tier
-        await new Promise((r) => setTimeout(r, 1100));
+        // 600ms keeps us safely under 2 req/sec.
+        await new Promise((r) => setTimeout(r, 600));
       }
       return out;
     }
