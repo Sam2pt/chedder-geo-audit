@@ -602,10 +602,10 @@ function WhereResults({ result }: { result: AuditResult }) {
           ) : (
             <>
               {showsUp.map((f, i) => (
-                <AIQueryItem key={i} query={f.label} detail="Mentioned prominently in Perplexity's answer" status="strong" />
+                <AIQueryItem key={i} scenario={f.label} detail={f.detail} status="strong" />
               ))}
               {showsUpButWeak.map((f, i) => (
-                <AIQueryItem key={`w-${i}`} query={f.label} detail="Mentioned, but not prominently" status="weak" />
+                <AIQueryItem key={`w-${i}`} scenario={f.label} detail={f.detail} status="weak" />
               ))}
               {wikiFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
@@ -651,7 +651,7 @@ function WhereResults({ result }: { result: AuditResult }) {
           ) : (
             <>
               {invisible.map((f, i) => (
-                <AIQueryItem key={i} query={f.label} detail="Not mentioned in Perplexity's answer" status="missing" />
+                <AIQueryItem key={i} scenario={f.label} detail={f.detail} status="missing" />
               ))}
               {wikiFinding?.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
@@ -684,11 +684,11 @@ function WhereResults({ result }: { result: AuditResult }) {
 }
 
 function AIQueryItem({
-  query,
+  scenario,
   detail,
   status,
 }: {
-  query: string;
+  scenario: string;
   detail: string;
   status: "strong" | "weak" | "missing";
 }) {
@@ -704,9 +704,6 @@ function AIQueryItem({
   };
   const c = colors[status];
 
-  // Truncate the query to a readable length
-  const cleanQuery = query.replace(/\.\.\.$/, "").slice(0, 90);
-
   return (
     <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
       <div className={`w-[16px] h-[16px] rounded-full ${c.bg} flex items-center justify-center shrink-0 mt-0.5`}>
@@ -714,9 +711,9 @@ function AIQueryItem({
           {icons[status]}
         </svg>
       </div>
-      <div className="text-[13px] leading-snug min-w-0">
-        <div className="font-medium text-foreground truncate" title={cleanQuery}>&ldquo;{cleanQuery}{cleanQuery.length >= 90 ? "..." : ""}&rdquo;</div>
-        <div className="text-[12px] text-muted-foreground mt-0.5">{detail}</div>
+      <div className="text-[13px] leading-snug min-w-0 flex-1">
+        <div className="font-semibold text-foreground">{scenario}</div>
+        <div className="text-[12px] text-muted-foreground mt-0.5 leading-[1.5]">{detail}</div>
       </div>
     </div>
   );

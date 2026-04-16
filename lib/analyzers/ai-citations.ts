@@ -66,7 +66,7 @@ function rootDomain(host: string): string {
 
 function extractCompetitorsFromResponses(
   responses: Array<{
-    query: string;
+    spec: { scenario: string; query: string };
     response: { content: string; citations: string[] } | null;
   }>,
   ownDomain: string
@@ -77,7 +77,7 @@ function extractCompetitorsFromResponses(
     { domain: string; mentions: number; queries: Set<string> }
   >();
 
-  for (const { query, response } of responses) {
+  for (const { spec, response } of responses) {
     if (!response) continue;
 
     for (const url of response.citations) {
@@ -86,17 +86,9 @@ function extractCompetitorsFromResponses(
         const host = u.hostname.replace(/^www\./, "").toLowerCase();
         const root = rootDomain(host);
 
-        // Skip excluded domains (check both root and full hostname)
         if (NON_COMPETITOR_DOMAINS.has(root)) continue;
         if (NON_COMPETITOR_DOMAINS.has(host)) continue;
-
-        // Skip the user's own domain
         if (root === ownRoot) continue;
-
-        // Skip obvious non-brand domains (ccTLDs for country sites, etc.)
-        if (/^(www|blog|docs|help|support|api)\./.test(host)) {
-          // use root domain instead
-        }
 
         const key = root;
         if (!counts.has(key)) {
@@ -107,7 +99,7 @@ function extractCompetitorsFromResponses(
           });
         }
         const entry = counts.get(key)!;
-        entry.queries.add(query);
+        entry.queries.add(spec.scenario);
       } catch {
         // invalid URL
       }
@@ -178,50 +170,67 @@ async function askPerplexity(
   }
 }
 
+interface QuerySpec {
+  /** User-facing description shown in the UI */
+  scenario: string;
+  /** The actual prompt sent to Perplexity */
+  query: string;
+}
+
 /**
  * Generate category-relevant queries based on domain & brand.
- * These are designed to test whether AI would recommend this brand.
+ * Each query has a user-friendly "scenario" description for the UI
+ * and the actual prompt sent to Perplexity.
  */
 function generateQueries(
   brand: string,
   domain: string,
   category: string | null
-): string[] {
-  const queries: string[] = [];
+): QuerySpec[] {
+  const queries: QuerySpec[] = [];
 
-  // Query 1: Direct brand query (tests if AI knows about them)
-  queries.push(
-    `Tell me about ${brand} (${domain}). What do they do and what are they known for?`
-  );
+  // 1: Direct brand query (does AI know about them)
+  queries.push({
+    scenario: `When someone asks AI about ${brand}`,
+    query: `Tell me about ${brand} (${domain}). What do they do and what are they known for?`,
+  });
 
-  // Query 2: Category "best" query (tests if they surface organically)
+  // 2: Category "best" query (do they surface organically)
   if (category) {
-    queries.push(`What are the best ${category} available right now?`);
+    queries.push({
+      scenario: `When someone asks for the best ${category}`,
+      query: `What are the best ${category} available right now?`,
+    });
   } else {
-    queries.push(
-      `What are the top companies similar to ${brand}? Who are they and what do they offer?`
-    );
+    queries.push({
+      scenario: `When someone asks about companies similar to ${brand}`,
+      query: `What are the top companies similar to ${brand}? Who are they and what do they offer?`,
+    });
   }
 
-  // Query 3: Alternatives query (tests competitive positioning)
-  queries.push(
-    `What are the best alternatives to ${brand}? List the top options with pros and cons.`
-  );
+  // 3: Alternatives query (competitive positioning)
+  queries.push({
+    scenario: `When someone asks for alternatives to ${brand}`,
+    query: `What are the best alternatives to ${brand}? List the top options with pros and cons.`,
+  });
 
-  // Query 4: Trust/review query
-  queries.push(
-    `Is ${brand} a trusted and well-reviewed company? What do customers say about them?`
-  );
+  // 4: Trust/review query
+  queries.push({
+    scenario: `When someone asks if ${brand} is trustworthy`,
+    query: `Is ${brand} a trusted and well-reviewed company? What do customers say about them?`,
+  });
 
-  // Query 5: Specific category leadership
+  // 5: Specific category leadership
   if (category) {
-    queries.push(
-      `Which companies lead the ${category} market and why are they recommended?`
-    );
+    queries.push({
+      scenario: `When someone asks which companies lead the ${category} market`,
+      query: `Which companies lead the ${category} market and why are they recommended?`,
+    });
   } else {
-    queries.push(
-      `What makes ${brand} stand out from competitors? Should it be recommended?`
-    );
+    queries.push({
+      scenario: `When someone asks what makes ${brand} stand out`,
+      query: `What makes ${brand} stand out from competitors? Should it be recommended?`,
+    });
   }
 
   return queries;
@@ -340,8 +349,8 @@ export async function analyzeAICitations(
   // Run queries in parallel
   const responses = await Promise.all(
     queries.map(async (q) => {
-      const r = await askPerplexity(q, apiKey);
-      return { query: q, response: r };
+      const r = await askPerplexity(q.query, apiKey);
+      return { spec: q, response: r };
     })
   );
 
@@ -356,12 +365,30 @@ export async function analyzeAICitations(
   let prominentCount = 0;
   let citedCount = 0;
 
-  for (const { query, response } of responses) {
+  // Helper: extract recommended brand domains from a response (for "don't show up" context)
+  const pickTopCitedBrands = (citations: string[]): string[] => {
+    const brands: string[] = [];
+    for (const url of citations) {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+        const root = rootDomain(host);
+        if (NON_COMPETITOR_DOMAINS.has(root) || NON_COMPETITOR_DOMAINS.has(host)) continue;
+        if (root === rootDomain(domain.replace(/^www\./, ""))) continue;
+        if (!brands.includes(root)) brands.push(root);
+        if (brands.length >= 3) break;
+      } catch {
+        // skip
+      }
+    }
+    return brands;
+  };
+
+  for (const { spec, response } of responses) {
     if (!response) {
       findings.push({
-        label: "Query Failed",
+        label: spec.scenario,
         status: "warn",
-        detail: `"${query.slice(0, 60)}...". API error`,
+        detail: "AI query failed. We will retry next audit.",
       });
       continue;
     }
@@ -377,22 +404,27 @@ export async function analyzeAICitations(
       prominentCount++;
       mentionCount++;
       findings.push({
-        label: query.slice(0, 80) + (query.length > 80 ? "..." : ""),
+        label: spec.scenario,
         status: "pass",
-        detail: `✨ Prominently mentioned. Excerpt: "${analysis.excerpt?.slice(0, 180)}..."`,
+        detail: `${brand} is mentioned prominently in the answer.`,
       });
     } else if (analysis.position === "mentioned") {
       mentionCount++;
       findings.push({
-        label: query.slice(0, 80) + (query.length > 80 ? "..." : ""),
+        label: spec.scenario,
         status: "warn",
-        detail: `Mentioned but not prominently. Excerpt: "${analysis.excerpt?.slice(0, 180)}..."`,
+        detail: `${brand} is mentioned, but not among the top recommendations.`,
       });
     } else {
+      const recommended = pickTopCitedBrands(response.citations);
+      const detail =
+        recommended.length > 0
+          ? `${brand} is not mentioned. AI recommended ${recommended.join(", ")} instead.`
+          : `${brand} is not mentioned in the answer.`;
       findings.push({
-        label: query.slice(0, 80) + (query.length > 80 ? "..." : ""),
+        label: spec.scenario,
         status: "fail",
-        detail: `Not mentioned in Perplexity's response. First citations: ${response.citations.slice(0, 3).join(", ") || "(none)"}`,
+        detail,
       });
     }
 
