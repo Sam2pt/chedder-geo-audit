@@ -150,8 +150,8 @@ function ModuleCard({ module }: { module: ModuleResult }) {
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-2 h-8 rounded-full shrink-0" style={{ background: mc.accent }} />
           <div className="min-w-0">
-            <div className="text-[15px] font-semibold text-foreground tracking-[-0.01em] truncate">{module.name}</div>
-            <div className="text-[13px] text-muted-foreground truncate leading-snug">{module.description}</div>
+            <div className="text-[15px] font-semibold text-foreground tracking-[-0.01em] leading-snug">{module.name}</div>
+            <div className="text-[13px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{module.description}</div>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -1172,13 +1172,13 @@ function CompetitorComparison({
                     const isLeader = s.score === maxScore;
                     return (
                       <div key={s.domain} className="flex items-center gap-2">
-                        <span className={`text-[12px] w-[140px] truncate ${isPrimary ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                        <span className={`text-[12px] w-[110px] sm:w-[140px] truncate shrink-0 ${isPrimary ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                           {s.domain}
                         </span>
-                        <div className="flex-1 h-[4px] rounded-full bg-foreground/[0.04] overflow-hidden">
+                        <div className="flex-1 h-[4px] rounded-full bg-foreground/[0.04] overflow-hidden min-w-0">
                           <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.score}%`, background: mc.accent, opacity: isPrimary ? 1 : 0.5 }} />
                         </div>
-                        <span className={`text-[12px] font-semibold tabular-nums w-7 text-right ${isLeader ? "text-foreground" : "text-muted-foreground"}`} style={{ color: isLeader ? mc.accent : undefined }}>
+                        <span className={`text-[12px] font-semibold tabular-nums w-7 text-right shrink-0 ${isLeader ? "text-foreground" : "text-muted-foreground"}`} style={{ color: isLeader ? mc.accent : undefined }}>
                           {s.score}
                         </span>
                       </div>
@@ -1206,7 +1206,7 @@ export function AuditDashboard({
   const c = scoreColor(result.overallScore);
 
   return (
-    <div className="flex-1 max-w-[680px] mx-auto w-full px-6 py-8 space-y-12">
+    <div className="flex-1 max-w-[680px] mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 pb-28 sm:pb-12 space-y-10 sm:space-y-12">
       {/* Nav */}
       <nav className="flex items-center justify-between">
         <button
@@ -1337,15 +1337,15 @@ function MetaInfo({ result }: { result: AuditResult }) {
     <section>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors border-t border-black/[0.04]"
+        className="w-full flex items-center justify-between gap-3 py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors border-t border-black/[0.04]"
       >
-        <span className="flex items-center gap-3">
+        <span className="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-left min-w-0">
           <span className="font-medium">Audit details &amp; methodology</span>
-          <span className="text-muted-foreground/50">
+          <span className="text-[12px] text-muted-foreground/50">
             {result.pagesAudited?.length || 1} page{(result.pagesAudited?.length || 1) > 1 ? "s" : ""} &middot; {new Date(result.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </span>
-        <svg className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
