@@ -169,7 +169,7 @@ async function auditSingleUrl(
   const externalPromise = analyzeExternal($home, parsedUrl.hostname);
 
   // AI citation testing runs in parallel (skipped for competitors to save cost)
-  let aiCitationsPromise: Promise<ModuleResult | null> | null = null;
+  let aiCitationsPromise: ReturnType<typeof analyzeAICitations> | null = null;
   if (!options.skipAI) {
     const brand = extractBrandName($home, parsedUrl.hostname);
     const metaDescription =
@@ -213,10 +213,14 @@ async function auditSingleUrl(
   const externalResult = await externalPromise;
   modules.push(externalResult);
 
+  let aiCompetitors: import("@/lib/types").AICompetitor[] | undefined;
   if (aiCitationsPromise) {
     const aiCitationsResult = await aiCitationsPromise;
     if (aiCitationsResult) {
-      modules.push(aiCitationsResult);
+      modules.push(aiCitationsResult.module);
+      if (aiCitationsResult.competitors.length > 0) {
+        aiCompetitors = aiCitationsResult.competitors;
+      }
     }
   }
 
@@ -231,6 +235,7 @@ async function auditSingleUrl(
     topRecommendations: getTopRecommendations(modules),
     pagesAudited,
     timestamp: new Date().toISOString(),
+    aiCompetitors,
   };
 }
 

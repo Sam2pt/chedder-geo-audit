@@ -557,6 +557,212 @@ function ExecutiveSummary({ result }: { result: AuditResult }) {
   );
 }
 
+/* ── Where You Show Up / Where You Don't ─────────────────────────── */
+
+function WhereResults({ result }: { result: AuditResult }) {
+  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
+
+  // Parse AI findings into show-up vs don't-show-up lists
+  const aiFindings = aiModule?.findings.filter(
+    (f) => !f.label.toLowerCase().includes("spend") && !f.label.toLowerCase().includes("query failed")
+  ) || [];
+
+  const showsUp = aiFindings.filter((f) => f.status === "pass");
+  const showsUpButWeak = aiFindings.filter((f) => f.status === "warn");
+  const invisible = aiFindings.filter((f) => f.status === "fail");
+
+  // Other strong signals (external, high-scoring modules)
+  const externalModule = result.modules.find((m) => m.slug === "external");
+  const wikiFinding = externalModule?.findings.find((f) =>
+    f.label.toLowerCase().includes("wikipedia")
+  );
+  const redditFinding = externalModule?.findings.find((f) =>
+    f.label.toLowerCase().includes("reddit")
+  );
+
+  const hasAnyData = aiFindings.length > 0 || wikiFinding || redditFinding;
+  if (!hasAnyData) return null;
+
+  return (
+    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Where you show up (GREEN) */}
+      <div className="p-5 rounded-2xl bg-[#34c759]/[0.04] border border-[#34c759]/[0.15] space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-[#34c759]/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#248a3d]">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </div>
+          <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">Where you show up</h3>
+        </div>
+
+        <div className="space-y-2">
+          {showsUp.length === 0 && showsUpButWeak.length === 0 && !wikiFinding?.status.includes("pass") ? (
+            <p className="text-[13px] text-muted-foreground italic">Nothing significant. This is a problem.</p>
+          ) : (
+            <>
+              {showsUp.map((f, i) => (
+                <AIQueryItem key={i} query={f.label} detail="Mentioned prominently in Perplexity's answer" status="strong" />
+              ))}
+              {showsUpButWeak.map((f, i) => (
+                <AIQueryItem key={`w-${i}`} query={f.label} detail="Mentioned, but not prominently" status="weak" />
+              ))}
+              {wikiFinding?.status === "pass" && (
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div className="text-[13px] leading-snug">
+                    <span className="font-semibold">Wikipedia</span>
+                    <span className="text-muted-foreground">: {wikiFinding.detail.replace(/^Found: /, "").slice(0, 120)}...</span>
+                  </div>
+                </div>
+              )}
+              {redditFinding?.status === "pass" && (
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div className="text-[13px] leading-snug">
+                    <span className="font-semibold">Reddit</span>
+                    <span className="text-muted-foreground">: {redditFinding.detail}</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Where you don't (RED) */}
+      <div className="p-5 rounded-2xl bg-[#ff453a]/[0.04] border border-[#ff453a]/[0.15] space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-[#ff453a]/15 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[#d70015]">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </div>
+          <h3 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">Where you don&apos;t</h3>
+        </div>
+
+        <div className="space-y-2">
+          {invisible.length === 0 && (!wikiFinding || wikiFinding.status === "pass") && (!redditFinding || redditFinding.status !== "fail") ? (
+            <p className="text-[13px] text-muted-foreground italic">Nothing critical here. Nice work.</p>
+          ) : (
+            <>
+              {invisible.map((f, i) => (
+                <AIQueryItem key={i} query={f.label} detail="Not mentioned in Perplexity's answer" status="missing" />
+              ))}
+              {wikiFinding?.status !== "pass" && (
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#ff453a]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                  </div>
+                  <div className="text-[13px] leading-snug">
+                    <span className="font-semibold">Wikipedia</span>
+                    <span className="text-muted-foreground">: No article found for this brand</span>
+                  </div>
+                </div>
+              )}
+              {redditFinding?.status === "fail" && (
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#ff453a]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                  </div>
+                  <div className="text-[13px] leading-snug">
+                    <span className="font-semibold">Reddit</span>
+                    <span className="text-muted-foreground">: No organic discussions found</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AIQueryItem({
+  query,
+  detail,
+  status,
+}: {
+  query: string;
+  detail: string;
+  status: "strong" | "weak" | "missing";
+}) {
+  const colors = {
+    strong: { bg: "bg-[#34c759]/20", text: "text-[#248a3d]" },
+    weak: { bg: "bg-[#ff9f0a]/20", text: "text-[#c77c02]" },
+    missing: { bg: "bg-[#ff453a]/20", text: "text-[#d70015]" },
+  };
+  const icons = {
+    strong: <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>,
+    weak: <circle cx="12" cy="12" r="4" fill="currentColor"/>,
+    missing: <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>,
+  };
+  const c = colors[status];
+
+  // Truncate the query to a readable length
+  const cleanQuery = query.replace(/\.\.\.$/, "").slice(0, 90);
+
+  return (
+    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
+      <div className={`w-[16px] h-[16px] rounded-full ${c.bg} flex items-center justify-center shrink-0 mt-0.5`}>
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className={c.text}>
+          {icons[status]}
+        </svg>
+      </div>
+      <div className="text-[13px] leading-snug min-w-0">
+        <div className="font-medium text-foreground truncate" title={cleanQuery}>&ldquo;{cleanQuery}{cleanQuery.length >= 90 ? "..." : ""}&rdquo;</div>
+        <div className="text-[12px] text-muted-foreground mt-0.5">{detail}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── AI Competitors ──────────────────────────────────────────────── */
+
+function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitors"] }) {
+  if (!competitors || competitors.length === 0) return null;
+
+  return (
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#ec4899] flex items-center justify-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Who AI thinks your competitors are</h3>
+          <p className="text-[13px] text-muted-foreground mt-0.5 leading-[1.5]">
+            Brands Perplexity cited when answering questions about your space
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {competitors.map((c, i) => (
+          <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
+            <div className="w-7 h-7 rounded-lg bg-foreground/[0.06] flex items-center justify-center shrink-0">
+              <span className="text-[12px] font-bold text-muted-foreground tabular-nums">{i + 1}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-semibold text-foreground truncate">{c.domain}</div>
+              <div className="text-[11px] text-muted-foreground">
+                Cited in {c.mentions} {c.mentions === 1 ? "query" : "queries"}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ── Action Plan (split recommendations) ─────────────────────────── */
 
 function ActionPlan({ result }: { result: AuditResult }) {
@@ -833,39 +1039,25 @@ export function AuditDashboard({
       {/* Executive Summary (now includes gauge, domain, grade) */}
       <ExecutiveSummary result={result} />
 
-      {/* Competitor Comparison */}
+      {/* Where you show up / Where you don't */}
+      <WhereResults result={result} />
+
+      {/* AI Competitors (who AI thinks you compete with) */}
+      <AICompetitors competitors={result.aiCompetitors} />
+
+      {/* Competitor Comparison (user-added competitors) */}
       {result.competitors && result.competitors.length > 0 && (
         <CompetitorComparison primary={result} competitors={result.competitors} />
-      )}
-
-      {/* Score Breakdown - only show when no competitors (otherwise it's redundant) */}
-      {(!result.competitors || result.competitors.length === 0) && (
-        <section className="space-y-4">
-          <h2 className="text-[20px] font-semibold tracking-[-0.02em]">Score Breakdown</h2>
-          <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
-            {result.modules.map((m) => {
-              const mc = moduleColor(m.slug);
-              return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
-            })}
-          </div>
-        </section>
       )}
 
       {/* Action Plan */}
       <ActionPlan result={result} />
 
-      {/* Detailed Analysis */}
-      <section className="space-y-4">
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em]">Detailed Analysis</h2>
-        <div className="space-y-3">
-          {result.modules.map((m) => (
-            <ModuleCard key={m.slug} module={m} />
-          ))}
-        </div>
-      </section>
-
       {/* Combined Take Action (PDF + Agency CTA) */}
       <TakeAction result={result} />
+
+      {/* Technical Deep Dive (collapsed) */}
+      <TechnicalDeepDive result={result} />
 
       {/* Compact meta info (pages audited + methodology) */}
       <MetaInfo result={result} />
@@ -895,6 +1087,68 @@ function TakeAction({ result }: { result: AuditResult }) {
     <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <DownloadGate result={result} />
       <ContactCTA website={result.domain} score={result.overallScore} />
+    </section>
+  );
+}
+
+/* ── Technical Deep Dive (collapsed detailed analysis) ───────────── */
+
+function TechnicalDeepDive({ result }: { result: AuditResult }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-black/[0.01] transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-foreground/[0.04] flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold tracking-[-0.01em]">Technical Deep Dive</h3>
+            <p className="text-[12px] text-muted-foreground">Full score breakdown and detailed analysis per category</p>
+          </div>
+        </div>
+        <svg className={`w-4 h-4 text-muted-foreground/50 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="p-5 pt-0 space-y-6">
+          <div className="h-px bg-black/[0.04]" />
+
+          {/* Score Breakdown */}
+          <div className="space-y-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
+              Score breakdown
+            </div>
+            <div className="space-y-4 p-4 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
+              {result.modules.map((m) => {
+                const mc = moduleColor(m.slug);
+                return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
+              })}
+            </div>
+          </div>
+
+          {/* Per-module findings */}
+          <div className="space-y-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
+              Detailed analysis
+            </div>
+            <div className="space-y-3">
+              {result.modules.map((m) => (
+                <ModuleCard key={m.slug} module={m} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

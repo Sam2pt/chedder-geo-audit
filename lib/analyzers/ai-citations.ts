@@ -1,5 +1,130 @@
-import { Finding, ModuleResult, Recommendation } from "../types";
+import { AICompetitor, Finding, ModuleResult, Recommendation } from "../types";
 import { checkSpendCap, recordSpend } from "../spend-cap";
+
+// Domains we never want to count as competitors
+const NON_COMPETITOR_DOMAINS = new Set([
+  // Encyclopedias / knowledge
+  "wikipedia.org",
+  "wikimedia.org",
+  "britannica.com",
+  // Social / forums
+  "reddit.com",
+  "twitter.com",
+  "x.com",
+  "linkedin.com",
+  "facebook.com",
+  "instagram.com",
+  "youtube.com",
+  "tiktok.com",
+  "quora.com",
+  "medium.com",
+  "substack.com",
+  // Code / Q&A
+  "github.com",
+  "stackoverflow.com",
+  "stackexchange.com",
+  // Press / news
+  "techcrunch.com",
+  "forbes.com",
+  "wired.com",
+  "theverge.com",
+  "businessinsider.com",
+  "cnbc.com",
+  "reuters.com",
+  "bloomberg.com",
+  "nytimes.com",
+  "wsj.com",
+  "bbc.com",
+  "bbc.co.uk",
+  // Review sites
+  "g2.com",
+  "capterra.com",
+  "trustpilot.com",
+  "gartner.com",
+  "trustradius.com",
+  "getapp.com",
+  "softwareadvice.com",
+  // Search / general
+  "google.com",
+  "bing.com",
+  "yahoo.com",
+  // Docs / generic
+  "amazon.com",
+  "apple.com",
+  "microsoft.com",
+]);
+
+/**
+ * Pull the "registrable" domain (e.g., stripe.com from api.stripe.com).
+ */
+function rootDomain(host: string): string {
+  const parts = host.replace(/^www\./, "").split(".");
+  if (parts.length <= 2) return parts.join(".");
+  // Simple heuristic: keep last 2 labels (good enough for most TLDs we'll see)
+  return parts.slice(-2).join(".");
+}
+
+function extractCompetitorsFromResponses(
+  responses: Array<{
+    query: string;
+    response: { content: string; citations: string[] } | null;
+  }>,
+  ownDomain: string
+): AICompetitor[] {
+  const ownRoot = rootDomain(ownDomain);
+  const counts = new Map<
+    string,
+    { domain: string; mentions: number; queries: Set<string> }
+  >();
+
+  for (const { query, response } of responses) {
+    if (!response) continue;
+
+    for (const url of response.citations) {
+      try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, "").toLowerCase();
+        const root = rootDomain(host);
+
+        // Skip excluded domains (check both root and full hostname)
+        if (NON_COMPETITOR_DOMAINS.has(root)) continue;
+        if (NON_COMPETITOR_DOMAINS.has(host)) continue;
+
+        // Skip the user's own domain
+        if (root === ownRoot) continue;
+
+        // Skip obvious non-brand domains (ccTLDs for country sites, etc.)
+        if (/^(www|blog|docs|help|support|api)\./.test(host)) {
+          // use root domain instead
+        }
+
+        const key = root;
+        if (!counts.has(key)) {
+          counts.set(key, {
+            domain: root,
+            mentions: 0,
+            queries: new Set(),
+          });
+        }
+        const entry = counts.get(key)!;
+        entry.queries.add(query);
+      } catch {
+        // invalid URL
+      }
+    }
+  }
+
+  // Convert to AICompetitor[] with mentions = distinct queries
+  return Array.from(counts.values())
+    .map((c) => ({
+      domain: c.domain,
+      mentions: c.queries.size,
+      queries: Array.from(c.queries).slice(0, 3),
+    }))
+    .filter((c) => c.mentions >= 1) // must appear in at least 1 query
+    .sort((a, b) => b.mentions - a.mentions)
+    .slice(0, 6);
+}
 
 interface PerplexityResponse {
   id: string;
@@ -159,7 +284,7 @@ export async function analyzeAICitations(
   brand: string,
   domain: string,
   metaDescription: string | null
-): Promise<ModuleResult | null> {
+): Promise<{ module: ModuleResult; competitors: AICompetitor[] } | null> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
     return null; // gracefully skip if not configured
@@ -169,22 +294,25 @@ export async function analyzeAICitations(
   const cap = await checkSpendCap();
   if (!cap.allowed || cap.remainingQueriesToday <= 0) {
     return {
-      name: "AI Citation Testing",
-      slug: "ai-citations",
-      score: 0,
-      icon: "🤖",
-      description:
-        "Tests whether AI models actually mention your brand when asked relevant questions",
-      findings: [
-        {
-          label: "Spend Cap Reached",
-          status: "warn",
-          detail:
-            cap.reason ||
-            "AI testing is paused until the daily/monthly budget resets.",
-        },
-      ],
-      recommendations: [],
+      module: {
+        name: "AI Citation Testing",
+        slug: "ai-citations",
+        score: 0,
+        icon: "🤖",
+        description:
+          "Tests whether AI models actually mention your brand when asked relevant questions",
+        findings: [
+          {
+            label: "Spend Cap Reached",
+            status: "warn",
+            detail:
+              cap.reason ||
+              "AI testing is paused until the daily/monthly budget resets.",
+          },
+        ],
+        recommendations: [],
+      },
+      competitors: [],
     };
   }
 
@@ -305,13 +433,19 @@ export async function analyzeAICitations(
     });
   }
 
+  // Extract AI-perceived competitors from the citations
+  const aiCompetitors = extractCompetitorsFromResponses(responses, domain);
+
   return {
-    name: "AI Citation Testing",
-    slug: "ai-citations",
-    score,
-    icon: "🤖",
-    description: `Real queries tested on Perplexity (${usedQueries}/${queries.length} queries ran)`,
-    findings,
-    recommendations,
+    module: {
+      name: "AI Citation Testing",
+      slug: "ai-citations",
+      score,
+      icon: "🤖",
+      description: `Real queries tested on Perplexity (${usedQueries}/${queries.length} queries ran)`,
+      findings,
+      recommendations,
+    },
+    competitors: aiCompetitors,
   };
 }

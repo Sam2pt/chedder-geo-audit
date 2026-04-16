@@ -20,6 +20,12 @@ export interface ModuleResult {
   recommendations: Recommendation[];
 }
 
+export interface AICompetitor {
+  domain: string;
+  mentions: number; // how many of our queries surfaced this domain
+  queries: string[]; // sample queries where it appeared
+}
+
 export interface AuditResult {
   url: string;
   domain: string;
@@ -30,4 +36,5 @@ export interface AuditResult {
   pagesAudited: string[];
   timestamp: string;
   competitors?: AuditResult[];
+  aiCompetitors?: AICompetitor[];
 }
