@@ -13,6 +13,20 @@ function scoreHex(s: number) {
   return "#ff453a";
 }
 
+/**
+ * Draw the 2pt logo (black rounded square with white italic "2pt").
+ * x, y = top-left in mm. size = side length in mm.
+ */
+function draw2ptLogo(doc: jsPDF, x: number, y: number, size: number) {
+  doc.setFillColor(29, 29, 31);
+  doc.roundedRect(x, y, size, size, size * 0.15, size * 0.15, "F");
+  doc.setFont("helvetica", "bolditalic");
+  doc.setFontSize(size * 2);
+  doc.setTextColor(255, 255, 255);
+  // Approximate vertical centering
+  doc.text("2pt", x + size / 2, y + size * 0.72, { align: "center" });
+}
+
 export function generateAuditPDF(result: AuditResult): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
@@ -22,29 +36,45 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
 
   // ── Header ────────────────────────────────────────────────────
   doc.setFillColor(29, 29, 31);
-  doc.rect(0, 0, W, 50, "F");
+  doc.rect(0, 0, W, 55, "F");
 
+  // 2pt logo top-left
+  draw2ptLogo(doc, margin, 12, 10);
+
+  // Title next to logo
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
+  doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text("Chedder GEO Audit", margin, 22);
+  doc.text("Chedder GEO Audit", margin + 14, 19);
 
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(200, 200, 200);
-  doc.text(result.domain, margin, 32);
-  doc.text(result.url, margin, 39);
+  doc.setTextColor(180, 180, 180);
+  doc.text("Generative Engine Optimization", margin + 14, 24);
 
+  // Domain section below
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text(result.domain, margin, 38);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(180, 180, 180);
+  doc.text(result.url, margin, 44);
+
+  // Score right side
   doc.setFontSize(36);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
   doc.text(`${result.overallScore}`, W - margin, 30, { align: "right" });
 
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(`${result.grade}. ${scoreLabel(result.overallScore)}`, W - margin, 40, { align: "right" });
+  doc.setTextColor(180, 180, 180);
+  doc.text(`${result.grade} · ${scoreLabel(result.overallScore)}`, W - margin, 40, { align: "right" });
 
-  y = 60;
+  y = 65;
 
   // ── Score Breakdown ───────────────────────────────────────────
   doc.setFontSize(16);
@@ -198,16 +228,25 @@ export function generateAuditPDF(result: AuditResult): jsPDF {
   // ── Footer on last page ───────────────────────────────────────
   const pageH = 297;
   doc.setFillColor(29, 29, 31);
-  doc.rect(0, pageH - 20, W, 20, "F");
+  doc.rect(0, pageH - 22, W, 22, "F");
+
+  // 2pt logo in footer
+  draw2ptLogo(doc, margin, pageH - 18, 8);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text("Chedder GEO Audit", margin, pageH - 8);
+  doc.text("Chedder GEO Audit", margin + 12, pageH - 12);
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 180, 180);
-  doc.text("Made by Two Point Technologies, twopointtechnologies.com", W - margin, pageH - 8, { align: "right" });
+  doc.setFontSize(8);
+  doc.setTextColor(170, 170, 170);
+  doc.text("Made by Two Point Technologies", margin + 12, pageH - 7);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(200, 200, 200);
+  doc.text("twopointtechnologies.com", W - margin, pageH - 10, { align: "right" });
 
   return doc;
 }

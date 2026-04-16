@@ -1,18 +1,9 @@
 <!-- This file is used by Netlify to detect forms at build time.
-     The forms below match the ones rendered in the React app. -->
+     Only the PDF download form is active. -->
 <!DOCTYPE html>
 <html>
 <head><title>Netlify Form Detection</title></head>
 <body>
-  <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
-    <input type="text" name="name" />
-    <input type="email" name="email" />
-    <input type="text" name="website" />
-    <input type="text" name="message" />
-    <input type="text" name="score" />
-    <input type="text" name="bot-field" />
-  </form>
-
   <form name="pdf-download" data-netlify="true" netlify-honeypot="bot-field" hidden>
     <input type="text" name="name" />
     <input type="email" name="email" />

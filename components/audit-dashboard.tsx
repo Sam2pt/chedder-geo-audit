@@ -212,7 +212,197 @@ function ModuleCard({ module }: { module: ModuleResult }) {
   );
 }
 
-/* ── Gated PDF Download ──────────────────────────────────────────── */
+/* ── Chat-style floating action popup ────────────────────────────── */
+
+type ChatMode = "intro" | "done";
+
+function ChatPopup({ result }: { result: AuditResult }) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<ChatMode>("intro");
+
+  // Form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function submitPDF() {
+    if (!name.trim() || !email.trim()) return;
+    setSending(true);
+    const lead = {
+      name, email,
+      website: result.domain,
+      message: `PDF download requested. Company: ${company || "N/A"}`,
+      score: result.overallScore,
+      source: "pdf-download" as const,
+      company,
+    };
+    await Promise.allSettled([
+      (async () => {
+        const fd = new URLSearchParams();
+        fd.append("form-name", "pdf-download");
+        fd.append("name", name);
+        fd.append("email", email);
+        fd.append("company", company);
+        fd.append("website", result.domain);
+        fd.append("score", String(result.overallScore));
+        await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: fd.toString() });
+      })(),
+      fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(lead) }),
+    ]);
+    const doc = generateAuditPDF(result);
+    doc.save(`${result.domain}-geo-audit.pdf`);
+    setSending(false);
+    setMode("done");
+  }
+
+  function reset() {
+    setMode("intro");
+    setName("");
+    setEmail("");
+    setCompany("");
+  }
+
+  // Icons
+  const cheeseIcon = (
+    <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="45" fill="#FFB800"/>
+      <circle cx="50" cy="50" r="45" fill="none" stroke="#E5A500" strokeWidth="3"/>
+      <circle cx="35" cy="35" r="4" fill="#E5A500" opacity="0.6"/>
+      <circle cx="65" cy="40" r="3" fill="#E5A500" opacity="0.6"/>
+      <circle cx="55" cy="60" r="5" fill="#E5A500" opacity="0.6"/>
+      <circle cx="35" cy="65" r="3" fill="#E5A500" opacity="0.6"/>
+    </svg>
+  );
+
+  return (
+    <>
+      {/* Floating button */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 h-14 px-5 rounded-full bg-[#1d1d1f] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_10px_32px_rgba(0,0,0,0.22)] transition-all active:scale-[0.97] flex items-center gap-2.5 font-semibold text-[14px] tracking-[-0.01em]"
+        >
+          {cheeseIcon}
+          Download full report
+        </button>
+      )}
+
+      {/* Backdrop (mobile) */}
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px] sm:bg-transparent sm:backdrop-blur-0" onClick={() => { setOpen(false); reset(); }} />
+      )}
+
+      {/* Popup */}
+      {open && (
+        <div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:bottom-6 sm:right-6 z-50 sm:w-[380px] rounded-3xl bg-white shadow-[0_12px_48px_rgba(0,0,0,0.16)] border border-black/[0.06] overflow-hidden flex flex-col max-h-[calc(100vh-60px)]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-black/[0.04]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#FFB800]/20 flex items-center justify-center">
+                {cheeseIcon}
+              </div>
+              <div>
+                <div className="text-[14px] font-semibold tracking-[-0.01em]">Chedder</div>
+                <div className="text-[11px] text-muted-foreground">by Two Point Technologies</div>
+              </div>
+            </div>
+            <button
+              onClick={() => { setOpen(false); reset(); }}
+              className="w-8 h-8 rounded-lg hover:bg-black/[0.04] transition-colors flex items-center justify-center text-muted-foreground"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {/* Greeting bubble */}
+            <div className="flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#FFB800]/20 flex items-center justify-center shrink-0 mt-0.5">
+                {cheeseIcon}
+              </div>
+              <div className="flex-1">
+                <div className="inline-block max-w-full p-3 rounded-2xl rounded-tl-md bg-[#f5f5f7] text-[13px] leading-[1.55] text-foreground">
+                  {mode === "intro" && <>Want the full audit for <strong>{result.domain}</strong> as a PDF? Pop your details in and I&apos;ll send it over.</>}
+                  {mode === "done" && <>Done 🎉 Check your downloads folder for <strong>{result.domain}-geo-audit.pdf</strong>. We&apos;ve saved your details so we can reach out if helpful.</>}
+                </div>
+              </div>
+            </div>
+
+            {/* PDF form */}
+            {mode === "intro" && (
+              <form
+                onSubmit={(e) => { e.preventDefault(); submitPDF(); }}
+                className="space-y-2 pl-9"
+              >
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  required
+                  autoFocus
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Work email"
+                  required
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                />
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Company (optional)"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={sending || !name.trim() || !email.trim()}
+                  className="w-full h-10 rounded-xl bg-[#1d1d1f] text-white text-[13px] font-semibold hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center gap-2 mt-1"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                  {sending ? "Generating..." : "Send me the PDF"}
+                </button>
+              </form>
+            )}
+
+            {/* Done state */}
+            {mode === "done" && (
+              <div className="pl-9">
+                <button
+                  onClick={() => { setOpen(false); reset(); }}
+                  className="w-full h-10 rounded-xl bg-[#1d1d1f] text-white text-[13px] font-semibold hover:bg-[#1d1d1f]/85 active:scale-[0.99] transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Powered by footer */}
+          <a
+            href="https://twopointtechnologies.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 py-2.5 border-t border-black/[0.04] hover:bg-black/[0.01] transition-colors"
+          >
+            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-4 rounded" />
+            <span className="text-[11px] text-muted-foreground/50 font-medium">
+              Powered by Two Point Technologies
+            </span>
+          </a>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── Gated PDF Download (kept for potential fallback) ────────────── */
 
 function DownloadGate({ result }: { result: AuditResult }) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
@@ -1050,11 +1240,11 @@ export function AuditDashboard({
       {/* Action Plan */}
       <ActionPlan result={result} />
 
-      {/* Combined Take Action (PDF + Agency CTA) */}
-      <TakeAction result={result} />
-
       {/* Technical Deep Dive (collapsed) */}
       <TechnicalDeepDive result={result} />
+
+      {/* Floating chat popup (replaces inline download + contact sections) */}
+      <ChatPopup result={result} />
 
       {/* Compact meta info (pages audited + methodology) */}
       <MetaInfo result={result} />
@@ -1074,17 +1264,6 @@ export function AuditDashboard({
         </a>
       </footer>
     </div>
-  );
-}
-
-/* ── Combined Take Action (PDF + Agency) ─────────────────────────── */
-
-function TakeAction({ result }: { result: AuditResult }) {
-  return (
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <DownloadGate result={result} />
-      <ContactCTA website={result.domain} score={result.overallScore} />
-    </section>
   );
 }
 

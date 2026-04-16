@@ -92,7 +92,7 @@ export default function Home() {
         <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.04] border border-foreground/[0.06] text-[13px] text-muted-foreground font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-[#34c759] animate-pulse" />
-            Chedder · Built by Two Point Technologies
+            Chedder · Generative Engine Optimization
           </div>
           <h1 className="text-[44px] sm:text-[62px] font-semibold tracking-[-0.035em] leading-[1.02] text-foreground">
             When AI answers,<br/>
