@@ -445,26 +445,49 @@ const REFUSAL_PHRASES = [
   "doesn't appear",
   "couldn't find",
   "could not find",
+  "cannot find",
+  "can't find",
+  "unable to find",
   "no direct information",
   "no information about",
+  "no information available",
+  "no information was provided",
+  "no reliable information",
+  "no specific information",
+  "no content about",
+  "no data about",
+  "no details about",
+  "no results found",
+  "no results for",
+  "no matches for",
+  "no direct match",
   "don't have information",
   "do not have information",
   "don't have details",
   "do not have details",
-  "no specific information",
+  "don't have specific",
+  "do not have specific",
+  "doesn't provide information",
   "not in the provided",
   "not in the search results",
   "not mentioned in",
-  "unable to find",
-  "no matches for",
-  "no results for",
+  "not found in",
+  "not listed in",
+  "not referenced in",
+  "not described in",
+  "no mention of",
+  "not present in",
+  "doesn't exist in",
   "i'm not aware of",
   "i am not aware of",
   "i'm not familiar with",
   "i am not familiar with",
-  "no direct match",
-  "not found in",
-  "doesn't exist in",
+  "i have no information",
+  "i do not have information",
+  "without more context",
+  "without additional context",
+  "there is no information",
+  "there's no information",
 ];
 
 function isRefusalAboutBrand(
@@ -489,6 +512,35 @@ function isRefusalAboutBrand(
   return false;
 }
 
+// Detect if the engine's citations point to a DIFFERENT site that happens
+// to share the brand name (e.g. we asked about chedder.2pt.ai but the AI's
+// top citation is chedder.io or getcheddar.com). This is a "name collision"
+// where the engine is describing a different entity entirely.
+function collidingCitations(
+  citations: string[],
+  brand: string,
+  domain: string
+): string[] {
+  const brandLower = brand.toLowerCase();
+  const ourHost = domain.toLowerCase().replace(/^www\./, "");
+  const ourRoot = rootDomain(ourHost);
+  const colliders = new Set<string>();
+  for (const c of citations) {
+    try {
+      const host = new URL(c).hostname.replace(/^www\./, "").toLowerCase();
+      if (host === ourHost || rootDomain(host) === ourRoot) continue;
+      // Any label containing the brand name suggests a same-name collision.
+      const labels = host.split(".");
+      if (labels.some((l) => l.includes(brandLower))) {
+        colliders.add(host);
+      }
+    } catch {
+      // skip unparseable URLs
+    }
+  }
+  return [...colliders];
+}
+
 function analyzeCitation(
   content: string,
   citations: string[],
@@ -499,6 +551,8 @@ function analyzeCitation(
   cited: boolean;
   position: "prominent" | "mentioned" | "absent";
   excerpt: string | null;
+  refused: boolean;
+  collisionHosts: string[];
 } {
   const lowerContent = content.toLowerCase();
   const lowerBrand = brand.toLowerCase();
@@ -519,6 +573,13 @@ function analyzeCitation(
   // positives like "Chedder does not appear in the results" being scored as
   // a prominent mention just because the word "Chedder" is in the text.
   const refused = substringHit && isRefusalAboutBrand(content, brandTokens);
+
+  // Detect when the engine's cited sources belong to a different, same-named
+  // entity. We'll still report this (name collisions are actionable intel)
+  // but downgrade it from "prominent" so it doesn't inflate the score.
+  const collisionHosts = collidingCitations(citations, brand, domain);
+  const hasCollision = collisionHosts.length > 0;
+
   const mentioned = substringHit && !refused;
 
   const cited = citations.some(
@@ -551,13 +612,15 @@ function analyzeCitation(
       lowerContent.indexOf(lowerBrand),
       lowerContent.indexOf(domainBase)
     );
+    // Name collisions cap at "mentioned" — we don't want a competing
+    // same-name entity to count as a prominent mention of YOUR brand.
     position =
-      firstMentionIdx >= 0 && firstMentionIdx < content.length * 0.3
+      !hasCollision && firstMentionIdx >= 0 && firstMentionIdx < content.length * 0.3
         ? "prominent"
         : "mentioned";
   }
 
-  return { mentioned, cited, position, excerpt };
+  return { mentioned, cited, position, excerpt, refused, collisionHosts };
 }
 
 /* ── Main analyzer ───────────────────────────────────────────────── */
@@ -769,10 +832,16 @@ export async function analyzeAICitations(
       });
     } else if (analysis.position === "mentioned") {
       eb.mentioned++;
+      // Name collision is the most useful thing to surface when it happens —
+      // it tells the user "AI knows a different brand with your name".
+      const detail =
+        analysis.collisionHosts.length > 0
+          ? `${engineLabel} found a different brand with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}). Your site wasn't the subject of the answer.`
+          : `${brand} is mentioned, but not among the top recommendations in the ${engineLabel} answer.`;
       findings.push({
         label: scenarioLabel,
         status: "warn",
-        detail: `${brand} is mentioned, but not among the top recommendations in the ${engineLabel} answer.`,
+        detail,
         excerpt: cleanExcerpt(analysis.excerpt),
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
@@ -785,7 +854,7 @@ export async function analyzeAICitations(
       const excerpt = analysis.excerpt
         ? cleanExcerpt(analysis.excerpt)
         : firstSnippet(response.content);
-      const detail = analysis.excerpt
+      const detail = analysis.refused
         ? `${engineLabel} did not recognize ${brand} in its answer.`
         : recommended.length > 0
           ? `${brand} is not mentioned by ${engineLabel}. It recommended ${recommended.join(
