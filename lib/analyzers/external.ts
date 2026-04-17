@@ -73,6 +73,46 @@ async function fetchWikiSummary(title: string) {
 // like " (company)") doesn't obviously correspond to the brand. Prevents
 // Wikipedia search fallbacks returning unrelated pages just because they
 // mention the brand name somewhere in the article body.
+//
+// Strict rules:
+//   - Exact match on the pre-parenthetical base → accept.
+//   - "Brand, Inc." / "Brand Inc." / "Brand Corp" etc. → accept only if the
+//     word(s) after the brand are in a known corporate-suffix allowlist.
+//   - Anything else ("Linear A", "Apple pie", "Orange Juice") → reject.
+const CORPORATE_SUFFIX_WORDS = new Set([
+  "inc",
+  "inc.",
+  "incorporated",
+  "corp",
+  "corp.",
+  "corporation",
+  "co",
+  "co.",
+  "company",
+  "ltd",
+  "ltd.",
+  "limited",
+  "llc",
+  "llp",
+  "lp",
+  "plc",
+  "gmbh",
+  "ag",
+  "sa",
+  "s.a.",
+  "bv",
+  "group",
+  "holdings",
+  "holding",
+  "technologies",
+  "technology",
+  "tech",
+  "software",
+  "systems",
+  "labs",
+  "studios",
+]);
+
 function titleMatchesBrand(title: string, brand: string): boolean {
   const brandLower = brand.toLowerCase().trim();
   if (!brandLower) return false;
@@ -82,12 +122,33 @@ function titleMatchesBrand(title: string, brand: string): boolean {
     .replace(/\s*\([^)]+\)\s*$/, "")
     .trim();
   if (base === brandLower) return true;
-  // Allow "Foo, Inc.", "Foo Corp", etc.
-  if (base.startsWith(brandLower + " ") || base.startsWith(brandLower + ",")) {
-    return true;
+
+  // Must start with the brand followed by a word boundary.
+  const prefixSpace = brandLower + " ";
+  const prefixComma = brandLower + ",";
+  let remainder: string | null = null;
+  if (base.startsWith(prefixSpace)) {
+    remainder = base.slice(prefixSpace.length).trim();
+  } else if (base.startsWith(prefixComma)) {
+    remainder = base.slice(prefixComma.length).trim();
   }
-  // Allow brand as last word too — e.g. "The Foo" → match "Foo" brands.
-  if (base.endsWith(" " + brandLower)) return true;
+
+  if (remainder !== null) {
+    // Strip connector punctuation like "& Co."
+    const cleaned = remainder.replace(/^&\s+/, "").trim();
+    // Take up to the first 2 words as the qualifier phrase. If ANY of
+    // those tokens is NOT a recognized corporate suffix word, reject.
+    // "Linear A" → ["a"] → not in allowlist → reject.
+    // "Foo Inc" → ["inc"] → accept.
+    // "Foo Inc., Ltd." → ["inc.", "ltd."] → accept.
+    const tokens = cleaned.split(/\s+/).slice(0, 2);
+    if (tokens.length === 0) return false;
+    const allCorporate = tokens.every((t) =>
+      CORPORATE_SUFFIX_WORDS.has(t.replace(/[,;]$/, ""))
+    );
+    return allCorporate;
+  }
+
   return false;
 }
 
@@ -226,16 +287,70 @@ interface RedditResult {
   topPost?: { title: string; subreddit: string; score: number; url: string };
 }
 
-async function fetchRedditSearch(url: string): Promise<unknown | null> {
+const REDDIT_USER_AGENT =
+  "web:ai.chedder.2pt:v1.0 (by /u/chedder_audit; contact sam@twopointtechnologies.com)";
+
+// Cached OAuth token (lifetime ~1 hour per Reddit docs).
+let cachedRedditToken: { token: string; expiresAt: number } | null = null;
+
+async function getRedditOAuthToken(): Promise<string | null> {
+  const clientId = process.env.REDDIT_CLIENT_ID;
+  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  if (cachedRedditToken && cachedRedditToken.expiresAt > Date.now() + 30_000) {
+    return cachedRedditToken.token;
+  }
+
   try {
-    const res = await fetch(url, {
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+    const res = await fetch("https://www.reddit.com/api/v1/access_token", {
+      method: "POST",
       headers: {
-        // Reddit throttles generic/short user agents. Their API guidance asks for
-        // platform:appname:version + contact. Keep it honest — we're read-only.
-        "User-Agent":
-          "web:ai.chedder.2pt:v1.0 (by /u/chedder_audit; contact sam@twopointtechnologies.com)",
-        Accept: "application/json",
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": REDDIT_USER_AGENT,
       },
+      body: "grant_type=client_credentials",
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[external] Reddit OAuth token HTTP ${res.status} ${res.statusText}`
+      );
+      return null;
+    }
+    const data = (await res.json()) as {
+      access_token?: string;
+      expires_in?: number;
+    };
+    if (!data.access_token) return null;
+    cachedRedditToken = {
+      token: data.access_token,
+      expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000,
+    };
+    return data.access_token;
+  } catch (e) {
+    console.warn(
+      "[external] Reddit OAuth token error:",
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+}
+
+async function fetchRedditSearch(
+  url: string,
+  bearer?: string
+): Promise<unknown | null> {
+  try {
+    const headers: Record<string, string> = {
+      "User-Agent": REDDIT_USER_AGENT,
+      Accept: "application/json",
+    };
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
+    const res = await fetch(url, {
+      headers,
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) {
@@ -263,20 +378,21 @@ async function checkReddit(
     const domainBase = domain.replace(/^www\./, "");
     const query = encodeURIComponent(`"${domainBase}"`);
 
-    // Try www.reddit.com first, then old.reddit.com as a fallback. Netlify's
-    // shared egress IPs are increasingly throttled by Reddit's main search
-    // endpoint; the "old." hostname tends to succeed when the primary
-    // rate-limits us out.
-    const candidates = [
-      `https://www.reddit.com/search.json?q=${query}&limit=25&sort=relevance`,
-      `https://old.reddit.com/search.json?q=${query}&limit=25&sort=relevance`,
-    ];
+    // Strategy, most to least reliable from Netlify's IP range:
+    //   1. oauth.reddit.com with a bearer token (60 req/min, reliable)
+    //   2. www.reddit.com (anon; frequently throttled from datacenter IPs)
+    //   3. old.reddit.com (anon fallback)
+    const bearer = await getRedditOAuthToken();
+    const oauthUrl = `https://oauth.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
+    const wwwUrl = `https://www.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
+    const oldUrl = `https://old.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
 
     let data: unknown = null;
-    for (const attempt of candidates) {
-      data = await fetchRedditSearch(attempt);
-      if (data) break;
+    if (bearer) {
+      data = await fetchRedditSearch(oauthUrl, bearer);
     }
+    if (!data) data = await fetchRedditSearch(wwwUrl);
+    if (!data) data = await fetchRedditSearch(oldUrl);
     if (!data) return null;
 
     const posts =
