@@ -270,6 +270,77 @@ interface OpenAIResponse {
   output_text?: string; // convenience field some SDK variants emit
 }
 
+// Infer what category of product/service this brand competes in. Returns a
+// 2–5 word phrase like "project management software", "payment processing",
+// "email marketing platforms". Returns null if OPENAI_API_KEY is absent or
+// the call fails — caller should then fall back to the regex heuristic.
+//
+// Uses chat/completions (not Responses API) because we don't want web
+// search and don't need streaming; ~100 input / ~10 output tokens per call
+// on gpt-4o-mini = roughly $0.00002 per audit.
+async function inferCategoryLLM(
+  brand: string,
+  domain: string,
+  metaDescription: string | null
+): Promise<string | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  if (!metaDescription) return null;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0,
+        max_tokens: 30,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You identify what competitive category a company belongs to so users can ask AI tools like ChatGPT for recommendations in that category without naming the company. Reply with ONLY a 2–5 word category (e.g. 'project management software', 'payment processing', 'CRM for sales teams'). No preamble, no quotes, no punctuation.",
+          },
+          {
+            role: "user",
+            content: `Brand: ${brand}\nDomain: ${domain}\nDescription: ${metaDescription.slice(0, 400)}`,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[ai-citations] category inference HTTP ${res.status} ${res.statusText}`
+      );
+      return null;
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content?.trim() ?? "";
+    // Sanity check: reject anything with punctuation the prompt forbade,
+    // anything that mentions the brand itself (would leak brand-awareness
+    // back into our "discovery-intent" queries), and anything silly long.
+    const cleaned = raw.replace(/["'.]/g, "").trim().toLowerCase();
+    if (!cleaned) return null;
+    if (cleaned.length > 60) return null;
+    if (cleaned.includes(brand.toLowerCase())) return null;
+    const wordCount = cleaned.split(/\s+/).length;
+    if (wordCount < 2 || wordCount > 6) return null;
+    return cleaned;
+  } catch (e) {
+    console.warn(
+      "[ai-citations] category inference error:",
+      e instanceof Error ? e.message : e
+    );
+    return null;
+  }
+}
+
 async function askOpenAI(
   query: string,
   apiKey: string
@@ -747,9 +818,16 @@ export async function analyzeAICitations(
     };
   }
 
-  // Derive a category from meta description (cheap heuristic)
-  let category: string | null = null;
-  if (metaDescription) {
+  // Infer the brand's competitive category — this drives every
+  // discovery-intent query. Prefer an LLM pass (accurate, ~$0.00001 per
+  // audit) with a regex heuristic as a last-resort fallback when OPENAI_API_KEY
+  // is missing or the call fails.
+  let category: string | null = await inferCategoryLLM(
+    brand,
+    domain,
+    metaDescription
+  );
+  if (!category && metaDescription) {
     const categoryPatterns = [
       /(\w+) (platform|software|tool|service|solution|app|api)/i,
       /(best|leading|top) (\w+ ?\w*)/i,
