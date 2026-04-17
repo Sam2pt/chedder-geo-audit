@@ -117,7 +117,11 @@ const COMPETITOR_SCENARIO_KEYWORDS = [
   "alternatives",
   "similar to",
   "companies similar",
+  "tools similar",
   "lead the",
+  "lead the market",
+  "needs to pick",
+  "needs to choose",
   "stand out",
 ];
 
@@ -426,8 +430,6 @@ function extractCompetitorsFromResponses(
     // the brand, not competing products.
     if (!isCompetitorScenario(spec.scenario)) continue;
 
-    const answerLower = response.content.toLowerCase();
-
     for (const url of response.citations) {
       try {
         const u = new URL(url);
@@ -438,13 +440,9 @@ function extractCompetitorsFromResponses(
         if (NON_COMPETITOR_DOMAINS.has(host)) continue;
         if (root === ownRoot) continue;
 
-        // Corroborate: the domain's brand token must actually appear in
-        // the answer text. Catches the "cited as a footer link but never
-        // discussed" case (common with utm-tagged sources).
         const token = domainToToken(root);
         if (token.length < 3) continue;
         if (token === ownToken) continue;
-        if (!answerLower.includes(token)) continue;
 
         const key = root;
         if (!counts.has(key)) {
@@ -487,44 +485,42 @@ function generateQueries(
 ): QuerySpec[] {
   const queries: QuerySpec[] = [];
 
-  queries.push({
-    scenario: `When someone asks AI about ${brand}`,
-    query: `Tell me about ${brand} (${domain}). What do they do and what are they known for?`,
-  });
-
+  // --- Discovery intent (brand-unaware) -----------------------------------
+  // The valuable signal: does the brand show up when a potential customer
+  // who has never heard of them asks AI for help in their category?
   if (category) {
     queries.push({
       scenario: `When someone asks for the best ${category}`,
-      query: `What are the best ${category} available right now?`,
+      query: `What are the best ${category} available right now? Give me your top recommendations with brief reasons.`,
+    });
+    queries.push({
+      scenario: `When someone needs to pick a ${category}`,
+      query: `I need to choose a ${category}. Which ones should I seriously consider and why?`,
+    });
+    queries.push({
+      scenario: `When someone asks which ${category} lead the market`,
+      query: `Which ${category} are the current market leaders in 2026, and what are they known for?`,
     });
   } else {
+    // Fallback if we can't infer a category — use brand as seed for a
+    // "similar to" query, which at least asks AI to list peers.
     queries.push({
-      scenario: `When someone asks about companies similar to ${brand}`,
-      query: `What are the top companies similar to ${brand}? Who are they and what do they offer?`,
+      scenario: `When someone asks for tools similar to ${brand}`,
+      query: `What are the top tools similar to ${brand}? Who are they and what do they offer?`,
+    });
+    queries.push({
+      scenario: `When someone asks for alternatives to ${brand}`,
+      query: `What are the best alternatives to ${brand}? List the top options with pros and cons.`,
     });
   }
 
+  // --- Brand-aware (verification) -----------------------------------------
+  // Confirms the engine actually knows the brand and isn't confusing it
+  // with a different entity (we use this for collision + refusal detection).
   queries.push({
-    scenario: `When someone asks for alternatives to ${brand}`,
-    query: `What are the best alternatives to ${brand}? List the top options with pros and cons.`,
+    scenario: `When someone asks AI directly about ${brand}`,
+    query: `Tell me about ${brand} (${domain}). What do they do and what are they known for?`,
   });
-
-  queries.push({
-    scenario: `When someone asks if ${brand} is trustworthy`,
-    query: `Is ${brand} a trusted and well-reviewed company? What do customers say about them?`,
-  });
-
-  if (category) {
-    queries.push({
-      scenario: `When someone asks which companies lead the ${category} market`,
-      query: `Which companies lead the ${category} market and why are they recommended?`,
-    });
-  } else {
-    queries.push({
-      scenario: `When someone asks what makes ${brand} stand out`,
-      query: `What makes ${brand} stand out from competitors? Should it be recommended?`,
-    });
-  }
 
   return queries;
 }
