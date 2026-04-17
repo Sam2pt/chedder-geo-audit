@@ -595,22 +595,25 @@ function extractCompetitorsFromResponses(
 ): AICompetitor[] {
   const ownRoot = rootDomain(ownDomain);
   const ownToken = domainToToken(ownRoot);
+  // Track candidates by registrable domain. We count how many distinct
+  // ENGINES mentioned the candidate — cross-engine agreement is our main
+  // relevance signal. A single-engine, single-query mention (the long tail
+  // of listicle noise: laneapp.co, guideflow.com, melp.us) almost never
+  // represents a real competitor.
   const counts = new Map<
     string,
-    { domain: string; mentions: number; queries: Set<string> }
+    {
+      domain: string;
+      engines: Set<EngineName>;
+      queries: Set<string>;
+    }
   >();
 
-  for (const { spec, response } of responses) {
+  for (const { engine, spec, response } of responses) {
     if (!response) continue;
-    // Only harvest competitors from scenarios that actually ask for them.
-    // "Tell me about X" and "is X trustworthy" citations are sources about
-    // the brand, not competing products.
     if (!isCompetitorScenario(spec.scenario)) continue;
 
-    // 1) Citations: treat domains linked from the answer as candidates.
-    //    These capture real product homepages when the AI cites them,
-    //    but often miss the well-known incumbents (PayPal, Square) because
-    //    the engine cites listicle articles rather than company pages.
+    // 1) Citations: domains linked from the answer.
     for (const url of response.citations) {
       try {
         const u = new URL(url);
@@ -622,10 +625,7 @@ function extractCompetitorsFromResponses(
       }
     }
 
-    // 2) Prose mentions: mine **bold** names and bare domains from the
-    //    answer text. This catches the "AI says 'Stripe, PayPal, Square'
-    //    in prose while citing a techradar article" case that citations
-    //    alone miss.
+    // 2) Prose mentions: **bold** names and bare domains from answer text.
     const mentions = extractProductMentionsFromText(response.content);
     for (const name of mentions) {
       const guess = productNameToDomain(name);
@@ -640,19 +640,33 @@ function extractCompetitorsFromResponses(
       if (token.length < 3) return;
       if (token === ownToken) return;
       if (!counts.has(root)) {
-        counts.set(root, { domain: root, mentions: 0, queries: new Set() });
+        counts.set(root, {
+          domain: root,
+          engines: new Set(),
+          queries: new Set(),
+        });
       }
-      counts.get(root)!.queries.add(spec.scenario);
+      const entry = counts.get(root)!;
+      entry.engines.add(engine);
+      entry.queries.add(spec.scenario);
     }
   }
+
+  // Count how many engines are configured this audit so we can scale the
+  // threshold: with 1 engine, demand just that one mentioned it; with 2+,
+  // demand at least 2-engine agreement.
+  const distinctEngines = new Set(responses.map((r) => r.engine)).size;
+  const minEngines = distinctEngines >= 2 ? 2 : 1;
 
   return Array.from(counts.values())
     .map((c) => ({
       domain: c.domain,
-      mentions: c.queries.size,
+      // Public shape: `mentions` is the engine-agreement count (how many
+      // distinct engines surfaced this competitor).
+      mentions: c.engines.size,
       queries: Array.from(c.queries).slice(0, 3),
     }))
-    .filter((c) => c.mentions >= 1)
+    .filter((c) => c.mentions >= minEngines)
     .sort((a, b) => b.mentions - a.mentions)
     .slice(0, 6);
 }
