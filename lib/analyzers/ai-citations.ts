@@ -703,12 +703,15 @@ async function inferCategoryLLM(
     // Sanity check: reject anything with punctuation the prompt forbade,
     // anything that mentions the brand itself (would leak brand-awareness
     // back into our "discovery-intent" queries), and anything silly long.
+    // Allow 1-word categories — "cola", "diapers", "toothpaste" are all
+    // perfectly valid and produce great discovery queries.
     const cleaned = raw.replace(/["'.]/g, "").trim().toLowerCase();
     if (!cleaned) return null;
     if (cleaned.length > 60) return null;
+    if (cleaned.length < 3) return null;
     if (cleaned.includes(brand.toLowerCase())) return null;
     const wordCount = cleaned.split(/\s+/).length;
-    if (wordCount < 2 || wordCount > 6) return null;
+    if (wordCount < 1 || wordCount > 6) return null;
     return cleaned;
   } catch (e) {
     console.warn(

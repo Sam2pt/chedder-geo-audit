@@ -3,10 +3,30 @@ import { Finding, ModuleResult, Recommendation } from "../types";
 
 /* ── Brand name extraction ────────────────────────────────────────── */
 
+// Strip locale suffixes (pampers.com → og:site_name "Pampers en-us"),
+// trademark symbols, and common corporate appendages so the brand name
+// we feed downstream is clean — otherwise it contaminates every query
+// and finding message.
+function cleanBrandName(raw: string): string {
+  let s = raw.trim();
+  // Trademark / registered marks
+  s = s.replace(/[®™©℠]/g, "");
+  // Locale codes like "en-us", "en-gb", "fr-ca" at the end
+  s = s.replace(/\s+[a-z]{2}-[a-z]{2}\s*$/i, "");
+  // "| Official site", "— Official website", ": US", country suffix etc.
+  s = s.replace(
+    /\s*[—|:]\s*(Official\s+(Site|Website|Store)|US|UK|Global|Worldwide|Home)\s*$/i,
+    ""
+  );
+  // Collapse internal whitespace
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
 export function extractBrandName($: CheerioAPI, domain: string): string {
   // Try og:site_name first
   const ogSiteName = $('meta[property="og:site_name"]').attr("content")?.trim();
-  if (ogSiteName) return ogSiteName;
+  if (ogSiteName) return cleanBrandName(ogSiteName);
 
   // Try Organization schema name
   const jsonLdScripts = $('script[type="application/ld+json"]');
@@ -39,7 +59,7 @@ export function extractBrandName($: CheerioAPI, domain: string): string {
       // skip
     }
   });
-  if (schemaName) return schemaName;
+  if (schemaName) return cleanBrandName(schemaName);
 
   // Fallback: derive from domain
   const host = domain.replace(/^www\./, "");
