@@ -279,179 +279,109 @@ async function checkWikipedia(
   }
 }
 
-/* ── Reddit check ──────────────────────────────────────────────────── */
+/* ── Reddit check (via Brave Web Search) ───────────────────────────── */
 
 interface RedditResult {
   totalMentions: number;
   recentMentions: number;
   topPost?: { title: string; subreddit: string; score: number; url: string };
+  source: "brave" | "unavailable";
 }
 
-const REDDIT_USER_AGENT =
-  "web:ai.chedder.2pt:v1.0 (by /u/chedder_audit; contact sam@twopointtechnologies.com)";
-
-// Cached OAuth token (lifetime ~1 hour per Reddit docs).
-let cachedRedditToken: { token: string; expiresAt: number } | null = null;
-
-async function getRedditOAuthToken(): Promise<string | null> {
-  const clientId = process.env.REDDIT_CLIENT_ID;
-  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
-
-  if (cachedRedditToken && cachedRedditToken.expiresAt > Date.now() + 30_000) {
-    return cachedRedditToken.token;
-  }
-
-  try {
-    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-    const res = await fetch("https://www.reddit.com/api/v1/access_token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basic}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": REDDIT_USER_AGENT,
-      },
-      body: "grant_type=client_credentials",
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) {
-      console.warn(
-        `[external] Reddit OAuth token HTTP ${res.status} ${res.statusText}`
-      );
-      return null;
-    }
-    const data = (await res.json()) as {
-      access_token?: string;
-      expires_in?: number;
-    };
-    if (!data.access_token) return null;
-    cachedRedditToken = {
-      token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000,
-    };
-    return data.access_token;
-  } catch (e) {
-    console.warn(
-      "[external] Reddit OAuth token error:",
-      e instanceof Error ? e.message : e
-    );
-    return null;
-  }
-}
-
-async function fetchRedditSearch(
-  url: string,
-  bearer?: string
-): Promise<unknown | null> {
-  try {
-    const headers: Record<string, string> = {
-      "User-Agent": REDDIT_USER_AGENT,
-      Accept: "application/json",
-    };
-    if (bearer) headers.Authorization = `Bearer ${bearer}`;
-    const res = await fetch(url, {
-      headers,
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) {
-      console.warn(
-        `[external] Reddit ${new URL(url).host} HTTP ${res.status} ${res.statusText}`
-      );
-      return null;
-    }
-    return await res.json();
-  } catch (e) {
-    console.warn(
-      `[external] Reddit fetch error:`,
-      e instanceof Error ? e.message : e
-    );
-    return null;
-  }
-}
-
+// Reddit blocks direct requests from shared datacenter IPs (Netlify, Vercel,
+// AWS ranges), their official OAuth API gates commercial use behind a manual
+// ticket with a long review, and scraping through proxies is fragile. So we
+// piggy-back on Brave's index: `site:reddit.com "{domain}"` returns the same
+// Reddit threads we care about, with titles + URLs + subreddit path, and
+// Brave already fetches Reddit on our behalf from an unblocked crawler.
 async function checkReddit(
   brand: string,
   domain: string
 ): Promise<RedditResult | null> {
+  const apiKey = process.env.BRAVE_API_KEY;
+  if (!apiKey) return null;
+
   try {
-    // Search for posts mentioning the domain — more precise than brand name alone.
     const domainBase = domain.replace(/^www\./, "");
-    const query = encodeURIComponent(`"${domainBase}"`);
+    // Exact-domain match to avoid spurious mentions of similar names.
+    const q = `site:reddit.com "${domainBase}"`;
+    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
+      q
+    )}&count=20`;
 
-    // Strategy, most to least reliable from Netlify's IP range:
-    //   1. oauth.reddit.com with a bearer token (60 req/min, reliable)
-    //   2. www.reddit.com (anon; frequently throttled from datacenter IPs)
-    //   3. old.reddit.com (anon fallback)
-    const bearer = await getRedditOAuthToken();
-    const oauthUrl = `https://oauth.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
-    const wwwUrl = `https://www.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
-    const oldUrl = `https://old.reddit.com/search.json?q=${query}&limit=25&sort=relevance`;
-
-    let data: unknown = null;
-    if (bearer) {
-      data = await fetchRedditSearch(oauthUrl, bearer);
-    }
-    if (!data) data = await fetchRedditSearch(wwwUrl);
-    if (!data) data = await fetchRedditSearch(oldUrl);
-    if (!data) return null;
-
-    const posts =
-      (data as { data?: { children?: unknown[] } })?.data?.children || [];
-
-    // Filter posts to only those that actually mention the brand/domain in title or body
-    const domainLower = domainBase.toLowerCase();
-    const brandLower = brand.toLowerCase();
-    type RedditPost = {
-      data: {
-        title?: string;
-        selftext?: string;
-        url?: string;
-        score?: number;
-        created_utc?: number;
-        subreddit?: string;
-        permalink?: string;
-      };
-    };
-    const filtered = (posts as RedditPost[]).filter((p) => {
-      const title = (p.data.title || "").toLowerCase();
-      const body = (p.data.selftext || "").toLowerCase();
-      const url = (p.data.url || "").toLowerCase();
-      return (
-        title.includes(domainLower) ||
-        body.includes(domainLower) ||
-        url.includes(domainLower) ||
-        title.includes(brandLower)
-      );
+    const res = await fetch(url, {
+      headers: {
+        "X-Subscription-Token": apiKey,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(8000),
     });
 
-    if (filtered.length === 0) {
-      return { totalMentions: 0, recentMentions: 0 };
+    if (!res.ok) {
+      console.warn(
+        `[external] Brave web search (reddit) HTTP ${res.status} ${res.statusText}`
+      );
+      return null;
     }
 
-    const oneYearAgo = Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60;
-    const recent = filtered.filter(
-      (p) => (p.data.created_utc || 0) > oneYearAgo
-    );
+    type BraveResult = {
+      title?: string;
+      url?: string;
+      description?: string;
+      age?: string;
+    };
+    const data = (await res.json()) as {
+      web?: { results?: BraveResult[] };
+    };
+    const results = data.web?.results ?? [];
 
-    const top = filtered.reduce<RedditPost | null>(
-      (best, p) =>
-        !best || (p.data.score || 0) > (best.data.score || 0) ? p : best,
-      null
-    );
+    // If the Brave key doesn't have the Web Search entitlement on this plan,
+    // the endpoint returns HTTP 200 with an empty response body (no `web`
+    // key). Surface this distinctly from "no Reddit threads found" so the UI
+    // can nudge the user to enable the free Data-for-Search tier.
+    if (!data.web) {
+      console.warn(
+        "[external] Brave key lacks web-search entitlement — enable Data for Search"
+      );
+      return { totalMentions: 0, recentMentions: 0, source: "unavailable" };
+    }
+
+    if (results.length === 0) {
+      return { totalMentions: 0, recentMentions: 0, source: "brave" };
+    }
+
+    // Extract subreddit from Reddit URL: https://www.reddit.com/r/<sub>/comments/...
+    const subRegex = /reddit\.com\/r\/([^/]+)\//i;
+    const top = results[0];
+    const topSubMatch = top.url ? top.url.match(subRegex) : null;
+
+    // Brave "age" looks like "1 month ago", "2 years ago", "3 days ago".
+    // Count anything not explicitly older than a year as recent.
+    const isRecent = (age?: string) => {
+      if (!age) return true; // Brave sometimes omits; assume recent.
+      return !/\b(year|years)\b/i.test(age) || /^1\s+year/i.test(age);
+    };
+    const recent = results.filter((r) => isRecent(r.age)).length;
 
     return {
-      totalMentions: filtered.length,
-      recentMentions: recent.length,
-      topPost: top
+      totalMentions: results.length,
+      recentMentions: recent,
+      topPost: top.title
         ? {
-            title: top.data.title || "",
-            subreddit: top.data.subreddit || "",
-            score: top.data.score || 0,
-            url: "https://reddit.com" + (top.data.permalink || ""),
+            title: top.title,
+            subreddit: topSubMatch ? topSubMatch[1] : "",
+            // Brave doesn't expose upvotes. Keep 0 rather than fabricate.
+            score: 0,
+            url: top.url || "",
           }
         : undefined,
+      source: "brave",
     };
-  } catch {
+  } catch (e) {
+    console.warn(
+      "[external] Brave Reddit search error:",
+      e instanceof Error ? e.message : e
+    );
     return null;
   }
 }
@@ -538,32 +468,42 @@ export async function analyzeExternal(
     });
   }
 
-  // Reddit findings
+  // Reddit findings — sourced via Brave (`site:reddit.com "{domain}"`).
   if (reddit === null) {
     findings.push({
       label: "Reddit Mentions",
       status: "warn",
-      detail: "Could not reach Reddit search API",
+      detail: "Reddit search unavailable (Brave key not configured)",
+    });
+  } else if (reddit.source === "unavailable") {
+    findings.push({
+      label: "Reddit Mentions",
+      status: "warn",
+      detail:
+        "Reddit check requires Brave's Data-for-Search tier. Enable it in the Brave API dashboard (free plan available).",
     });
   } else if (reddit.totalMentions >= 10) {
     findings.push({
       label: "Reddit Mentions",
       status: "pass",
-      detail: `${reddit.totalMentions}+ posts found (${reddit.recentMentions} in the last year)`,
+      detail: `${reddit.totalMentions}+ threads found (${reddit.recentMentions} likely recent)`,
     });
     score += 25;
     if (reddit.topPost) {
+      const inSub = reddit.topPost.subreddit
+        ? ` in r/${reddit.topPost.subreddit}`
+        : "";
       findings.push({
         label: "Top Reddit Discussion",
         status: "pass",
-        detail: `"${reddit.topPost.title.slice(0, 80)}" in r/${reddit.topPost.subreddit} (${reddit.topPost.score} upvotes)`,
+        detail: `"${reddit.topPost.title.slice(0, 100)}"${inSub}`,
       });
     }
   } else if (reddit.totalMentions >= 1) {
     findings.push({
       label: "Reddit Mentions",
       status: "warn",
-      detail: `Only ${reddit.totalMentions} posts found`,
+      detail: `Only ${reddit.totalMentions} thread${reddit.totalMentions === 1 ? "" : "s"} found`,
     });
     score += 10;
     recommendations.push({
@@ -576,7 +516,7 @@ export async function analyzeExternal(
     findings.push({
       label: "Reddit Mentions",
       status: "fail",
-      detail: "No Reddit posts mentioning this brand",
+      detail: "No Reddit threads mentioning this brand",
     });
     recommendations.push({
       priority: "high",
