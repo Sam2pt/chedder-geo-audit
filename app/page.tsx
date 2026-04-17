@@ -25,7 +25,7 @@ export default function Home() {
   const [progress, setProgress] = useState<
     Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>
   >([]);
-  const [currentStage, setCurrentStage] = useState<string>("Starting audit...");
+  const [currentStage, setCurrentStage] = useState<string>("Firing up the cheese wheel…");
 
   async function handleAudit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +35,7 @@ export default function Home() {
     setError("");
     setResult(null);
     setProgress([]);
-    setCurrentStage("Starting audit...");
+    setCurrentStage("Firing up the cheese wheel…");
 
     const cleanCompetitors = competitors
       .map((c) => c.trim())
@@ -574,7 +574,7 @@ function CheeseWheelLoader({
           <ul className="divide-y divide-black/[0.04]">
             {progress.length === 0 && (
               <li className="px-4 py-3 text-[13px] text-muted-foreground/60 italic">
-                Warming up...
+                Aging to perfection…
               </li>
             )}
             {progress.map((p) => {

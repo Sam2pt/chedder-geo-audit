@@ -126,7 +126,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
     return;
   }
 
-  emit({ type: "stage", name: "fetch", detail: `Fetching ${parsedUrl.hostname}` });
+  emit({ type: "stage", name: "fetch", detail: `Slicing into ${parsedUrl.hostname}…` });
   const homePage = await fetchPage(normalizedUrl).catch(() => null);
   if (!homePage || !homePage.ok) {
     let message: string;
@@ -144,7 +144,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
     return;
   }
 
-  emit({ type: "stage", name: "robots", detail: "Checking robots.txt + sitemap" });
+  emit({ type: "stage", name: "robots", detail: "Peeking at the house rules (robots.txt + sitemap)…" });
   let robotsTxt: string | null = null;
   let sitemapExists = false;
   try {
@@ -178,29 +178,29 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
   };
 
   // Fast on-page analyzers — run sequentially so the client sees them appear
-  emit({ type: "stage", name: "schema", detail: "Parsing structured data" });
+  emit({ type: "stage", name: "schema", detail: "Reading your schema labels…" });
   emitModule(analyzeSchema($home));
 
-  emit({ type: "stage", name: "meta", detail: "Reading meta tags" });
+  emit({ type: "stage", name: "meta", detail: "Scanning your meta tags…" });
   emitModule(analyzeMeta($home));
 
-  emit({ type: "stage", name: "content", detail: "Analyzing content structure" });
+  emit({ type: "stage", name: "content", detail: "Measuring your content structure…" });
   emitModule(analyzeContent($home));
 
-  emit({ type: "stage", name: "technical", detail: "Evaluating AI crawlability" });
+  emit({ type: "stage", name: "technical", detail: "Checking whether AI crawlers can get in…" });
   emitModule(analyzeTechnical($home, technicalCtx));
 
-  emit({ type: "stage", name: "authority", detail: "Assessing trust signals" });
+  emit({ type: "stage", name: "authority", detail: "Looking for trust signals…" });
   emitModule(analyzeAuthority($home, normalizedUrl));
 
   // External + AI run in parallel (slow — Wikipedia/Reddit/Perplexity)
-  emit({ type: "stage", name: "external", detail: "Checking Wikipedia, Reddit, Google" });
+  emit({ type: "stage", name: "external", detail: "Asking around — Wikipedia, Reddit, the wider web…" });
   const externalPromise = analyzeExternal($home, parsedUrl.hostname);
 
   const brand = extractBrandName($home, parsedUrl.hostname);
   const metaDescription = $home('meta[name="description"]').attr("content")?.trim() || null;
 
-  emit({ type: "stage", name: "ai", detail: "Testing AI citations across engines" });
+  emit({ type: "stage", name: "ai", detail: "Putting you to the test — asking ChatGPT, Perplexity, and Brave Search…" });
   const aiPromise = analyzeAICitations(brand, parsedUrl.hostname, metaDescription);
 
   const externalResult = await externalPromise;
@@ -224,7 +224,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
     emit({
       type: "stage",
       name: "quality",
-      detail: "Running quality check on results",
+      detail: "Tasting the results for quality…",
     });
     try {
       const review = await reviewAuditQuality(
@@ -259,7 +259,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
   const overallScore = calculateOverallScore(modules);
   const slug = makeSlug(parsedUrl.hostname);
 
-  emit({ type: "stage", name: "finalizing", detail: "Saving + computing benchmarks" });
+  emit({ type: "stage", name: "finalizing", detail: "Wrapping it all up and saving your audit…" });
 
   const base: AuditResult = {
     url: normalizedUrl,

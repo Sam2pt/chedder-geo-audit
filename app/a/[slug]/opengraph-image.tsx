@@ -30,6 +30,11 @@ function getGrade(score: number): string {
   return "F";
 }
 
+// satori (the renderer next/og uses) requires `display: flex` on every
+// element that has children — even children that are just text nodes.
+// Keep layouts explicit and simple; avoid `boxShadow`, nested SVG, and
+// complex gradients that have burned us before.
+
 export default async function OpengraphImage({
   params,
 }: {
@@ -38,15 +43,10 @@ export default async function OpengraphImage({
   const { slug } = await params;
   const audit = await getAudit(slug).catch(() => null);
 
-  // Graceful fallback if the audit doesn't exist — still serve a branded
-  // card so social scrapers don't error out.
   const domain = audit?.domain ?? "chedder.2pt.ai";
   const score = audit?.overallScore ?? 0;
   const grade = audit?.grade || getGrade(score);
   const c = scoreColor(score);
-
-  // Pull a headline competitor (if any) to make the card actually useful
-  // to readers.
   const topCompetitor = audit?.aiCompetitors?.[0]?.domain;
 
   return new ImageResponse(
@@ -59,38 +59,27 @@ export default async function OpengraphImage({
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px 72px",
-          background:
-            "linear-gradient(135deg, #ffffff 0%, #fafafa 60%, #f5f5f7 100%)",
-          fontFamily: "system-ui, -apple-system, sans-serif",
+          background: "#fafafa",
+          fontFamily: "system-ui, sans-serif",
         }}
       >
-        {/* Top bar: Chedder wordmark */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", alignItems: "center" }}>
           <div
             style={{
               width: 52,
               height: 52,
-              borderRadius: 14,
-              background:
-                "linear-gradient(135deg, #FFB800 0%, #E5A500 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+              borderRadius: 26,
+              background: "#FFB800",
+              border: "3px solid #E5A500",
+              marginRight: 14,
             }}
-          >
-            <svg viewBox="0 0 100 100" width={32} height={32}>
-              <circle cx={34} cy={37} r={8} fill="#8a5c00" />
-              <circle cx={64} cy={33} r={5} fill="#8a5c00" />
-              <circle cx={58} cy={62} r={10} fill="#8a5c00" />
-              <circle cx={32} cy={67} r={5} fill="#8a5c00" />
-            </svg>
-          </div>
+          />
           <div
             style={{
+              display: "flex",
               fontSize: 32,
               fontWeight: 700,
-              letterSpacing: "-0.02em",
               color: "#1d1d1f",
             }}
           >
@@ -98,6 +87,7 @@ export default async function OpengraphImage({
           </div>
           <div
             style={{
+              display: "flex",
               marginLeft: 18,
               paddingLeft: 18,
               borderLeft: "1px solid rgba(0,0,0,0.12)",
@@ -115,40 +105,57 @@ export default async function OpengraphImage({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 48,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", maxWidth: 700 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              maxWidth: 720,
+            }}
+          >
             <div
               style={{
-                fontSize: 24,
+                display: "flex",
+                fontSize: 22,
                 color: "#6e6e73",
-                marginBottom: 8,
+                marginBottom: 10,
               }}
             >
               Audit for
             </div>
             <div
               style={{
-                fontSize: 76,
+                display: "flex",
+                fontSize: 72,
                 fontWeight: 700,
-                letterSpacing: "-0.035em",
                 color: "#1d1d1f",
                 lineHeight: 1.05,
               }}
             >
               {domain}
             </div>
-            {topCompetitor && (
+            {topCompetitor ? (
               <div
                 style={{
-                  marginTop: 22,
+                  display: "flex",
+                  marginTop: 24,
                   fontSize: 22,
                   color: "#6e6e73",
-                  lineHeight: 1.4,
                 }}
               >
                 AI recommends {topCompetitor} in the same category.
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  marginTop: 24,
+                  fontSize: 22,
+                  color: "#6e6e73",
+                }}
+              >
+                See how you show up in ChatGPT, Perplexity, and Brave Search.
               </div>
             )}
           </div>
@@ -160,19 +167,18 @@ export default async function OpengraphImage({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              width: 260,
-              height: 260,
-              borderRadius: 32,
+              width: 240,
+              height: 240,
+              borderRadius: 28,
               background: c.light,
-              border: `3px solid ${c.bg}`,
-              boxShadow: `0 8px 32px ${c.bg}40`,
+              border: `4px solid ${c.bg}`,
             }}
           >
             <div
               style={{
-                fontSize: 120,
+                display: "flex",
+                fontSize: 112,
                 fontWeight: 700,
-                letterSpacing: "-0.04em",
                 color: c.text,
                 lineHeight: 1,
               }}
@@ -181,11 +187,12 @@ export default async function OpengraphImage({
             </div>
             <div
               style={{
-                fontSize: 22,
+                display: "flex",
+                fontSize: 20,
                 color: c.text,
                 marginTop: 10,
                 fontWeight: 600,
-                letterSpacing: "0.02em",
+                letterSpacing: 1,
               }}
             >
               GRADE {grade}
@@ -193,7 +200,7 @@ export default async function OpengraphImage({
           </div>
         </div>
 
-        {/* Bottom: tagline */}
+        {/* Bottom bar */}
         <div
           style={{
             display: "flex",
@@ -203,10 +210,10 @@ export default async function OpengraphImage({
             color: "#86868b",
           }}
         >
-          <div>
+          <div style={{ display: "flex" }}>
             Where does your brand show up when customers ask AI?
           </div>
-          <div style={{ fontWeight: 600, color: "#1d1d1f" }}>
+          <div style={{ display: "flex", fontWeight: 600, color: "#1d1d1f" }}>
             chedder.2pt.ai
           </div>
         </div>

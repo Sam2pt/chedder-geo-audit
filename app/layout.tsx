@@ -9,9 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Chedder · GEO Audit",
+  // Absolute base for all metadata URLs (og:image, canonical, etc.) —
+  // otherwise Next.js resolves them against http://localhost:3000 in
+  // dev-style output even in production builds.
+  metadataBase: new URL("https://chedder.2pt.ai"),
+  title: "Chedder · AI Search Visibility",
   description:
-    "See how your brand performs in AI-generated answers. Actionable insights for Generative Engine Optimization.",
+    "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
 };
 
 export default function RootLayout({
