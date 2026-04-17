@@ -7,6 +7,7 @@ import { analyzeTechnical } from "@/lib/analyzers/technical";
 import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal, extractBrandName } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
+import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
 import {
   calculateOverallScore,
   getGrade,
@@ -207,9 +208,52 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
 
   const aiResult = await aiPromise;
   let aiCompetitors: AICompetitor[] | undefined;
+  let inferredCategory: string | null = null;
   if (aiResult) {
     emitModule(aiResult.module);
     if (aiResult.competitors.length > 0) aiCompetitors = aiResult.competitors;
+    inferredCategory = aiResult.category;
+  }
+
+  // ── Quality check ───────────────────────────────────────────────
+  // Before showing the audit, run a final LLM review of the surfaced
+  // competitors: catches publishers, category-word false-positives, and
+  // duplicate domains for the same brand. Visible to the user as a
+  // distinct stage so they know Chedder is sanity-checking its own work.
+  if (aiCompetitors && aiCompetitors.length > 0) {
+    emit({
+      type: "stage",
+      name: "quality",
+      detail: "Running quality check on results",
+    });
+    try {
+      const review = await reviewAuditQuality(
+        brand,
+        parsedUrl.hostname,
+        inferredCategory,
+        aiCompetitors
+      );
+      aiCompetitors =
+        review.competitors.length > 0 ? review.competitors : undefined;
+      if (review.dropped.length > 0) {
+        console.log(
+          `[quality-review] dropped ${review.dropped.length} competitor(s):`,
+          review.dropped
+            .map((d) => `${d.domain} (${d.reason})`)
+            .join(", ")
+        );
+      }
+      if (review.suggestedCategory) {
+        console.log(
+          `[quality-review] category correction: "${inferredCategory}" → "${review.suggestedCategory}"`
+        );
+      }
+    } catch (e) {
+      console.warn(
+        "[quality-review] failed, keeping original competitors:",
+        e instanceof Error ? e.message : e
+      );
+    }
   }
 
   const overallScore = calculateOverallScore(modules);

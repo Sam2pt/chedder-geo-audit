@@ -1220,7 +1220,13 @@ export async function analyzeAICitations(
   brand: string,
   domain: string,
   metaDescription: string | null
-): Promise<{ module: ModuleResult; competitors: AICompetitor[] } | null> {
+): Promise<{
+  module: ModuleResult;
+  competitors: AICompetitor[];
+  /** The category the LLM (or regex fallback) inferred for the brand.
+   *  Exposed so downstream quality-review can use it. */
+  category: string | null;
+} | null> {
   const engines = configuredEngines();
   if (engines.length === 0) return null; // no keys configured → skip module
 
@@ -1246,6 +1252,7 @@ export async function analyzeAICitations(
         recommendations: [],
       },
       competitors: [],
+      category: null,
     };
   }
 
@@ -1579,5 +1586,6 @@ export async function analyzeAICitations(
       recommendations,
     },
     competitors: aiCompetitors,
+    category,
   };
 }
