@@ -1,7 +1,8 @@
 import { AICompetitor, Finding, ModuleResult, Recommendation } from "../types";
 import { checkSpendCap, recordSpend } from "../spend-cap";
 
-// Domains we never want to count as competitors
+// Domains we never want to count as competitors. Populated from real
+// dogfood noise — every addition represents a false positive we saw.
 const NON_COMPETITOR_DOMAINS = new Set([
   // Encyclopedias / knowledge
   "wikipedia.org",
@@ -19,8 +20,12 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "quora.com",
   "medium.com",
   "substack.com",
+  "dev.to",
+  "hashnode.dev",
   // Code / Q&A
   "github.com",
+  "gitlab.com",
+  "bitbucket.org",
   "stackoverflow.com",
   "stackexchange.com",
   // Press / news
@@ -36,7 +41,10 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "wsj.com",
   "bbc.com",
   "bbc.co.uk",
-  // Review sites
+  "economist.com",
+  "ft.com",
+  "fastcompany.com",
+  // Review / directory sites (they list every vendor — not competitors)
   "g2.com",
   "capterra.com",
   "trustpilot.com",
@@ -44,15 +52,85 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "trustradius.com",
   "getapp.com",
   "softwareadvice.com",
+  "producthunt.com",
+  "alternativeto.net",
+  "saashub.com",
+  "slashdot.org",
+  // Funding / employer / salary directories
+  "crunchbase.com",
+  "pitchbook.com",
+  "dealroom.co",
+  "ycombinator.com",
+  "news.ycombinator.com",
+  "contrary.com",
+  "vault.com",
+  "glassdoor.com",
+  "levels.fyi",
+  "builtin.com",
+  "comparably.com",
+  "owler.com",
+  "zoominfo.com",
+  // Integration / automation platforms (cited on every SaaS integration page)
+  "zapier.com",
+  "make.com",
+  "n8n.io",
+  "ifttt.com",
+  "pipedream.com",
+  "workato.com",
+  "tray.io",
+  "integromat.com",
+  // AI model providers (Linear.app audits kept citing openai.com)
+  "openai.com",
+  "anthropic.com",
+  "cohere.com",
+  "mistral.ai",
+  "perplexity.ai",
   // Search / general
   "google.com",
   "bing.com",
   "yahoo.com",
-  // Docs / generic
+  "duckduckgo.com",
+  "brave.com",
+  // Big tech / infra defaults
   "amazon.com",
+  "aws.amazon.com",
   "apple.com",
   "microsoft.com",
+  "azure.com",
+  "cloudflare.com",
+  "vercel.com",
+  "netlify.com",
+  // App stores
+  "apps.apple.com",
+  "play.google.com",
+  "chromewebstore.google.com",
 ]);
+
+// Only pull competitor candidates from scenarios that explicitly ask the AI
+// to list competing products. Citations from "tell me about X" or "is X
+// trustworthy" are primarily sources about the brand itself (integration
+// partners, VC pages, press), not competitors — they polluted ~100% of
+// early results with garbage.
+const COMPETITOR_SCENARIO_KEYWORDS = [
+  "best ",
+  "alternative",
+  "alternatives",
+  "similar to",
+  "companies similar",
+  "lead the",
+  "stand out",
+];
+
+function isCompetitorScenario(scenario: string): boolean {
+  const s = scenario.toLowerCase();
+  return COMPETITOR_SCENARIO_KEYWORDS.some((k) => s.includes(k));
+}
+
+// Extract a "brand token" from a domain root so we can check if it's
+// actually referenced in the answer text. e.g. "asana.com" → "asana".
+function domainToToken(root: string): string {
+  return root.split(".")[0];
+}
 
 /**
  * Pull the "registrable" domain (e.g., stripe.com from api.stripe.com).
@@ -335,6 +413,7 @@ function extractCompetitorsFromResponses(
   ownDomain: string
 ): AICompetitor[] {
   const ownRoot = rootDomain(ownDomain);
+  const ownToken = domainToToken(ownRoot);
   const counts = new Map<
     string,
     { domain: string; mentions: number; queries: Set<string> }
@@ -342,6 +421,12 @@ function extractCompetitorsFromResponses(
 
   for (const { spec, response } of responses) {
     if (!response) continue;
+    // Only harvest competitors from scenarios that actually ask for them.
+    // "Tell me about X" and "is X trustworthy" citations are sources about
+    // the brand, not competing products.
+    if (!isCompetitorScenario(spec.scenario)) continue;
+
+    const answerLower = response.content.toLowerCase();
 
     for (const url of response.citations) {
       try {
@@ -352,6 +437,14 @@ function extractCompetitorsFromResponses(
         if (NON_COMPETITOR_DOMAINS.has(root)) continue;
         if (NON_COMPETITOR_DOMAINS.has(host)) continue;
         if (root === ownRoot) continue;
+
+        // Corroborate: the domain's brand token must actually appear in
+        // the answer text. Catches the "cited as a footer link but never
+        // discussed" case (common with utm-tagged sources).
+        const token = domainToToken(root);
+        if (token.length < 3) continue;
+        if (token === ownToken) continue;
+        if (!answerLower.includes(token)) continue;
 
         const key = root;
         if (!counts.has(key)) {
