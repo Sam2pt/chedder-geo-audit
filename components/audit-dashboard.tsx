@@ -717,7 +717,7 @@ function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitor
         <div className="flex-1">
           <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Who AI thinks your competitors are</h3>
           <p className="text-[13px] text-muted-foreground mt-0.5 leading-[1.5]">
-            Brands Perplexity cited when answering questions about your space
+            Brands AI tools brought up when customers asked about your space
           </p>
         </div>
       </div>
@@ -1644,11 +1644,11 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
 
   let narrative = "";
   if (aiModule.score >= 70) {
-    narrative = `Perplexity mentioned ${result.domain} in ${mentions} of ${total} queries. You're showing up where it matters.`;
+    narrative = `AI tools brought up ${result.domain} in ${mentions} of ${total} customer questions. You're showing up where it matters.`;
   } else if (aiModule.score >= 40) {
-    narrative = `Perplexity mentioned ${result.domain} in ${mentions} of ${total} queries, but rarely first. Competitors are being recommended ahead of you.`;
+    narrative = `AI tools brought up ${result.domain} in ${mentions} of ${total} customer questions, but rarely first. Competitors are getting recommended ahead of you.`;
   } else {
-    narrative = `Perplexity mentioned ${result.domain} in only ${mentions} of ${total} queries. You are functionally invisible to AI search right now.`;
+    narrative = `AI tools brought up ${result.domain} in only ${mentions} of ${total} customer questions. When people don't already know you by name, you're effectively invisible.`;
   }
 
   return (
@@ -1663,7 +1663,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
         </div>
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">Live AI Test</div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">Perplexity</div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">ChatGPT · Perplexity · Brave Search</div>
         </div>
       </div>
 
@@ -1674,15 +1674,15 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
       <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
         <div>
           <div className="text-[20px] font-semibold tabular-nums text-[#34c759]">{passes}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Prominent</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Top pick</div>
         </div>
         <div>
           <div className="text-[20px] font-semibold tabular-nums text-[#ff9f0a]">{warns}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Mentioned</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Also mentioned</div>
         </div>
         <div>
           <div className="text-[20px] font-semibold tabular-nums text-[#ff453a]">{fails}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Absent</div>
+          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Not mentioned</div>
         </div>
       </div>
     </div>
@@ -2043,7 +2043,7 @@ function MetaInfo({ result }: { result: AuditResult }) {
           )}
 
           <div className="text-[13px] text-muted-foreground leading-[1.6]">
-            Chedder audits the on-site factors AI models use to decide which brands to recommend: structured data, meta tags, content quality, AI crawler access, trust signals. We also test real queries on Perplexity and check your presence on Wikipedia and Reddit. A complete strategy also requires backlinks and broader brand monitoring not covered here.
+            Chedder checks the things AI tools use to decide who to recommend: your site's structure, meta tags, content quality, whether AI crawlers can read you, and your trust signals. We also run real customer questions through ChatGPT, Perplexity, and Brave Search, and check whether you show up on Wikipedia and Reddit. A full strategy also involves link building and broader brand monitoring, which this audit doesn't cover.
           </div>
         </div>
       )}

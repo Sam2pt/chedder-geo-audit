@@ -292,7 +292,7 @@ function configuredEngines(): Engine[] {
   if (brv) {
     engines.push({
       name: "brave",
-      label: "Brave",
+      label: "Brave Search",
       ask: (q) => askBrave(q, brv),
       // Brave Answers plan caps at 2 req/sec — serialize to stay safely under.
       sequential: true,
@@ -926,7 +926,7 @@ export async function analyzeAICitations(
   if (!cap.allowed || cap.remainingQueriesToday <= 0) {
     return {
       module: {
-        name: "AI Citation Testing",
+        name: "AI Search Visibility",
         slug: "ai-citations",
         score: 0,
         icon: "🤖",
@@ -1094,7 +1094,10 @@ export async function analyzeAICitations(
 
   for (const { engine, spec, response } of results) {
     const engineLabel = engineLabelOf(engine);
-    const scenarioLabel = `${engineLabel} · ${spec.scenario}`;
+    // Finding label leads with the human scenario; the detail text names the
+    // specific AI tool. This keeps the card readable even if a user hasn't
+    // heard of Perplexity or Brave Search.
+    const scenarioLabel = `${spec.scenario} — via ${engineLabel}`;
     const eb = byEngine[engine];
     eb.total++;
 
@@ -1102,7 +1105,7 @@ export async function analyzeAICitations(
       findings.push({
         label: scenarioLabel,
         status: "warn",
-        detail: `${engineLabel} query failed. We will retry next audit.`,
+        detail: `We couldn't reach ${engineLabel} this time. We'll try again on your next audit.`,
       });
       continue;
     }
@@ -1121,19 +1124,17 @@ export async function analyzeAICitations(
       findings.push({
         label: scenarioLabel,
         status: "pass",
-        detail: `${brand} is mentioned prominently in the ${engineLabel} answer.`,
+        detail: `${engineLabel} lists ${brand} among its top picks — this is exactly where you want to be.`,
         excerpt: cleanExcerpt(analysis.excerpt),
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
       });
     } else if (analysis.position === "mentioned") {
       eb.mentioned++;
-      // Name collision is the most useful thing to surface when it happens —
-      // it tells the user "AI knows a different brand with your name".
       const detail =
         analysis.collisionHosts.length > 0
-          ? `${engineLabel} found a different brand with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}). Your site wasn't the subject of the answer.`
-          : `${brand} is mentioned, but not among the top recommendations in the ${engineLabel} answer.`;
+          ? `${engineLabel} is thinking of a different company with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}) — you were not the subject of the answer.`
+          : `${engineLabel} mentions ${brand}, but buries it below other recommendations. Customers who scan the top picks will miss you.`;
       findings.push({
         label: scenarioLabel,
         status: "warn",
@@ -1144,19 +1145,16 @@ export async function analyzeAICitations(
       });
     } else {
       const recommended = pickTopCitedBrands(response.citations);
-      // If analyzeCitation returned an excerpt, the brand name appeared in
-      // the text but was refused (e.g. "X does not appear in results"). Use
-      // that excerpt so the user sees exactly how the engine disclaimed it.
       const excerpt = analysis.excerpt
         ? cleanExcerpt(analysis.excerpt)
         : firstSnippet(response.content);
       const detail = analysis.refused
-        ? `${engineLabel} did not recognize ${brand} in its answer.`
+        ? `${engineLabel} doesn't recognize ${brand} — it told the user it didn't know the company.`
         : recommended.length > 0
-          ? `${brand} is not mentioned by ${engineLabel}. It recommended ${recommended.join(
+          ? `${brand} doesn't come up in ${engineLabel}. It recommends ${recommended.join(
               ", "
             )} instead.`
-          : `${brand} is not mentioned in the ${engineLabel} answer.`;
+          : `${brand} doesn't come up in ${engineLabel} at all — you're invisible for this question.`;
       findings.push({
         label: scenarioLabel,
         status: "fail",
@@ -1211,24 +1209,26 @@ export async function analyzeAICitations(
   if (totalMentioned === 0 && totalAnswered > 0) {
     recommendations.push({
       priority: "high",
-      title: "Your Brand Is Invisible to AI",
-      description: `None of the AI engines we tested (${engines
+      title: "AI doesn't know you yet",
+      description: `When customers ask AI for recommendations in your category, none of the tools we tested (${engines
         .map((e) => e.label)
-        .join(", ")}) mentioned ${brand}. Focus on earning authoritative mentions on Wikipedia, Reddit, G2, news publications, and industry directories.`,
+        .join(
+          ", "
+        )}) bring up ${brand}. The fix is earning more mentions in the places AI learns from: Wikipedia, Reddit, press coverage, and review sites like G2 and Capterra.`,
     });
   } else if (totalProminent === 0 && totalMentioned > 0) {
     recommendations.push({
       priority: "high",
-      title: "Improve Prominence in AI Responses",
-      description: `${brand} is mentioned but always toward the end of responses. AI models list "leading" brands first. Build topical authority through comprehensive content and third-party endorsements.`,
+      title: "Move up in AI answers",
+      description: `${brand} shows up, but always near the bottom. AI tools list the most-discussed brands first, so the goal is more coverage and stronger topical authority — think press mentions, comparison articles, and in-depth content that positions you as a category leader.`,
     });
   }
 
   if (totalCited === 0 && totalMentioned > 0) {
     recommendations.push({
       priority: "high",
-      title: "Your Site Isn't Being Cited Directly",
-      description: `AI mentions ${brand} but cites other sources (reviews, Wikipedia, news). Optimize your own content to become a direct citation source: add FAQs, structured data, and authoritative statistics.`,
+      title: "AI talks about you but doesn't link to you",
+      description: `AI mentions ${brand}, but sends users to other sites (reviews, Wikipedia, news) for the details. Give AI tools a reason to link back to you directly — add FAQs, data-backed claims, and structured data that make your own pages the most quotable source.`,
     });
   }
 
@@ -1241,14 +1241,11 @@ export async function analyzeAICitations(
       weakEngines.length > 0 &&
       weakEngines.length < engines.length // don't duplicate the "invisible everywhere" rec
     ) {
+      const weakList = weakEngines.map((w) => w.label).join(", ");
       recommendations.push({
         priority: "medium",
-        title: `Missing from ${weakEngines.map((w) => w.label).join(", ")}`,
-        description: `You appear in some AI engines but not others. Different engines weight different signals — ${weakEngines
-          .map((w) => w.label)
-          .join(
-            ", "
-          )} lean harder on recent web content, structured data, and high-authority backlinks. Publish fresh content that targets your core categories and earn links from industry publications.`,
+        title: `Not showing up in ${weakList}`,
+        description: `You're visible in some AI tools but not ${weakList}. Each tool weighs different signals, and the ones missing you tend to rely more on fresh web content, structured data, and links from well-known industry sites. Regular publishing and earned press close this gap fastest.`,
       });
     }
   }
@@ -1260,10 +1257,10 @@ export async function analyzeAICitations(
   const engineList = engines.map((e) => e.label).join(", ");
   const description =
     engines.length > 1
-      ? `Real queries tested across ${engineList} — ${engineSummary.join(
+      ? `We asked real customer questions to ${engineList} and checked whether ${brand} came up — ${engineSummary.join(
           " · "
         )}`
-      : `Real queries tested on ${engineList} (${usedQueries}/${results.length} queries ran)`;
+      : `We asked real customer questions to ${engineList} and checked whether ${brand} came up (${usedQueries}/${results.length} questions answered).`;
 
   return {
     module: {

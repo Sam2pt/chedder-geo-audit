@@ -375,8 +375,8 @@ export default function Home() {
             {[
               {
                 color: "#14b8a6",
-                title: "Real AI citation testing",
-                desc: "We ask Perplexity 5 real questions about your category and check if your brand appears, with exact verbatim excerpts.",
+                title: "Real AI search tests",
+                desc: "We ask ChatGPT, Perplexity, and Brave Search real customer questions about your category and check whether your brand comes up — with exact verbatim excerpts.",
                 badge: "Killer feature",
               },
               {
@@ -439,7 +439,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s, even both side-by-side." },
-              { num: "2", title: "Chedder audits everything", desc: "Crawls 5 pages, tests Perplexity, checks Wikipedia and Reddit, scores every signal." },
+              { num: "2", title: "Chedder audits everything", desc: "Crawls your pages, runs real questions through ChatGPT, Perplexity, and Brave Search, and checks Wikipedia and Reddit — scoring every signal." },
               { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
             ].map((step, i) => (
               <div key={i} className="relative p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
