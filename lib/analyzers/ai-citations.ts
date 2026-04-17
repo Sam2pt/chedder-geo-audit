@@ -370,6 +370,91 @@ function extractProductMentionsFromText(content: string): string[] {
   return Array.from(names);
 }
 
+// Resolve a batch of brand/product names to their canonical domains using
+// an LLM. The model already knows thousands of DTC brand-to-domain
+// mappings — this is dramatically more reliable than firstword.com
+// guessing, and scales to any consumer vertical without a hand-curated
+// dictionary. Returns a Map from lowercased name → domain; unknown names
+// are omitted (not returned) so the caller can fall back to the local
+// resolver for those.
+async function resolveBrandDomainsLLM(
+  names: string[],
+  category: string | null
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || names.length === 0) return out;
+
+  // Dedupe + clamp — no need to pay for repeats or absurdly long names.
+  const unique = Array.from(
+    new Set(
+      names
+        .map((n) => n.trim())
+        .filter((n) => n.length >= 2 && n.length <= 60)
+    )
+  ).slice(0, 40);
+  if (unique.length === 0) return out;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0,
+        max_tokens: 600,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You resolve consumer brand names to their official website domains. For each input name, return its canonical domain ONLY if you are confident it is a real direct-to-consumer or consumer-goods brand (e.g. Casper → casper.com, Bear Mattress → bearmattress.com, Nectar → nectarsleep.com, Allbirds → allbirds.com). Skip names you are unsure about, names that are generic words, retailers (Amazon, Target), publishers (Wirecutter), or anything that isn't a product brand. Return JSON in the exact shape {\"brands\": [{\"name\": <input verbatim>, \"domain\": <lowercase domain, no www, no path>}]}.",
+          },
+          {
+            role: "user",
+            content: `Category context: ${category || "consumer products"}\n\nNames to resolve:\n${unique.map((n) => `- ${n}`).join("\n")}`,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[ai-citations] brand resolver HTTP ${res.status} ${res.statusText}`
+      );
+      return out;
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as {
+      brands?: Array<{ name?: string; domain?: string }>;
+    };
+    for (const b of parsed.brands ?? []) {
+      if (!b.name || !b.domain) continue;
+      const name = b.name.trim().toLowerCase();
+      const domain = b.domain
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/.*$/, "");
+      if (!/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/.test(domain)) continue;
+      out.set(name, domain);
+    }
+  } catch (e) {
+    console.warn(
+      "[ai-citations] brand resolver error:",
+      e instanceof Error ? e.message : e
+    );
+  }
+  return out;
+}
+
 // Map a product name (or a bare domain) to a registrable domain we can
 // count as a competitor. Returns null if the name can't be resolved or
 // looks like a false positive.
@@ -776,10 +861,11 @@ type TaggedResponse = {
   response: EngineResponse | null;
 };
 
-function extractCompetitorsFromResponses(
+async function extractCompetitorsFromResponses(
   responses: TaggedResponse[],
-  ownDomain: string
-): AICompetitor[] {
+  ownDomain: string,
+  category: string | null
+): Promise<AICompetitor[]> {
   const ownRoot = rootDomain(ownDomain);
   const ownToken = domainToToken(ownRoot);
   // Track candidates by registrable domain. We count how many distinct
@@ -795,6 +881,35 @@ function extractCompetitorsFromResponses(
       queries: Set<string>;
     }
   >();
+
+  // First pass: collect all prose-mentioned product names so we can
+  // batch-resolve them with a single LLM call (scales to any DTC category
+  // without a hand-curated dictionary).
+  const allMentions: Array<{
+    engine: EngineName;
+    scenario: string;
+    name: string;
+  }> = [];
+  for (const { engine, spec, response } of responses) {
+    if (!response) continue;
+    if (!isCompetitorScenario(spec.scenario)) continue;
+    for (const name of extractProductMentionsFromText(response.content)) {
+      allMentions.push({ engine, scenario: spec.scenario, name });
+    }
+  }
+  const uniqueNames = Array.from(
+    new Set(allMentions.map((m) => m.name.toLowerCase()))
+  );
+  const llmResolved = await resolveBrandDomainsLLM(uniqueNames, category);
+
+  // Helper: resolve a name → domain using LLM map first, then local
+  // overrides + firstword.com fallback.
+  const resolve = (name: string): string | null => {
+    const key = name.toLowerCase();
+    const llm = llmResolved.get(key);
+    if (llm) return llm;
+    return productNameToDomain(name);
+  };
 
   for (const { engine, spec, response } of responses) {
     if (!response) continue;
@@ -812,11 +927,10 @@ function extractCompetitorsFromResponses(
       }
     }
 
-    // 2) Prose mentions: **bold** names and bare domains from answer text.
-    const mentions = extractProductMentionsFromText(response.content);
-    for (const name of mentions) {
-      const guess = productNameToDomain(name);
-      if (guess) addCandidate(rootDomain(guess));
+    // 2) Prose mentions — domains resolved via LLM when possible.
+    for (const name of extractProductMentionsFromText(response.content)) {
+      const resolved = resolve(name);
+      if (resolved) addCandidate(rootDomain(resolved));
     }
 
     function addCandidate(root: string) {
@@ -1440,7 +1554,11 @@ export async function analyzeAICitations(
 
   /* ── Merge competitors across all engines ──────────────────────── */
 
-  const aiCompetitors = extractCompetitorsFromResponses(results, domain);
+  const aiCompetitors = await extractCompetitorsFromResponses(
+    results,
+    domain,
+    category
+  );
 
   const engineList = engines.map((e) => e.label).join(", ");
   const description =

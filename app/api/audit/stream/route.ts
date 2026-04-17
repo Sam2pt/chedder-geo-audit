@@ -25,22 +25,45 @@ export const dynamic = "force-dynamic";
 
 const FETCH_TIMEOUT = 10000;
 
-async function fetchPage(url: string) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; ChedderBot/1.0; +https://chedder.app)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-    redirect: "follow",
-    signal: AbortSignal.timeout(FETCH_TIMEOUT),
-  });
-  if (!res.ok) return null;
+type FetchResult =
+  | { ok: true; html: string; headers: Record<string, string> }
+  | { ok: false; status: number; protectedBy?: string };
+
+async function fetchPage(url: string): Promise<FetchResult | null> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; ChedderBot/1.0; +https://chedder.2pt.ai)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT),
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) {
+    // Detect common bot-protection services so we can tell the user why.
+    const headerDump: Record<string, string> = {};
+    res.headers.forEach((v, k) => {
+      headerDump[k.toLowerCase()] = v;
+    });
+    let protectedBy: string | undefined;
+    if (headerDump["x-datadome"]) protectedBy = "DataDome";
+    else if (headerDump["cf-ray"] || headerDump["server"]?.toLowerCase().includes("cloudflare"))
+      protectedBy = "Cloudflare";
+    else if (headerDump["x-akamai-transformed"]) protectedBy = "Akamai";
+    else if (headerDump["server"]?.toLowerCase().includes("perimeterx"))
+      protectedBy = "PerimeterX";
+    return { ok: false, status: res.status, protectedBy };
+  }
   const headers: Record<string, string> = {};
   res.headers.forEach((v, k) => {
     headers[k.toLowerCase()] = v;
   });
-  return { html: await res.text(), headers };
+  return { ok: true, html: await res.text(), headers };
 }
 
 type StreamEvent =
@@ -104,8 +127,19 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
 
   emit({ type: "stage", name: "fetch", detail: `Fetching ${parsedUrl.hostname}` });
   const homePage = await fetchPage(normalizedUrl).catch(() => null);
-  if (!homePage) {
-    emit({ type: "error", message: `Could not reach ${parsedUrl.hostname}` });
+  if (!homePage || !homePage.ok) {
+    let message: string;
+    if (homePage && !homePage.ok && homePage.protectedBy) {
+      // e.g. "sugarfina.com blocks automated audits (DataDome bot protection).
+      // This is a limit of the site, not Chedder. If it's your own site,
+      // allow requests from Chedder's user-agent. Otherwise try a different URL."
+      message = `${parsedUrl.hostname} blocks automated audits (${homePage.protectedBy} bot protection, HTTP ${homePage.status}). If this is your site, ask your team to allow the Chedder user-agent. Otherwise try a different URL.`;
+    } else if (homePage && !homePage.ok) {
+      message = `${parsedUrl.hostname} returned HTTP ${homePage.status} — the site may be down or blocking automated requests.`;
+    } else {
+      message = `Could not reach ${parsedUrl.hostname}. Check the URL and try again.`;
+    }
+    emit({ type: "error", message });
     return;
   }
 
