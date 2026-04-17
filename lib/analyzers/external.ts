@@ -298,7 +298,12 @@ async function checkReddit(
   brand: string,
   domain: string
 ): Promise<RedditResult | null> {
-  const apiKey = process.env.BRAVE_API_KEY;
+  // Brave issues plan-scoped keys. BRAVE_SEARCH_API_KEY is the Search-plan
+  // key (entitled for /res/v1/web/search); BRAVE_API_KEY is the Answers-plan
+  // key used for /res/v1/chat/completions. Fall back to BRAVE_API_KEY for
+  // backwards compatibility with older environments that only had one key.
+  const apiKey =
+    process.env.BRAVE_SEARCH_API_KEY || process.env.BRAVE_API_KEY;
   if (!apiKey) return null;
 
   try {
