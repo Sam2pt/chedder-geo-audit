@@ -56,6 +56,25 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "alternativeto.net",
   "saashub.com",
   "slashdot.org",
+  // Listicle/publisher sites we saw repeatedly in dogfood
+  "techradar.com",
+  "nerdwallet.com",
+  "zdnet.com",
+  "pcmag.com",
+  "cnet.com",
+  "tomsguide.com",
+  "tomshardware.com",
+  "thedigitalprojectmanager.com",
+  "paymentnerds.com",
+  "swipesum.com",
+  "investopedia.com",
+  "wirecutter.com",
+  "engadget.com",
+  "mashable.com",
+  "makeuseof.com",
+  "howtogeek.com",
+  "digitaltrends.com",
+  "lifehacker.com",
   // Funding / employer / salary directories
   "crunchbase.com",
   "pitchbook.com",
@@ -105,6 +124,93 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "play.google.com",
   "chromewebstore.google.com",
 ]);
+
+// Well-known product → domain overrides for names whose brand doesn't
+// follow the "firstword.com" default. Keep this small; only add entries
+// we actually hit in dogfood.
+const PRODUCT_DOMAIN_OVERRIDES: Record<string, string> = {
+  jira: "atlassian.com",
+  confluence: "atlassian.com",
+  trello: "atlassian.com",
+  notion: "notion.so",
+  "monday.com": "monday.com",
+  "monday": "monday.com",
+  asana: "asana.com",
+  clickup: "clickup.com",
+  smartsheet: "smartsheet.com",
+  linear: "linear.app",
+  basecamp: "basecamp.com",
+  airtable: "airtable.com",
+  paypal: "paypal.com",
+  square: "squareup.com",
+  braintree: "braintreepayments.com",
+  adyen: "adyen.com",
+  stripe: "stripe.com",
+  shopify: "shopify.com",
+  quickbooks: "intuit.com",
+  venmo: "venmo.com",
+  coda: "coda.io",
+  "smart sheet": "smartsheet.com",
+  "zoho crm": "zoho.com",
+  zoho: "zoho.com",
+  hubspot: "hubspot.com",
+  salesforce: "salesforce.com",
+  pipedrive: "pipedrive.com",
+};
+
+// Extract product names from an AI answer. AI listicles predictably use:
+//   - Markdown bold:  **Asana**, **Monday.com**
+//   - Numbered lists with bold:  "1. **Asana** - ..."
+//   - Bare domains:  "asana.com", "stripe.com"
+// We skip the enclosing prose parsing and just mine these structural
+// signals — cheap and high-precision.
+function extractProductMentionsFromText(content: string): string[] {
+  const names = new Set<string>();
+
+  // Markdown bold:  **Name** — must start with a capital letter so we
+  // don't catch emphasis on common words.
+  for (const m of content.matchAll(
+    /\*\*([A-Z][A-Za-z0-9.\s&'\-]{1,40})\*\*/g
+  )) {
+    const cleaned = m[1].trim();
+    if (cleaned.length >= 2 && cleaned.length <= 40) names.add(cleaned);
+  }
+
+  // Bare domain mentions:  asana.com, stripe.com, coda.io
+  for (const m of content.matchAll(
+    /\b([a-z][a-z0-9-]{1,30}\.(?:com|io|app|ai|co|dev|so|net|org))\b/gi
+  )) {
+    names.add(m[1].toLowerCase());
+  }
+
+  return Array.from(names);
+}
+
+// Map a product name (or a bare domain) to a registrable domain we can
+// count as a competitor. Returns null if the name can't be resolved or
+// looks like a false positive.
+function productNameToDomain(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  // Already looks like a domain → normalize.
+  if (/^[a-z][a-z0-9-]*\.[a-z]{2,}/i.test(trimmed)) {
+    return trimmed.toLowerCase().replace(/^www\./, "");
+  }
+
+  // Override lookup (handles Jira → atlassian.com, Notion → notion.so etc).
+  const key = trimmed.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+  if (PRODUCT_DOMAIN_OVERRIDES[key]) return PRODUCT_DOMAIN_OVERRIDES[key];
+
+  // Default guess:  firstword.com. Covers the 80% case (Asana → asana.com,
+  // Square → square.com, Shopify → shopify.com).
+  const firstWord = trimmed
+    .split(/\s+/)[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  if (firstWord.length < 3 || firstWord.length > 30) return null;
+  return firstWord + ".com";
+}
 
 // Only pull competitor candidates from scenarios that explicitly ask the AI
 // to list competing products. Citations from "tell me about X" or "is X
@@ -501,33 +607,42 @@ function extractCompetitorsFromResponses(
     // the brand, not competing products.
     if (!isCompetitorScenario(spec.scenario)) continue;
 
+    // 1) Citations: treat domains linked from the answer as candidates.
+    //    These capture real product homepages when the AI cites them,
+    //    but often miss the well-known incumbents (PayPal, Square) because
+    //    the engine cites listicle articles rather than company pages.
     for (const url of response.citations) {
       try {
         const u = new URL(url);
         const host = u.hostname.replace(/^www\./, "").toLowerCase();
         const root = rootDomain(host);
-
-        if (NON_COMPETITOR_DOMAINS.has(root)) continue;
-        if (NON_COMPETITOR_DOMAINS.has(host)) continue;
-        if (root === ownRoot) continue;
-
-        const token = domainToToken(root);
-        if (token.length < 3) continue;
-        if (token === ownToken) continue;
-
-        const key = root;
-        if (!counts.has(key)) {
-          counts.set(key, {
-            domain: root,
-            mentions: 0,
-            queries: new Set(),
-          });
-        }
-        const entry = counts.get(key)!;
-        entry.queries.add(spec.scenario);
+        addCandidate(root);
       } catch {
         // invalid URL
       }
+    }
+
+    // 2) Prose mentions: mine **bold** names and bare domains from the
+    //    answer text. This catches the "AI says 'Stripe, PayPal, Square'
+    //    in prose while citing a techradar article" case that citations
+    //    alone miss.
+    const mentions = extractProductMentionsFromText(response.content);
+    for (const name of mentions) {
+      const guess = productNameToDomain(name);
+      if (guess) addCandidate(rootDomain(guess));
+    }
+
+    function addCandidate(root: string) {
+      if (!root) return;
+      if (NON_COMPETITOR_DOMAINS.has(root)) return;
+      if (root === ownRoot) return;
+      const token = domainToToken(root);
+      if (token.length < 3) return;
+      if (token === ownToken) return;
+      if (!counts.has(root)) {
+        counts.set(root, { domain: root, mentions: 0, queries: new Set() });
+      }
+      counts.get(root)!.queries.add(spec.scenario);
     }
   }
 
