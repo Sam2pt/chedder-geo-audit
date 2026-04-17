@@ -1264,7 +1264,7 @@ export async function analyzeAICitations(
 
   return {
     module: {
-      name: "AI Citation Testing",
+      name: "AI Search Visibility",
       slug: "ai-citations",
       score,
       icon: "🤖",
