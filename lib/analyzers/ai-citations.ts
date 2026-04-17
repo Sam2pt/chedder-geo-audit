@@ -680,7 +680,7 @@ async function inferCategoryLLM(
           {
             role: "system",
             content:
-              "You identify the consumer product category a direct-to-consumer (DTC) brand belongs to, so a shopper can ask AI tools like ChatGPT for recommendations in that category without naming the brand. Reply with ONLY a 2–5 word consumer product category. Good examples: 'dog beds', 'memory foam mattresses', 'running shoes for women', 'artisan chocolate', 'digital pianos', 'reusable water bottles', 'natural deodorant'. Avoid retail/service framing like 'mattress retail' or 'pet supplies store' — use the product itself. No preamble, no quotes, no punctuation.",
+              "You identify the specific consumer product category a brand competes in, so a shopper can ask AI tools like ChatGPT for recommendations in that category without naming the brand. This covers the full consumer packaged goods (CPG) range — both direct-to-consumer startups and traditional retail brands. Reply with ONLY a 2–5 word consumer product category. Good examples: 'sandwich cookies' (not 'snacks'), 'laundry detergent', 'toothpaste', 'dog beds', 'memory foam mattresses', 'running shoes for women', 'dark chocolate bars', 'digital pianos', 'meal kit subscriptions', 'camera bags', 'insulated drinkware'. Prefer the most specific product category you are confident about — 'sandwich cookies' is better than 'cookies', 'laundry detergent' better than 'cleaning products'. Avoid retail/service framing ('mattress retail', 'grocery store') — use the product itself. No preamble, no quotes, no punctuation.",
           },
           {
             role: "user",
