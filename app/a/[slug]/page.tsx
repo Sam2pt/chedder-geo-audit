@@ -35,8 +35,27 @@ export async function generateMetadata({
   if (!result) {
     return { title: "Audit not found · Chedder" };
   }
+  const title = `${result.domain} — AI Search Visibility · Chedder`;
+  const description = `${result.domain} scored ${result.overallScore}/100 (${result.grade}) on Chedder's AI search visibility audit. See how the brand shows up in ChatGPT, Perplexity, and Brave Search.`;
+  const permalink = `https://chedder.2pt.ai/a/${slug}`;
   return {
-    title: `${result.domain} — GEO Audit · Chedder`,
-    description: `${result.domain} scored ${result.overallScore}/100 (${result.grade}) on Chedder's Generative Engine Optimization audit.`,
+    title,
+    description,
+    // og:image is auto-wired by the opengraph-image.tsx file in this
+    // segment — here we just set the rest of the OG/Twitter metadata so
+    // Slack/Twitter/LinkedIn render a rich card.
+    alternates: { canonical: permalink },
+    openGraph: {
+      title,
+      description,
+      url: permalink,
+      siteName: "Chedder",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
