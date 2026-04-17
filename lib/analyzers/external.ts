@@ -466,10 +466,10 @@ export async function analyzeExternal(
       detail: "No Wikipedia article found for this brand",
     });
     recommendations.push({
-      priority: "high",
-      title: "Build Toward a Wikipedia Presence",
+      priority: "medium",
+      title: "Earn credible press coverage",
       description:
-        "Wikipedia is one of the most-cited sources by AI models. Earn notability through press coverage, then have an independent editor create an article (Wikipedia policy discourages self-authored pages).",
+        "Wikipedia is one of the most-cited sources by AI models, but most DTC brands won't meet its notability bar until later. The path there is earned press: get reviewed in Wirecutter, NYT Strategist, Good Housekeeping, or your category's leading publication. Those placements also feed every other AI signal at once.",
     });
   }
 
@@ -513,9 +513,9 @@ export async function analyzeExternal(
     score += 10;
     recommendations.push({
       priority: "medium",
-      title: "Grow Reddit Discussion",
+      title: "Grow Reddit discussion around your brand",
       description:
-        "AI models weight organic Reddit discussions highly. Engage authentically in relevant subreddits, do not astroturf, which is detected and penalized.",
+        "AI models weight organic Reddit discussions heavily for shopper intent — r/BuyItForLife and category subreddits are gold. Seed genuine conversations by answering questions in your category honestly (even when it doesn't route to your product), and encourage happy customers to post reviews. Avoid astroturfing — it's detected and penalized.",
     });
   } else {
     findings.push({
@@ -525,9 +525,9 @@ export async function analyzeExternal(
     });
     recommendations.push({
       priority: "high",
-      title: "Build Organic Reddit Presence",
+      title: "Build organic Reddit presence",
       description:
-        "Reddit is a top-tier source AI models cite for authentic user opinions. Identify 2-3 subreddits where your audience gathers and contribute valuable, non-promotional content.",
+        "Reddit is a top-tier source AI models cite for honest shopper opinions. Identify 2–3 subreddits where your target shopper hangs out (r/BuyItForLife and your category-specific subs), and contribute genuinely helpful, non-promotional comments. Ask happy customers to share their experience — organic threads outrank any paid campaign here.",
     });
   }
 
@@ -549,9 +549,9 @@ export async function analyzeExternal(
       score += 15;
       recommendations.push({
         priority: "medium",
-        title: "Expand Web Mentions",
+        title: "Expand web presence",
         description:
-          "Increase PR, guest posts, podcast appearances, and directory listings to build broader web presence that AI crawlers can find.",
+          "Broaden where your brand shows up online — pitch reviews to lifestyle and category publications, send product to creators in your niche for honest reviews, get on roundup lists, and pursue podcast mentions. AI tools learn from fresh, varied coverage.",
       });
     } else {
       findings.push({
@@ -561,10 +561,10 @@ export async function analyzeExternal(
       });
       recommendations.push({
         priority: "high",
-        title: "Build Web Mentions",
+        title: "Build web presence from scratch",
         description:
-          "Low web presence means AI models have little signal beyond your own site. Prioritize PR, partnerships, and earned media.",
-      });
+          "Low web presence means AI models have little to go on beyond your own site. Pitch the press that matters for your category (Wirecutter, Good Housekeeping, lifestyle outlets, niche reviewers), send product to creators, and appear in honest roundup articles. You need other people talking about you before AI can.",
+    });
     }
   } else if (google.configured && google.error) {
     findings.push({

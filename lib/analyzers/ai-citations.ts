@@ -123,12 +123,205 @@ const NON_COMPETITOR_DOMAINS = new Set([
   "apps.apple.com",
   "play.google.com",
   "chromewebstore.google.com",
+  // Retailers / marketplaces (NOT competitors to DTC brands — they resell)
+  "walmart.com",
+  "target.com",
+  "ebay.com",
+  "bestbuy.com",
+  "costco.com",
+  "costcowholesale.com",
+  "samsclub.com",
+  "wayfair.com",
+  "overstock.com",
+  "etsy.com",
+  "macys.com",
+  "nordstrom.com",
+  "bloomingdales.com",
+  "kohls.com",
+  "jcpenney.com",
+  "homedepot.com",
+  "lowes.com",
+  "petco.com",
+  "petsmart.com",
+  "chewy.com",
+  "sephora.com",
+  "ulta.com",
+  "rei.com",
+  "dickssportinggoods.com",
+  "shein.com",
+  "temu.com",
+  "aliexpress.com",
+  "alibaba.com",
+  // Consumer review/lifestyle publishers
+  "goodhousekeeping.com",
+  "consumerreports.org",
+  "wirecutter.com",
+  "nytimes.com",
+  "nymag.com",
+  "thestrategist.nymag.com",
+  "realsimple.com",
+  "bonappetit.com",
+  "epicurious.com",
+  "foodandwine.com",
+  "bhg.com",
+  "apartmenttherapy.com",
+  "architecturaldigest.com",
+  "elle.com",
+  "vogue.com",
+  "cosmopolitan.com",
+  "allure.com",
+  "harpersbazaar.com",
+  "glamour.com",
+  "self.com",
+  "shape.com",
+  "menshealth.com",
+  "womenshealthmag.com",
+  "runnersworld.com",
+  "mensjournal.com",
+  "gq.com",
+  "esquire.com",
+  "rollingstone.com",
+  "thespruce.com",
+  "thespruceeats.com",
+  "thespruepets.com",
+  "dogster.com",
+  "cattime.com",
+  "americankennelclub.org",
+  "akc.org",
+  "buzzfeed.com",
+  "parade.com",
+  "people.com",
+  "usmagazine.com",
+  "popsugar.com",
+  "housebeautiful.com",
+  "elledecor.com",
+  "marthastewart.com",
+  "countryliving.com",
+  "pianobuyer.com",
+  "pianoworld.com",
+  "reviewed.com",
+  "usatoday.com",
+  "today.com",
+  "cnn.com",
+  // Aggregators / deal sites
+  "dealnews.com",
+  "slickdeals.net",
+  "rakuten.com",
+  "retailmenot.com",
+  "honey.com",
+  "capitaloneshopping.com",
 ]);
 
 // Well-known product → domain overrides for names whose brand doesn't
-// follow the "firstword.com" default. Keep this small; only add entries
-// we actually hit in dogfood.
+// follow the "firstword.com" default. Populated from dogfood where we
+// saw a brand named in prose but couldn't resolve the domain correctly.
 const PRODUCT_DOMAIN_OVERRIDES: Record<string, string> = {
+  // --- DTC: mattresses / sleep -----------------------------------------
+  casper: "casper.com",
+  purple: "purple.com",
+  saatva: "saatva.com",
+  nectar: "nectarsleep.com",
+  helix: "helix.com",
+  "helix sleep": "helix.com",
+  tempurpedic: "tempurpedic.com",
+  "tempur-pedic": "tempurpedic.com",
+  "bear mattress": "bearmattress.com",
+  avocado: "avocadogreenmattress.com",
+  brooklinen: "brooklinen.com",
+  "tuft & needle": "tuftandneedle.com",
+  tuftandneedle: "tuftandneedle.com",
+  leesa: "leesa.com",
+  "layla sleep": "laylasleep.com",
+  layla: "laylasleep.com",
+  awara: "awarasleep.com",
+  // --- DTC: pet -----------------------------------------
+  barkbox: "barkbox.com",
+  superchewer: "superchewer.com",
+  "super chewer": "superchewer.com",
+  pupbox: "pupbox.com",
+  pupjoy: "pupjoy.com",
+  kong: "kongcompany.com",
+  "west paw": "westpaw.com",
+  "big barker": "bigbarker.com",
+  "pet fusion": "petfusion.com",
+  petfusion: "petfusion.com",
+  "brentwood home": "brentwoodhome.com",
+  // --- DTC: apparel / footwear -----------------------------------------
+  allbirds: "allbirds.com",
+  rothy: "rothys.com",
+  rothys: "rothys.com",
+  warby: "warbyparker.com",
+  "warby parker": "warbyparker.com",
+  bonobos: "bonobos.com",
+  everlane: "everlane.com",
+  lululemon: "lululemon.com",
+  nike: "nike.com",
+  adidas: "adidas.com",
+  "new balance": "newbalance.com",
+  hoka: "hoka.com",
+  brooks: "brooksrunning.com",
+  asics: "asics.com",
+  "on running": "on.com",
+  vuori: "vuoriclothing.com",
+  "outdoor voices": "outdoorvoices.com",
+  // --- DTC: food / candy / snacks --------------------------------------
+  sugarfina: "sugarfina.com",
+  vosges: "vosgeschocolate.com",
+  "vosges haut-chocolat": "vosgeschocolate.com",
+  theochocolate: "theochocolate.com",
+  "theo chocolate": "theochocolate.com",
+  hu: "hukitchen.com",
+  "hu kitchen": "hukitchen.com",
+  "hu chocolate": "hukitchen.com",
+  godiva: "godiva.com",
+  ghirardelli: "ghirardelli.com",
+  lindt: "lindt.com",
+  see: "sees.com",
+  "see's candies": "sees.com",
+  jeni: "jenis.com",
+  "jeni's": "jenis.com",
+  magnum: "magnumicecream.com",
+  halotop: "halotop.com",
+  "halo top": "halotop.com",
+  // --- DTC: beauty / personal care -------------------------------------
+  glossier: "glossier.com",
+  harry: "harrys.com",
+  harrys: "harrys.com",
+  dollar: "dollarshaveclub.com",
+  dollarshaveclub: "dollarshaveclub.com",
+  native: "nativecos.com",
+  "native deodorant": "nativecos.com",
+  billie: "mybillie.com",
+  flamingo: "shopflamingo.com",
+  lola: "mylola.com",
+  ritual: "ritual.com",
+  oura: "ouraring.com",
+  "oura ring": "ouraring.com",
+  // --- DTC: home / kitchen ---------------------------------------------
+  "parachute home": "parachutehome.com",
+  parachute: "parachutehome.com",
+  boll: "bollandbranch.com",
+  bollandbranch: "bollandbranch.com",
+  "boll & branch": "bollandbranch.com",
+  yeti: "yeti.com",
+  hydroflask: "hydroflask.com",
+  "hydro flask": "hydroflask.com",
+  stanley: "stanley1913.com",
+  owala: "owalalife.com",
+  liquiddeath: "liquiddeath.com",
+  "liquid death": "liquiddeath.com",
+  // --- Pianos / instruments --------------------------------------------
+  steinway: "steinway.com",
+  yamaha: "yamaha.com",
+  kawai: "kawai-global.com",
+  roland: "roland.com",
+  casio: "casio.com",
+  korg: "korg.com",
+  bechstein: "bechstein.com",
+  bluthner: "bluethner.com",
+  "blüthner": "bluethner.com",
+  fazioli: "fazioli.com",
+  // --- SaaS overrides kept for non-DTC spillover -----------------------
   jira: "atlassian.com",
   confluence: "atlassian.com",
   trello: "atlassian.com",
@@ -147,15 +340,6 @@ const PRODUCT_DOMAIN_OVERRIDES: Record<string, string> = {
   adyen: "adyen.com",
   stripe: "stripe.com",
   shopify: "shopify.com",
-  quickbooks: "intuit.com",
-  venmo: "venmo.com",
-  coda: "coda.io",
-  "smart sheet": "smartsheet.com",
-  "zoho crm": "zoho.com",
-  zoho: "zoho.com",
-  hubspot: "hubspot.com",
-  salesforce: "salesforce.com",
-  pipedrive: "pipedrive.com",
 };
 
 // Extract product names from an AI answer. AI listicles predictably use:
@@ -224,10 +408,13 @@ const COMPETITOR_SCENARIO_KEYWORDS = [
   "similar to",
   "companies similar",
   "tools similar",
+  "brands similar",
   "lead the",
   "lead the market",
   "needs to pick",
   "needs to choose",
+  "is choosing",
+  "most recommended",
   "stand out",
 ];
 
@@ -408,7 +595,7 @@ async function inferCategoryLLM(
           {
             role: "system",
             content:
-              "You identify what competitive category a company belongs to so users can ask AI tools like ChatGPT for recommendations in that category without naming the company. Reply with ONLY a 2–5 word category (e.g. 'project management software', 'payment processing', 'CRM for sales teams'). No preamble, no quotes, no punctuation.",
+              "You identify the consumer product category a direct-to-consumer (DTC) brand belongs to, so a shopper can ask AI tools like ChatGPT for recommendations in that category without naming the brand. Reply with ONLY a 2–5 word consumer product category. Good examples: 'dog beds', 'memory foam mattresses', 'running shoes for women', 'artisan chocolate', 'digital pianos', 'reusable water bottles', 'natural deodorant'. Avoid retail/service framing like 'mattress retail' or 'pet supplies store' — use the product itself. No preamble, no quotes, no punctuation.",
           },
           {
             role: "user",
@@ -686,30 +873,31 @@ function generateQueries(
   const queries: QuerySpec[] = [];
 
   // --- Discovery intent (brand-unaware) -----------------------------------
-  // The valuable signal: does the brand show up when a potential customer
-  // who has never heard of them asks AI for help in their category?
+  // The valuable signal: does the brand show up when a shopper who's never
+  // heard of them asks AI for help shopping in the brand's category? Queries
+  // use consumer-buying voice — "best X to buy", "which brand should I try"
+  // — because Chedder serves DTC consumer brands.
   if (category) {
     queries.push({
-      scenario: `When someone asks for the best ${category}`,
-      query: `What are the best ${category} available right now? Give me your top recommendations with brief reasons.`,
+      scenario: `When a shopper asks for the best ${category}`,
+      query: `What are the best ${category} to buy right now? Give me your top brand recommendations with brief reasons.`,
     });
     queries.push({
-      scenario: `When someone needs to pick a ${category}`,
-      query: `I need to choose a ${category}. Which ones should I seriously consider and why?`,
+      scenario: `When a shopper is choosing a ${category} brand`,
+      query: `I'm looking to buy ${category}. Which brands should I consider and why?`,
     });
     queries.push({
-      scenario: `When someone asks which ${category} lead the market`,
-      query: `Which ${category} are the current market leaders in 2026, and what are they known for?`,
+      scenario: `When a shopper asks which ${category} brands are most recommended`,
+      query: `Which ${category} brands are the most recommended in 2026, and what are they known for?`,
     });
   } else {
-    // Fallback if we can't infer a category — use brand as seed for a
-    // "similar to" query, which at least asks AI to list peers.
+    // Fallback if we can't infer a category — ask AI for peer brands.
     queries.push({
-      scenario: `When someone asks for tools similar to ${brand}`,
-      query: `What are the top tools similar to ${brand}? Who are they and what do they offer?`,
+      scenario: `When a shopper asks for brands similar to ${brand}`,
+      query: `What are the top brands similar to ${brand}? Who are they and what do they make?`,
     });
     queries.push({
-      scenario: `When someone asks for alternatives to ${brand}`,
+      scenario: `When a shopper asks for alternatives to ${brand}`,
       query: `What are the best alternatives to ${brand}? List the top options with pros and cons.`,
     });
   }
@@ -1210,17 +1398,17 @@ export async function analyzeAICitations(
     recommendations.push({
       priority: "high",
       title: "AI doesn't know you yet",
-      description: `When customers ask AI for recommendations in your category, none of the tools we tested (${engines
+      description: `When shoppers ask AI for recommendations in your category, none of the tools we tested (${engines
         .map((e) => e.label)
         .join(
           ", "
-        )}) bring up ${brand}. The fix is earning more mentions in the places AI learns from: Wikipedia, Reddit, press coverage, and review sites like G2 and Capterra.`,
+        )}) bring up ${brand}. The fix is earning mentions in the places AI learns from about consumer brands: Wirecutter and NYT Strategist roundups, Good Housekeeping and Consumer Reports reviews, active Reddit discussion (r/BuyItForLife, category-specific subs), and credible press in lifestyle / category publications.`,
     });
   } else if (totalProminent === 0 && totalMentioned > 0) {
     recommendations.push({
       priority: "high",
       title: "Move up in AI answers",
-      description: `${brand} shows up, but always near the bottom. AI tools list the most-discussed brands first, so the goal is more coverage and stronger topical authority — think press mentions, comparison articles, and in-depth content that positions you as a category leader.`,
+      description: `${brand} shows up, but always near the bottom of the list. AI tools rank the brands they see discussed most often. Push into top-of-list territory with "best ${brand.toLowerCase()} [category]" roundup placements, creator/influencer coverage on YouTube and TikTok, and review-rich product pages that AI can quote verbatim.`,
     });
   }
 
@@ -1228,7 +1416,7 @@ export async function analyzeAICitations(
     recommendations.push({
       priority: "high",
       title: "AI talks about you but doesn't link to you",
-      description: `AI mentions ${brand}, but sends users to other sites (reviews, Wikipedia, news) for the details. Give AI tools a reason to link back to you directly — add FAQs, data-backed claims, and structured data that make your own pages the most quotable source.`,
+      description: `AI mentions ${brand}, but sends shoppers to other sites (Wirecutter, Reddit threads, retailer pages) for the details. Give AI tools a reason to link back to you directly: add detailed FAQs, ingredient/spec tables, sizing guides, and sourcing stories that make your own pages the most quotable source.`,
     });
   }
 
@@ -1245,7 +1433,7 @@ export async function analyzeAICitations(
       recommendations.push({
         priority: "medium",
         title: `Not showing up in ${weakList}`,
-        description: `You're visible in some AI tools but not ${weakList}. Each tool weighs different signals, and the ones missing you tend to rely more on fresh web content, structured data, and links from well-known industry sites. Regular publishing and earned press close this gap fastest.`,
+        description: `You're visible in some AI tools but not ${weakList}. Each tool leans on different signals — the ones missing you tend to weight fresh web content, review-site coverage, and links from well-known lifestyle or category publications. Earned press from the right outlets closes this gap fastest.`,
       });
     }
   }
