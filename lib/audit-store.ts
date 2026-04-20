@@ -42,7 +42,8 @@ export function makeSlug(domain: string): string {
 
 /**
  * Save a completed audit under its slug and return the slug.
- * Also appends to per-domain history and updates benchmarks.
+ * Also appends to per-domain history, per-device history, per-lead
+ * history, and updates benchmarks.
  */
 export async function saveAudit(result: AuditResult): Promise<string> {
   const slug = result.slug || makeSlug(result.domain);
@@ -52,10 +53,17 @@ export async function saveAudit(result: AuditResult): Promise<string> {
     const store = getAuditStore();
     await store.setJSON(`audit:${slug}`, stored);
 
-    // Append to domain history (best-effort, fire & forget)
+    // Fan out the various indexes in parallel. Each is best-effort —
+    // a failure in one should not kill the audit save.
     await Promise.all([
       appendHistory(result.domain, stored),
       updateBenchmarks(stored),
+      stored.deviceId
+        ? appendAuditToDevice(stored.deviceId, stored)
+        : Promise.resolve(),
+      stored.leadEmail
+        ? appendAuditToLead(stored.leadEmail, stored)
+        : Promise.resolve(),
     ]);
   } catch (e) {
     // If blobs aren't configured locally, don't fail the audit.
@@ -123,6 +131,113 @@ export async function getDomainHistory(
   } catch {
     return [];
   }
+}
+
+/* ── Per-device and per-lead indexes ─────────────────────────────────
+ *
+ * Give the "your recent audits" dropdown something fast to read.
+ * Each index is a bounded ring buffer keyed by the stable identifier
+ * (browser deviceId or lead email). Entries store the minimum needed
+ * for a list-view tile: slug, domain, score, timestamp.
+ *
+ * When we move auth + audit ownership to Netlify DB later, these
+ * indexes become foreign-key joins. For now they're cheap KV reads.
+ */
+
+/** Cap how many audits we remember per identity. */
+const PER_IDENTITY_CAP = 50;
+
+export interface RecentAuditEntry {
+  slug: string;
+  domain: string;
+  url: string;
+  overallScore: number;
+  grade: string;
+  timestamp: string;
+}
+
+function toRecentEntry(r: AuditResult): RecentAuditEntry {
+  return {
+    slug: r.slug!,
+    domain: r.domain,
+    url: r.url,
+    overallScore: r.overallScore,
+    grade: r.grade,
+    timestamp: r.timestamp,
+  };
+}
+
+async function appendAuditToDevice(deviceId: string, result: AuditResult) {
+  const key = `device:${safeId(deviceId)}:audits`;
+  try {
+    const store = getAuditStore();
+    const current = (await store.get(key, { type: "json" })) as
+      | RecentAuditEntry[]
+      | null;
+    const next = [
+      toRecentEntry(result),
+      ...(current || []).filter((e) => e.slug !== result.slug),
+    ].slice(0, PER_IDENTITY_CAP);
+    await store.setJSON(key, next);
+  } catch (e) {
+    console.warn("appendAuditToDevice failed:", e);
+  }
+}
+
+async function appendAuditToLead(leadEmail: string, result: AuditResult) {
+  const key = `lead:${safeEmail(leadEmail)}:audits`;
+  try {
+    const store = getAuditStore();
+    const current = (await store.get(key, { type: "json" })) as
+      | RecentAuditEntry[]
+      | null;
+    const next = [
+      toRecentEntry(result),
+      ...(current || []).filter((e) => e.slug !== result.slug),
+    ].slice(0, PER_IDENTITY_CAP);
+    await store.setJSON(key, next);
+  } catch (e) {
+    console.warn("appendAuditToLead failed:", e);
+  }
+}
+
+/** Audits most recently run by a given browser (identified by deviceId). */
+export async function getAuditsForDevice(
+  deviceId: string
+): Promise<RecentAuditEntry[]> {
+  if (!deviceId) return [];
+  try {
+    const store = getAuditStore();
+    const data = (await store.get(`device:${safeId(deviceId)}:audits`, {
+      type: "json",
+    })) as RecentAuditEntry[] | null;
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Audits associated with a signed-up lead, across all devices. */
+export async function getAuditsForLead(
+  leadEmail: string
+): Promise<RecentAuditEntry[]> {
+  if (!leadEmail) return [];
+  try {
+    const store = getAuditStore();
+    const data = (await store.get(`lead:${safeEmail(leadEmail)}:audits`, {
+      type: "json",
+    })) as RecentAuditEntry[] | null;
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function safeId(raw: string): string {
+  return raw.replace(/[^a-z0-9_-]/gi, "").slice(0, 64);
+}
+function safeEmail(raw: string): string {
+  return raw.trim().toLowerCase().slice(0, 200);
 }
 
 interface BenchmarkBuffer {

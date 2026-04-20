@@ -191,9 +191,11 @@ async function auditSingleUrl(
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { url, competitors } = body as {
+    const { url, competitors, deviceId, leadEmail } = body as {
       url: string;
       competitors?: string[];
+      deviceId?: string;
+      leadEmail?: string;
     };
 
     if (!url || typeof url !== "string") {
@@ -229,7 +231,16 @@ export async function POST(req: NextRequest) {
     // Persist + enrich with benchmarks and history.
     // These run in parallel; if blobs aren't available, we degrade silently.
     const slug = makeSlug(primary.domain);
-    const primaryWithSlug: AuditResult = { ...primary, slug };
+    // Stamp identity on the primary audit so it shows up in the
+    // requester's "your recent audits" view and can be linked back to
+    // a lead once they've signed up. Competitor audits stay anonymous
+    // since they were run for comparison, not for the requester.
+    const primaryWithSlug: AuditResult = {
+      ...primary,
+      slug,
+      deviceId: typeof deviceId === "string" ? deviceId : undefined,
+      leadEmail: typeof leadEmail === "string" ? leadEmail : undefined,
+    };
     const [benchmarks, history] = await Promise.all([
       getBenchmarks(primaryWithSlug),
       getDomainHistory(primary.domain, slug),

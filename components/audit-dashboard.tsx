@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AuditResult, ModuleResult, Finding, Recommendation } from "@/lib/types";
 import { generateAuditPDF } from "@/lib/generate-pdf";
 import { CodeSnippet } from "@/components/code-snippet";
-import { track } from "@/lib/track";
+import { track, getDeviceId, getLeadEmail } from "@/lib/track";
+
+// Shape returned by /api/audits/recent — kept inline to avoid a shared
+// type dependency loop. Must match RecentAuditEntry in audit-store.ts.
+interface RecentAuditEntry {
+  slug: string;
+  domain: string;
+  url: string;
+  overallScore: number;
+  grade: string;
+  timestamp: string;
+}
 
 /* ── Module color palette ────────────────────────────────────────── */
 
@@ -1373,6 +1384,142 @@ function CompetitorComparison({
 
 /* ── App Chrome (sticky top bar) ─────────────────────────────────── */
 
+/* ── Recent Audits Menu ─────────────────────────────────────────────
+ *
+ * The "private vessel" feel without auth: every audit we run stamps
+ * the requester's deviceId and (when signed up) leadEmail. This
+ * dropdown reads the per-identity index and lists their recent audits,
+ * giving the signed-in-ish sense of "here's what I've looked at."
+ *
+ * When we add real login + Netlify DB later, this component swaps its
+ * fetch source (session-bound instead of localStorage-bound) without
+ * any visual change.
+ */
+function RecentAuditsMenu({
+  currentSlug,
+}: {
+  currentSlug?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [audits, setAudits] = useState<RecentAuditEntry[] | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Lazy-load the list the first time the menu opens.
+  useEffect(() => {
+    if (!open || loaded) return;
+    setLoaded(true);
+    const deviceId = getDeviceId();
+    const leadEmail = getLeadEmail();
+    const params = new URLSearchParams();
+    if (deviceId) params.set("deviceId", deviceId);
+    if (leadEmail) params.set("leadEmail", leadEmail);
+    fetch(`/api/audits/recent?${params.toString()}`)
+      .then((r) => (r.ok ? r.json() : { audits: [] }))
+      .then((data) => setAudits((data.audits ?? []) as RecentAuditEntry[]))
+      .catch(() => setAudits([]));
+  }, [open, loaded]);
+
+  // Close when clicking outside the menu.
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const hasLead = typeof window !== "undefined" && !!getLeadEmail();
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="h-9 px-3 rounded-lg bg-foreground/[0.04] hover:bg-foreground/[0.08] border border-foreground/[0.06] text-[13px] font-semibold text-foreground tracking-[-0.01em] flex items-center gap-1.5 transition-colors"
+        title="Your recent audits"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+        </svg>
+        <span className="hidden sm:inline">Your audits</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-[calc(100%+6px)] w-[340px] max-w-[92vw] rounded-xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-black/[0.06] overflow-hidden animate-[fadeIn_160ms_ease-out]">
+          <div className="px-4 py-3 border-b border-black/[0.05] bg-foreground/[0.02]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+              Your recent audits
+            </div>
+            {!hasLead && (
+              <div className="text-[11px] text-muted-foreground/70 mt-0.5 leading-snug">
+                Saved on this browser only. Sign up to keep them across devices.
+              </div>
+            )}
+          </div>
+
+          {audits === null && (
+            <div className="px-4 py-6 text-[12.5px] text-muted-foreground/70 italic">
+              Loading…
+            </div>
+          )}
+          {audits !== null && audits.length === 0 && (
+            <div className="px-4 py-6 text-[12.5px] text-muted-foreground/80 leading-snug">
+              No audits yet. Run one and it will show up here.
+            </div>
+          )}
+          {audits !== null && audits.length > 0 && (
+            <ul className="max-h-[340px] overflow-y-auto divide-y divide-black/[0.04]">
+              {audits.map((a) => {
+                const c = scoreColor(a.overallScore);
+                const isCurrent = a.slug === currentSlug;
+                return (
+                  <li key={a.slug}>
+                    <a
+                      href={`/a/${a.slug}`}
+                      className={`block px-4 py-2.5 hover:bg-foreground/[0.03] transition-colors ${
+                        isCurrent ? "bg-foreground/[0.03]" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13px] font-semibold text-foreground truncate">
+                            {a.domain}
+                            {isCurrent && (
+                              <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                now
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {new Date(a.timestamp).toLocaleString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </div>
+                        </div>
+                        <span
+                          className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded shrink-0"
+                          style={{ background: c.bgLight, color: c.text }}
+                        >
+                          {a.overallScore}
+                        </span>
+                      </div>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AppChrome({
   result,
   onBack,
@@ -1421,7 +1568,11 @@ function AppChrome({
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: result.url }),
+        body: JSON.stringify({
+          url: result.url,
+          deviceId: getDeviceId(),
+          leadEmail: getLeadEmail(),
+        }),
       });
       const data = await res.json();
       if (res.ok && data?.slug) {
@@ -1456,6 +1607,7 @@ function AppChrome({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <RecentAuditsMenu currentSlug={result.slug} />
           {canShare && (
             <button
               onClick={onShare}

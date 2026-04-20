@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { LeadGate } from "@/components/lead-gate";
-import { track, getDeviceId } from "@/lib/track";
+import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
 export default function Home() {
   // inline helper — updates URL to /a/<slug> without a full navigation
@@ -120,7 +120,12 @@ export default function Home() {
         const res = await fetch("/api/audit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: url.trim(), competitors: cleanCompetitors }),
+          body: JSON.stringify({
+            url: url.trim(),
+            competitors: cleanCompetitors,
+            deviceId: getDeviceId(),
+            leadEmail: getLeadEmail(),
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -154,7 +159,11 @@ export default function Home() {
       const res = await fetch("/api/audit/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({
+          url: url.trim(),
+          deviceId: getDeviceId(),
+          leadEmail: getLeadEmail(),
+        }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));

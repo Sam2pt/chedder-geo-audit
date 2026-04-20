@@ -76,7 +76,11 @@ type StreamEvent =
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { url } = body as { url?: string };
+  const { url, deviceId, leadEmail } = body as {
+    url?: string;
+    deviceId?: string;
+    leadEmail?: string;
+  };
 
   if (!url || typeof url !== "string") {
     return new Response(JSON.stringify({ error: "URL is required" }), {
@@ -87,6 +91,11 @@ export async function POST(req: NextRequest) {
 
   const encoder = new TextEncoder();
 
+  const identity = {
+    deviceId: typeof deviceId === "string" ? deviceId : undefined,
+    leadEmail: typeof leadEmail === "string" ? leadEmail : undefined,
+  };
+
   const stream = new ReadableStream({
     async start(controller) {
       const emit = (e: StreamEvent) => {
@@ -95,7 +104,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        await runAudit(url, emit);
+        await runAudit(url, emit, identity);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Unknown error";
         emit({ type: "error", message });
@@ -115,7 +124,11 @@ export async function POST(req: NextRequest) {
   });
 }
 
-async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
+async function runAudit(
+  rawUrl: string,
+  emit: (e: StreamEvent) => void,
+  identity: { deviceId?: string; leadEmail?: string } = {}
+) {
   let normalizedUrl = rawUrl.trim();
   if (!normalizedUrl.startsWith("http")) normalizedUrl = "https://" + normalizedUrl;
 
@@ -302,6 +315,8 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
     timestamp: new Date().toISOString(),
     aiCompetitors,
     slug,
+    deviceId: identity.deviceId,
+    leadEmail: identity.leadEmail,
   };
 
   const [benchmarks, history] = await Promise.all([

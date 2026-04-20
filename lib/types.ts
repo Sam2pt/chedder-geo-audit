@@ -90,4 +90,11 @@ export interface AuditResult {
   benchmarks?: BenchmarkData;
   /** Past audits of the same domain, most recent first (excluding this one). */
   history?: HistoryEntry[];
+  /** Persistent per-browser identifier captured at audit time. Lets us
+   *  stitch a user's activity together and power the "your recent audits"
+   *  view without needing full auth yet. */
+  deviceId?: string;
+  /** Lead email when the audit was run by someone who has crossed the
+   *  soft gate. Optional — first audits are anonymous. */
+  leadEmail?: string;
 }
