@@ -970,8 +970,8 @@ function ActionItem({
         <div className="flex-1 min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <PriorityTag priority={item.rec.priority} />
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              {item.moduleName.split(" ")[0]}
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate max-w-[180px]">
+              {item.moduleName}
             </span>
             <span className="text-[14px] font-semibold text-foreground tracking-[-0.01em]">
               {item.rec.title}
@@ -1757,13 +1757,19 @@ function AuditHero({ result }: { result: AuditResult }) {
               <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Grade</div>
               <div className="text-[22px] font-semibold tracking-[-0.02em] leading-none mt-1">{result.grade}</div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Strongest</div>
-              <div className="text-[13px] font-semibold leading-snug mt-0.5">{strongest.name.split(" ")[0]} <span className="text-muted-foreground/60 font-medium tabular-nums">{strongest.score}</span></div>
+              <div className="text-[13px] font-semibold leading-snug mt-0.5 truncate">
+                <span className="text-muted-foreground/70 font-medium tabular-nums mr-1">{strongest.score}</span>
+                {strongest.name}
+              </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">Weakest</div>
-              <div className="text-[13px] font-semibold leading-snug mt-0.5">{weakest.name.split(" ")[0]} <span className="text-muted-foreground/60 font-medium tabular-nums">{weakest.score}</span></div>
+              <div className="text-[13px] font-semibold leading-snug mt-0.5 truncate">
+                <span className="text-muted-foreground/70 font-medium tabular-nums mr-1">{weakest.score}</span>
+                {weakest.name}
+              </div>
             </div>
           </div>
         </div>
