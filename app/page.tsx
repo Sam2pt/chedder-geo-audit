@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
+import { LeadGate } from "@/components/lead-gate";
 
 export default function Home() {
   // inline helper — updates URL to /a/<slug> without a full navigation
@@ -27,10 +28,61 @@ export default function Home() {
   >([]);
   const [currentStage, setCurrentStage] = useState<string>("Firing up the cheese wheel…");
 
+  // Soft gate state. First audit is free + anon; second audit asks for
+  // name + role + company + email. Tracked in localStorage (easily
+  // bypassed, which is fine — this is a soft gate, not a paywall).
+  const [showLeadGate, setShowLeadGate] = useState(false);
+  // Keep the submit event alive so we can resume the audit after the
+  // user completes the gate (or dismisses it).
+  const [pendingAuditKickoff, setPendingAuditKickoff] = useState<
+    (() => void) | null
+  >(null);
+
+  /** Has the user already run at least one audit in this browser? */
+  function hasFirstAudit(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("chedder:firstAuditDone") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  /** Has the user signed up (completed the lead gate)? */
+  function hasSignedUp(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("chedder:signedUp") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function markFirstAuditDone() {
+    try {
+      localStorage.setItem("chedder:firstAuditDone", "1");
+    } catch {
+      // ignore
+    }
+  }
+
   async function handleAudit(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
 
+    // Intercept second+ audits with the soft gate when the user hasn't
+    // signed up yet. Stash the kickoff so we can resume after the
+    // gate is dismissed.
+    if (hasFirstAudit() && !hasSignedUp()) {
+      setPendingAuditKickoff(() => () => void runAudit());
+      setShowLeadGate(true);
+      return;
+    }
+
+    await runAudit();
+  }
+
+  async function runAudit() {
     setLoading(true);
     setError("");
     setResult(null);
@@ -56,6 +108,7 @@ export default function Home() {
           return;
         }
         setResult(data);
+        markFirstAuditDone();
         updateUrlWithSlug(data?.slug);
       } catch {
         setError("Failed to connect. Please try again.");
@@ -118,6 +171,7 @@ export default function Home() {
 
       if (finalResult) {
         setResult(finalResult);
+        markFirstAuditDone();
         updateUrlWithSlug(finalResult.slug);
       }
     } catch {
@@ -141,23 +195,48 @@ export default function Home() {
     setCompetitors(competitors.map((c, idx) => (idx === i ? val : c)));
   }
 
+  // Shared gate element (rendered over any screen when triggered).
+  const gate = showLeadGate ? (
+    <LeadGate
+      sourceAuditSlug={result?.slug}
+      onComplete={() => {
+        setShowLeadGate(false);
+        const kickoff = pendingAuditKickoff;
+        setPendingAuditKickoff(null);
+        if (kickoff) kickoff();
+      }}
+      onDismiss={() => {
+        setShowLeadGate(false);
+        setPendingAuditKickoff(null);
+      }}
+    />
+  ) : null;
+
   // Full-screen loading with cheese wheel
   if (loading) {
-    return <CheeseWheelLoader url={url} stage={currentStage} progress={progress} />;
+    return (
+      <>
+        <CheeseWheelLoader url={url} stage={currentStage} progress={progress} />
+        {gate}
+      </>
+    );
   }
 
   if (result) {
     return (
-      <AuditDashboard
-        result={result}
-        onBack={() => {
-          setResult(null);
-          setUrl("");
-          if (typeof window !== "undefined") {
-            window.history.replaceState({}, "", "/");
-          }
-        }}
-      />
+      <>
+        <AuditDashboard
+          result={result}
+          onBack={() => {
+            setResult(null);
+            setUrl("");
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, "", "/");
+            }
+          }}
+        />
+        {gate}
+      </>
     );
   }
 
@@ -508,6 +587,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      {gate}
     </main>
   );
 }
