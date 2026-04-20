@@ -889,7 +889,7 @@ async function generateTailoredQueriesLLM(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || !category) return [];
 
-  const systemPrompt = `You write realistic shopper questions to test whether a consumer brand gets recommended by AI. Given a brand, its category, and a short description, propose ONE discovery query a real shopper might type into ChatGPT. The query must:
+  const systemPrompt = `You write realistic shopper questions to test whether a consumer brand gets recommended by AI. Given a brand, its category, and a short description, propose TWO discovery queries a real shopper might type into ChatGPT. The queries must:
 - NOT name the brand (we're testing whether AI recommends them unprompted)
 - Probe a specific shopper intent the brand might actually win: a use case ("for marathon training"), an attribute ("organic", "sustainable", "hypoallergenic"), a price tier ("budget", "premium"), a persona ("for older dogs", "for beginners"), or a quality signal
 - Be distinct from these generic baseline queries we already run:
@@ -901,7 +901,8 @@ async function generateTailoredQueriesLLM(
 Return JSON in exactly this shape:
 {
   "queries": [
-    { "scenario": "<short noun-phrase title for the finding card>", "query": "<the exact question a shopper would ask>" }
+    { "scenario": "<short noun-phrase title for the finding card>", "query": "<the exact question a shopper would ask>" },
+    { "scenario": "...", "query": "..." }
   ]
 }
 
@@ -958,10 +959,7 @@ Description: ${(metaDescription ?? "").slice(0, 400)}`;
       // (that defeats the whole "brand-unaware" point of discovery).
       if (query.toLowerCase().includes(brand.toLowerCase())) continue;
       out.push({ scenario, query });
-      // Only keep the first high-quality tailored query — adding a
-      // second pushed total audit time past the streaming timeout
-      // because Brave's serial 2 req/sec cap dominates the AI stage.
-      break;
+      if (out.length >= 2) break;
     }
     return out;
   } catch (e) {
@@ -1579,18 +1577,27 @@ export async function analyzeAICitations(
   const queries = allQueries.slice(0, perEngine);
 
   // Fan out across engines. Engines marked `sequential` (Brave Answers at
-  // 2 req/sec) run their queries one at a time with a small delay to stay
-  // under the rate limit.
+  // 2 req/sec) stagger their starts by 600ms so we stay under the rate
+  // limit but all queries run concurrently once started. Previously we
+  // awaited each response before firing the next, which for 5 queries
+  // turned a ~10s wall-clock bottleneck into ~50s and kept tailored
+  // queries from shipping. Staggered concurrent keeps us under the
+  // rate cap while finishing in max(startDelay, slowestQuery).
   const runEngine = async (engine: Engine): Promise<TaggedResponse[]> => {
-    const out: TaggedResponse[] = [];
     if (engine.sequential) {
-      for (const q of queries) {
-        const response = await engine.ask(q.query);
-        out.push({ engine: engine.name, spec: q, response });
-        // 600ms keeps us safely under 2 req/sec.
-        await new Promise((r) => setTimeout(r, 600));
+      const promises: Promise<TaggedResponse>[] = [];
+      for (let i = 0; i < queries.length; i++) {
+        const q = queries[i];
+        if (i > 0) await new Promise((r) => setTimeout(r, 600));
+        promises.push(
+          engine.ask(q.query).then((response) => ({
+            engine: engine.name,
+            spec: q,
+            response,
+          }))
+        );
       }
-      return out;
+      return Promise.all(promises);
     }
     const settled = await Promise.all(
       queries.map(async (q) => ({
