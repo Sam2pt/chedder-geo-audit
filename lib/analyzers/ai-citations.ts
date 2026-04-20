@@ -661,6 +661,19 @@ function rootDomain(host: string): string {
 
 type EngineName = "perplexity" | "openai" | "brave";
 
+/**
+ * User-facing category for each engine. We intentionally hide the
+ * specific tool names from the audit output because the typical CPG
+ * customer doesn't know what Perplexity or Brave Search are — "AI chats"
+ * and "AI search" are the conceptual buckets they already think in.
+ */
+type EngineCategory = "AI chats" | "AI search";
+const ENGINE_CATEGORIES: Record<EngineName, EngineCategory> = {
+  openai: "AI chats",
+  perplexity: "AI search",
+  brave: "AI search",
+};
+
 interface EngineResponse {
   content: string;
   citations: string[];
@@ -1557,24 +1570,64 @@ export async function analyzeAICitations(
     return brands;
   };
 
+  // First pass: bucket results by (scenario, engine category) so we can
+  // surface ONE finding per scenario per category ("AI chats", "AI search")
+  // instead of spamming three lines per scenario with tool names.
+  type Bucket = {
+    scenario: string;
+    category: EngineCategory;
+    engineCount: number;
+    prominentCount: number;
+    mentionedCount: number;
+    answeredCount: number;
+    failedCount: number;
+    refusedCount: number;
+    collisionHosts: string[];
+    bestExcerpt: string | null;
+    bestSourceUrl: string | undefined;
+    bestRecommended: string[];
+    /** Track engines with no response so we can warn if the whole
+     *  category failed to answer. */
+    unreachableCount: number;
+  };
+  const buckets = new Map<string, Bucket>();
+
   for (const { engine, spec, response } of results) {
-    const engineLabel = engineLabelOf(engine);
-    // Finding label leads with the human scenario; the detail text names the
-    // specific AI tool. This keeps the card readable even if a user hasn't
-    // heard of Perplexity or Brave Search.
-    const scenarioLabel = `${spec.scenario} · via ${engineLabel}`;
+    // Per-engine aggregates for the score (unchanged — we still score
+    // the audit on raw engine pass rates, since that's the most honest
+    // signal even though we don't show engine names to the user).
     const eb = byEngine[engine];
     eb.total++;
 
+    const category = ENGINE_CATEGORIES[engine];
+    const key = `${category}|${spec.scenario}`;
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = {
+        scenario: spec.scenario,
+        category,
+        engineCount: 0,
+        prominentCount: 0,
+        mentionedCount: 0,
+        answeredCount: 0,
+        failedCount: 0,
+        refusedCount: 0,
+        collisionHosts: [],
+        bestExcerpt: null,
+        bestSourceUrl: undefined,
+        bestRecommended: [],
+        unreachableCount: 0,
+      };
+      buckets.set(key, bucket);
+    }
+    bucket.engineCount++;
+
     if (!response) {
-      findings.push({
-        label: scenarioLabel,
-        status: "warn",
-        detail: `We couldn't reach ${engineLabel} this time. We'll try again on your next audit.`,
-      });
+      bucket.unreachableCount++;
       continue;
     }
     eb.answered++;
+    bucket.answeredCount++;
 
     const analysis = analyzeCitation(
       response.content,
@@ -1586,61 +1639,137 @@ export async function analyzeAICitations(
     if (analysis.position === "prominent") {
       eb.mentioned++;
       eb.prominent++;
-      findings.push({
-        label: scenarioLabel,
-        status: "pass",
-        detail: `${engineLabel} lists ${brand} among its top picks. This is exactly where you want to be.`,
-        excerpt: cleanExcerpt(analysis.excerpt),
-        highlight: brand,
-        sourceUrl: firstCitation(response.citations),
-      });
+      bucket.prominentCount++;
+      bucket.mentionedCount++;
+      if (!bucket.bestExcerpt && analysis.excerpt) {
+        bucket.bestExcerpt = cleanExcerpt(analysis.excerpt) ?? null;
+        bucket.bestSourceUrl = firstCitation(response.citations);
+      }
     } else if (analysis.position === "mentioned") {
       eb.mentioned++;
-      const detail =
-        analysis.collisionHosts.length > 0
-          ? `${engineLabel} is thinking of a different company with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}). You were not the subject of the answer.`
-          : `${engineLabel} mentions ${brand}, but buries it below other recommendations. Customers who scan the top picks will miss you.`;
-      findings.push({
-        label: scenarioLabel,
-        status: "warn",
-        detail,
-        excerpt: cleanExcerpt(analysis.excerpt),
-        highlight: brand,
-        sourceUrl: firstCitation(response.citations),
-      });
+      bucket.mentionedCount++;
+      for (const h of analysis.collisionHosts) {
+        if (!bucket.collisionHosts.includes(h)) bucket.collisionHosts.push(h);
+      }
+      // Only keep the "mentioned" excerpt if we don't have a better
+      // prominent excerpt yet.
+      if (!bucket.bestExcerpt && analysis.excerpt) {
+        bucket.bestExcerpt = cleanExcerpt(analysis.excerpt) ?? null;
+        bucket.bestSourceUrl = firstCitation(response.citations);
+      }
     } else {
+      bucket.failedCount++;
+      if (analysis.refused) bucket.refusedCount++;
       const recommended = pickTopCitedBrands(response.citations);
-      const excerpt = analysis.excerpt
-        ? cleanExcerpt(analysis.excerpt)
-        : firstSnippet(response.content);
-      const detail = analysis.refused
-        ? `${engineLabel} doesn't recognize ${brand}. It told the user it didn't know the company.`
-        : recommended.length > 0
-          ? `${brand} doesn't come up in ${engineLabel}. It recommends ${recommended.join(
-              ", "
-            )} instead.`
-          : `${brand} doesn't come up in ${engineLabel} at all. You're invisible for this question.`;
-      findings.push({
-        label: scenarioLabel,
-        status: "fail",
-        detail,
-        excerpt,
-        highlight: brand,
-        sourceUrl: firstCitation(response.citations),
-      });
+      for (const r of recommended) {
+        if (!bucket.bestRecommended.includes(r)) {
+          bucket.bestRecommended.push(r);
+        }
+      }
+      if (!bucket.bestExcerpt) {
+        const excerpt = analysis.excerpt
+          ? cleanExcerpt(analysis.excerpt)
+          : firstSnippet(response.content);
+        bucket.bestExcerpt = excerpt ?? null;
+        bucket.bestSourceUrl = firstCitation(response.citations);
+      }
     }
 
     if (analysis.cited) eb.cited++;
   }
 
+  // Second pass: emit one finding per (scenario, category) bucket.
+  // Status follows best-case logic: if ANY engine in the category listed
+  // the brand prominently, the whole category passes. Mixed or all-warn
+  // becomes warn; all-fail is fail.
+  const sortedBuckets = Array.from(buckets.values()).sort((a, b) => {
+    // Group same scenario together, AI chats before AI search for
+    // consistent reading order.
+    if (a.scenario === b.scenario) {
+      return a.category < b.category ? -1 : 1;
+    }
+    return 0;
+  });
+
+  for (const b of sortedBuckets) {
+    const scenarioLabel = `${b.scenario} · ${b.category}`;
+    // All engines in this category failed to reach us at all — surface
+    // as a warn so the user knows we retried and got nothing.
+    if (b.answeredCount === 0) {
+      findings.push({
+        label: scenarioLabel,
+        status: "warn",
+        detail: `${b.category} tools didn't respond this time. We'll try again on your next audit.`,
+      });
+      continue;
+    }
+
+    if (b.prominentCount > 0) {
+      // Any prominent hit → pass. If more than one engine ran in this
+      // category, include the strength fraction for extra intel.
+      const cov =
+        b.engineCount > 1
+          ? ` (${b.prominentCount} of ${b.answeredCount} ${b.category} tools listed you up top)`
+          : "";
+      findings.push({
+        label: scenarioLabel,
+        status: "pass",
+        detail: `${b.category} lists ${brand} among the top picks${cov}. This is exactly where you want to be.`,
+        excerpt: b.bestExcerpt ?? undefined,
+        highlight: brand,
+        sourceUrl: b.bestSourceUrl,
+      });
+    } else if (b.mentionedCount > 0) {
+      const detail =
+        b.collisionHosts.length > 0
+          ? `${b.category} is thinking of a different company with the name "${brand}" (${b.collisionHosts.slice(0, 2).join(", ")}). You were not the subject of the answer.`
+          : `${b.category} mentions ${brand} but buries it below other recommendations. Customers who scan the top picks will miss you.`;
+      findings.push({
+        label: scenarioLabel,
+        status: "warn",
+        detail,
+        excerpt: b.bestExcerpt ?? undefined,
+        highlight: brand,
+        sourceUrl: b.bestSourceUrl,
+      });
+    } else {
+      const detail =
+        b.refusedCount >= b.answeredCount
+          ? `${b.category} doesn't recognize ${brand}. It told the user it didn't know the company.`
+          : b.bestRecommended.length > 0
+            ? `${brand} doesn't come up in ${b.category}. It recommends ${b.bestRecommended
+                .slice(0, 3)
+                .join(", ")} instead.`
+            : `${brand} doesn't come up in ${b.category} at all. You're invisible for this question.`;
+      findings.push({
+        label: scenarioLabel,
+        status: "fail",
+        detail,
+        excerpt: b.bestExcerpt ?? undefined,
+        highlight: brand,
+        sourceUrl: b.bestSourceUrl,
+      });
+    }
+  }
+
   /* ── Score (averaged across engines that actually ran) ─────────── */
 
   const engineScores: number[] = [];
-  const engineSummary: string[] = [];
   let totalMentioned = 0;
   let totalProminent = 0;
   let totalCited = 0;
   let totalAnswered = 0;
+
+  // Roll per-engine stats into per-category stats for the user-facing
+  // description (we score the audit internally on raw engine rates, but
+  // the headline display hides engine names).
+  const categoryStats: Record<
+    EngineCategory,
+    { total: number; answered: number; mentioned: number; prominent: number; cited: number }
+  > = {
+    "AI chats": { total: 0, answered: 0, mentioned: 0, prominent: 0, cited: 0 },
+    "AI search": { total: 0, answered: 0, mentioned: 0, prominent: 0, cited: 0 },
+  };
 
   for (const engine of engines) {
     const eb = byEngine[engine.name];
@@ -1653,13 +1782,24 @@ export async function analyzeAICitations(
       mentionRate * 40 + prominentRate * 40 + citationRate * 20
     );
     engineScores.push(engineScore);
-    engineSummary.push(
-      `${engine.label} ${eb.mentioned}/${eb.total}`
-    );
     totalMentioned += eb.mentioned;
     totalProminent += eb.prominent;
     totalCited += eb.cited;
     totalAnswered += eb.answered;
+
+    const cat = ENGINE_CATEGORIES[engine.name];
+    categoryStats[cat].total += eb.total;
+    categoryStats[cat].answered += eb.answered;
+    categoryStats[cat].mentioned += eb.mentioned;
+    categoryStats[cat].prominent += eb.prominent;
+    categoryStats[cat].cited += eb.cited;
+  }
+
+  const engineSummary: string[] = [];
+  for (const cat of ["AI chats", "AI search"] as const) {
+    const s = categoryStats[cat];
+    if (s.total === 0) continue;
+    engineSummary.push(`${cat} ${s.mentioned}/${s.total}`);
   }
 
   const score =
@@ -1675,11 +1815,7 @@ export async function analyzeAICitations(
     recommendations.push({
       priority: "high",
       title: "AI doesn't know you yet",
-      description: `When shoppers ask AI for recommendations in your category, none of the tools we tested (${engines
-        .map((e) => e.label)
-        .join(
-          ", "
-        )}) bring up ${brand}. The fix is earning mentions in the places AI learns from about consumer brands: Wirecutter and NYT Strategist roundups, Good Housekeeping and Consumer Reports reviews, active Reddit discussion (r/BuyItForLife, category-specific subs), and credible press in lifestyle / category publications.`,
+      description: `When shoppers ask AI for recommendations in your category, neither AI chats nor AI search surface ${brand}. The fix is earning mentions in the places AI learns from about consumer brands: Wirecutter and NYT Strategist roundups, Good Housekeeping and Consumer Reports reviews, active Reddit discussion (r/BuyItForLife and category specific subs), and credible press in lifestyle or category publications.`,
     });
   } else if (totalProminent === 0 && totalMentioned > 0) {
     recommendations.push({
@@ -1697,22 +1833,25 @@ export async function analyzeAICitations(
     });
   }
 
-  // Flag per-engine gaps so users see which engines they're weak on
-  if (engines.length > 1) {
-    const weakEngines = engines
-      .map((e) => ({ label: e.label, eb: byEngine[e.name] }))
-      .filter(({ eb }) => eb.total > 0 && eb.mentioned === 0);
-    if (
-      weakEngines.length > 0 &&
-      weakEngines.length < engines.length // don't duplicate the "invisible everywhere" rec
-    ) {
-      const weakList = weakEngines.map((w) => w.label).join(", ");
-      recommendations.push({
-        priority: "medium",
-        title: `Not showing up in ${weakList}`,
-        description: `You're visible in some AI tools but not ${weakList}. Each tool leans on different signals. The ones missing you tend to weight fresh web content, review site coverage, and links from well known lifestyle or category publications. Earned press from the right outlets closes this gap fastest.`,
-      });
-    }
+  // Flag per-category gaps so users see whether AI chats or AI search
+  // is where they're weakest (talk in categories, not tool names).
+  const weakCategories = (["AI chats", "AI search"] as const).filter((c) => {
+    const s = categoryStats[c];
+    return s.total > 0 && s.mentioned === 0;
+  });
+  const activeCategories = (["AI chats", "AI search"] as const).filter(
+    (c) => categoryStats[c].total > 0
+  );
+  if (
+    weakCategories.length > 0 &&
+    weakCategories.length < activeCategories.length
+  ) {
+    const weakList = weakCategories.join(" and ");
+    recommendations.push({
+      priority: "medium",
+      title: `Not showing up in ${weakList}`,
+      description: `You're visible in some AI surfaces but not ${weakList}. AI search tools lean on fresh web content and links from well known lifestyle or category publications, while AI chats lean on conversational authority and broad cultural mentions. Earned press from the right outlets closes this gap fastest.`,
+    });
   }
 
   /* ── Merge competitors across all engines ──────────────────────── */
@@ -1724,13 +1863,17 @@ export async function analyzeAICitations(
     category
   );
 
-  const engineList = engines.map((e) => e.label).join(", ");
+  // User-facing description speaks in categories (AI chats, AI search)
+  // instead of naming the specific tools (ChatGPT, Perplexity, Brave).
+  const activeCategoryList = (["AI chats", "AI search"] as const)
+    .filter((c) => categoryStats[c].total > 0)
+    .join(" and ");
   const description =
-    engines.length > 1
-      ? `We asked real customer questions to ${engineList} and checked whether ${brand} came up · ${engineSummary.join(
+    engineSummary.length > 0
+      ? `We asked real shopper questions to ${activeCategoryList} and checked whether ${brand} came up · ${engineSummary.join(
           " · "
         )}`
-      : `We asked real customer questions to ${engineList} and checked whether ${brand} came up (${usedQueries}/${results.length} questions answered).`;
+      : `We asked real shopper questions to ${activeCategoryList} and checked whether ${brand} came up (${usedQueries}/${results.length} questions answered).`;
 
   return {
     module: {

@@ -230,7 +230,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
   const brand = extractBrandName($home, parsedUrl.hostname);
   const metaDescription = $home('meta[name="description"]').attr("content")?.trim() || null;
 
-  emit({ type: "stage", name: "ai", detail: "Putting you to the test. Asking ChatGPT, Perplexity, and Brave Search…" });
+  emit({ type: "stage", name: "ai", detail: "Putting you to the test across AI chats and AI search…" });
   const aiPromise = analyzeAICitations(brand, parsedUrl.hostname, metaDescription);
 
   const externalResult = await externalPromise;

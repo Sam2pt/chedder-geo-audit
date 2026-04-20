@@ -1008,6 +1008,253 @@ function ActionItem({
   );
 }
 
+/* ── Land Grab Insights ─────────────────────────────────────────────
+ *
+ * Builds the "where can we take land from competitors" view. This is
+ * the single most useful thing the competitor comparison should tell
+ * a marketer: not just the raw scores, but the specific openings.
+ *
+ * Three sections:
+ *   1. "Take land"   — opportunities where competitors are winning and you
+ *                     aren't. Biggest gaps first.
+ *   2. "You lead"    — your strongholds. Confirmation of what to defend.
+ *   3. "Quick wins"  — specific finding-level gaps with a clear fix
+ *                     (e.g. "You're missing FAQ schema. Saatva has it.").
+ *
+ * The builder lives inline with the component because it's tightly
+ * coupled to how the UI presents the data.
+ */
+
+type LandGrabItem = {
+  kind: "take" | "lead" | "quickwin";
+  title: string;
+  detail: string;
+  /** Higher = more important. Used to sort within a section. */
+  weight: number;
+};
+
+function buildLandGrabInsights(
+  primary: AuditResult,
+  competitors: AuditResult[]
+): {
+  take: LandGrabItem[];
+  lead: LandGrabItem[];
+  quickwin: LandGrabItem[];
+} {
+  const take: LandGrabItem[] = [];
+  const lead: LandGrabItem[] = [];
+  const quickwin: LandGrabItem[] = [];
+
+  if (competitors.length === 0) return { take, lead, quickwin };
+
+  // ── Module-level gaps ────────────────────────────────────────────
+  for (const myMod of primary.modules) {
+    const theirScores = competitors
+      .map((c) => c.modules.find((m) => m.slug === myMod.slug)?.score)
+      .filter((s): s is number => typeof s === "number");
+    if (theirScores.length === 0) continue;
+
+    const avgCompetitor =
+      theirScores.reduce((a, b) => a + b, 0) / theirScores.length;
+    const delta = myMod.score - avgCompetitor;
+    // Module name is already human-friendly in the data (e.g. "The labels
+    // AI reads first"). Lowercase it within sentences for cleaner prose.
+    const moduleName = myMod.name;
+
+    if (delta <= -15) {
+      // Significant gap = real land-grab opportunity.
+      take.push({
+        kind: "take",
+        title: `Competitors outscore you on ${moduleName.toLowerCase()}`,
+        detail: `Your competitors average ${Math.round(avgCompetitor)} of 100 here. You sit at ${myMod.score}. Closing this is ${Math.abs(delta) >= 30 ? "the biggest" : "a clear"} opportunity to catch up.`,
+        weight: Math.abs(delta),
+      });
+    } else if (delta >= 15) {
+      lead.push({
+        kind: "lead",
+        title: `You lead on ${moduleName.toLowerCase()}`,
+        detail: `You score ${myMod.score}, ${Math.round(delta)} points above the competitor average. Keep investing here — this is a defensible strength.`,
+        weight: delta,
+      });
+    }
+  }
+
+  // ── AI scenario-level gaps ───────────────────────────────────────
+  //
+  // Each competitor-aware finding on ai-citations has a label like
+  // "{scenario} · {AI chats|AI search}". Pass = shown up top. Fail or warn
+  // = they don't/buried. If competitors are winning a scenario you're
+  // failing, it's a specific place you're losing shoppers.
+  const myAi = primary.modules.find((m) => m.slug === "ai-citations");
+  if (myAi) {
+    for (const myFinding of myAi.findings) {
+      // Only look at scenario findings (they have " · AI chats" or
+      // " · AI search" in the label). Skip spend-cap / reach warnings.
+      if (!/ · AI (chats|search)$/.test(myFinding.label)) continue;
+
+      const compFindings = competitors
+        .map((c) => {
+          const aiMod = c.modules.find((m) => m.slug === "ai-citations");
+          return aiMod?.findings.find((f) => f.label === myFinding.label);
+        })
+        .filter((f): f is NonNullable<typeof f> => !!f);
+      if (compFindings.length === 0) continue;
+
+      const competitorsWinning = compFindings.filter((f) => f.status === "pass").length;
+      const primaryWinning = myFinding.status === "pass";
+
+      if (!primaryWinning && competitorsWinning > 0) {
+        // Extract the human scenario text for a nicer headline
+        const scenarioText = myFinding.label.replace(
+          / · AI (chats|search)$/,
+          ""
+        );
+        const surface = myFinding.label.match(/ · (AI (?:chats|search))$/)?.[1] ?? "";
+        take.push({
+          kind: "take",
+          title: `${surface} dodges you: "${scenarioText.toLowerCase()}"`,
+          detail: `${competitorsWinning} of ${compFindings.length} competitors show up as a top pick here. You don't. This is a specific search where their brand is being recommended instead of yours.`,
+          weight: 50 + competitorsWinning * 10,
+        });
+      } else if (primaryWinning && competitorsWinning < compFindings.length) {
+        const scenarioText = myFinding.label.replace(
+          / · AI (chats|search)$/,
+          ""
+        );
+        lead.push({
+          kind: "lead",
+          title: `You win: "${scenarioText.toLowerCase()}"`,
+          detail: `You appear as a top pick and ${compFindings.length - competitorsWinning} of ${compFindings.length} competitors don't. Defend this.`,
+          weight: 40,
+        });
+      }
+    }
+  }
+
+  // ── Finding-level quick wins ─────────────────────────────────────
+  //
+  // Scan the on-site modules (not ai-citations) for cases where you
+  // have a fail/warn finding and ≥1 competitor has a pass on the same
+  // labeled finding. These become concrete copy-paste next steps.
+  const onSiteSlugs = ["schema", "content", "meta", "technical", "authority", "external"];
+  for (const slug of onSiteSlugs) {
+    const myMod = primary.modules.find((m) => m.slug === slug);
+    if (!myMod) continue;
+
+    for (const myFinding of myMod.findings) {
+      if (myFinding.status === "pass") continue; // already winning this one
+
+      let compPassCount = 0;
+      for (const c of competitors) {
+        const cMod = c.modules.find((m) => m.slug === slug);
+        const cFinding = cMod?.findings.find((f) => f.label === myFinding.label);
+        if (cFinding?.status === "pass") compPassCount++;
+      }
+      if (compPassCount === 0) continue;
+
+      quickwin.push({
+        kind: "quickwin",
+        title: myFinding.label,
+        detail: `You're ${myFinding.status === "fail" ? "missing" : "weak on"} this while ${compPassCount} of ${competitors.length} competitors have it sorted. ${myFinding.detail}`,
+        weight: 100 * (compPassCount / competitors.length) + (myFinding.status === "fail" ? 10 : 0),
+      });
+    }
+  }
+
+  take.sort((a, b) => b.weight - a.weight);
+  lead.sort((a, b) => b.weight - a.weight);
+  quickwin.sort((a, b) => b.weight - a.weight);
+
+  return {
+    take: take.slice(0, 5),
+    lead: lead.slice(0, 3),
+    quickwin: quickwin.slice(0, 6),
+  };
+}
+
+function LandGrabInsights({
+  primary,
+  competitors,
+}: {
+  primary: AuditResult;
+  competitors: AuditResult[];
+}) {
+  const { take, lead, quickwin } = buildLandGrabInsights(primary, competitors);
+
+  if (take.length === 0 && lead.length === 0 && quickwin.length === 0) {
+    return null;
+  }
+
+  const Section = ({
+    title,
+    subtitle,
+    items,
+    accent,
+    bg,
+  }: {
+    title: string;
+    subtitle: string;
+    items: LandGrabItem[];
+    accent: string;
+    bg: string;
+  }) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="p-5 rounded-2xl border" style={{ background: bg, borderColor: `${accent}33` }}>
+        <div className="flex items-baseline justify-between mb-1">
+          <div className="text-[14px] font-semibold tracking-[-0.01em]" style={{ color: accent }}>
+            {title}
+          </div>
+          <div className="text-[11px] text-muted-foreground">{items.length}</div>
+        </div>
+        <p className="text-[12px] text-muted-foreground leading-[1.5] mb-3">{subtitle}</p>
+        <ul className="space-y-2">
+          {items.map((item, i) => (
+            <li key={i} className="rounded-xl bg-white/70 p-3">
+              <div className="text-[13px] font-semibold tracking-[-0.005em] text-foreground leading-snug">
+                {item.title}
+              </div>
+              <div className="text-[12px] text-muted-foreground leading-[1.5] mt-1">{item.detail}</div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Where you can take land</h2>
+        <p className="text-[13px] text-muted-foreground mt-1 leading-snug">
+          A side by side read of every signal, sorted by the openings that matter most.
+        </p>
+      </div>
+      <Section
+        title="Take land"
+        subtitle="Places where your competitors are already winning and you aren't yet. Biggest gaps first."
+        items={take}
+        accent="#ec4899"
+        bg="rgba(236,72,153,0.06)"
+      />
+      <Section
+        title="Quick wins"
+        subtitle="Specific fixes your competitors have in place that you don't. Ship these first."
+        items={quickwin}
+        accent="#0ea5e9"
+        bg="rgba(14,165,233,0.06)"
+      />
+      <Section
+        title="You lead"
+        subtitle="Your strongholds. Defend these while you chase the land grabs."
+        items={lead}
+        accent="#34c759"
+        bg="rgba(52,199,89,0.06)"
+      />
+    </section>
+  );
+}
+
 /* ── Competitor Comparison ───────────────────────────────────────── */
 
 function CompetitorComparison({
@@ -1022,8 +1269,10 @@ function CompetitorComparison({
 
   return (
     <section className="space-y-5">
+      <LandGrabInsights primary={primary} competitors={competitors} />
+
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Competitor Comparison</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Side by side</h2>
         <span className="text-[13px] font-medium text-muted-foreground">
           {competitors.length} competitor{competitors.length > 1 ? "s" : ""}
         </span>
@@ -1663,7 +1912,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
         </div>
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">Live AI Test</div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">ChatGPT · Perplexity · Brave Search</div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">AI chats · AI search</div>
         </div>
       </div>
 
@@ -2043,7 +2292,7 @@ function MetaInfo({ result }: { result: AuditResult }) {
           )}
 
           <div className="text-[13px] text-muted-foreground leading-[1.6]">
-            Chedder checks the things AI tools use to decide who to recommend: your site's structure, meta tags, content quality, whether AI crawlers can read you, and your trust signals. We also run real customer questions through ChatGPT, Perplexity, and Brave Search, and check whether you show up on Wikipedia and Reddit. A full strategy also involves link building and broader brand monitoring, which this audit doesn't cover.
+            Chedder checks the things AI tools use to decide who to recommend: your site's structure, meta tags, content quality, whether AI crawlers can read you, and your trust signals. We also run real shopper questions through AI chats and AI search, and check whether you show up on Wikipedia and Reddit. A full strategy also involves link building and broader brand monitoring, which this audit doesn't cover.
           </div>
         </div>
       )}
