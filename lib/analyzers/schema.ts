@@ -19,59 +19,73 @@ const IMPORTANT_SCHEMAS = [
   "ImageObject",
 ];
 
-export function analyzeSchema($: CheerioAPI): ModuleResult {
+/**
+ * Analyze structured data across one or more pages of a site.
+ *
+ * Accepts an array of loaded Cheerio instances (homepage first, then any
+ * crawled sub-pages). Schemas are unioned across all pages so the audit
+ * reflects the whole site rather than penalizing brands whose product
+ * schema lives on product pages, FAQ schema lives on /faq, etc.
+ */
+export function analyzeSchema(pages: CheerioAPI[]): ModuleResult {
   const findings: Finding[] = [];
   const recommendations: Recommendation[] = [];
   let score = 0;
 
-  // Parse JSON-LD
-  const jsonLdScripts = $('script[type="application/ld+json"]');
+  // Parse JSON-LD across every crawled page.
   const schemas: string[] = [];
+  let totalJsonLdBlocks = 0;
 
-  jsonLdScripts.each((_, el) => {
-    try {
-      const content = $(el).html();
-      if (!content) return;
-      const data = JSON.parse(content);
-      const items = Array.isArray(data) ? data : [data];
-      for (const item of items) {
-        if (item["@graph"]) {
-          for (const node of item["@graph"]) {
-            if (node["@type"]) {
-              const types = Array.isArray(node["@type"])
-                ? node["@type"]
-                : [node["@type"]];
-              schemas.push(...types);
+  for (const $ of pages) {
+    const jsonLdScripts = $('script[type="application/ld+json"]');
+    totalJsonLdBlocks += jsonLdScripts.length;
+
+    jsonLdScripts.each((_, el) => {
+      try {
+        const content = $(el).html();
+        if (!content) return;
+        const data = JSON.parse(content);
+        const items = Array.isArray(data) ? data : [data];
+        for (const item of items) {
+          if (item["@graph"]) {
+            for (const node of item["@graph"]) {
+              if (node["@type"]) {
+                const types = Array.isArray(node["@type"])
+                  ? node["@type"]
+                  : [node["@type"]];
+                schemas.push(...types);
+              }
             }
+          } else if (item["@type"]) {
+            const types = Array.isArray(item["@type"])
+              ? item["@type"]
+              : [item["@type"]];
+            schemas.push(...types);
           }
-        } else if (item["@type"]) {
-          const types = Array.isArray(item["@type"])
-            ? item["@type"]
-            : [item["@type"]];
-          schemas.push(...types);
         }
+      } catch {
+        // invalid JSON-LD
       }
-    } catch {
-      // invalid JSON-LD
-    }
-  });
+    });
 
-  // Check for microdata
-  const microdataElements = $("[itemtype]");
-  microdataElements.each((_, el) => {
-    const itemtype = $(el).attr("itemtype") || "";
-    const type = itemtype.split("/").pop();
-    if (type) schemas.push(type);
-  });
+    // Check for microdata
+    const microdataElements = $("[itemtype]");
+    microdataElements.each((_, el) => {
+      const itemtype = $(el).attr("itemtype") || "";
+      const type = itemtype.split("/").pop();
+      if (type) schemas.push(type);
+    });
+  }
 
   const uniqueSchemas = [...new Set(schemas)];
+  const jsonLdScriptsLength = totalJsonLdBlocks;
 
   // JSON-LD presence
-  if (jsonLdScripts.length > 0) {
+  if (jsonLdScriptsLength > 0) {
     findings.push({
       label: "JSON-LD Structured Data",
       status: "pass",
-      detail: `Found ${jsonLdScripts.length} JSON-LD block(s)`,
+      detail: `Found ${jsonLdScriptsLength} JSON-LD block${jsonLdScriptsLength === 1 ? "" : "s"} across ${pages.length} page${pages.length === 1 ? "" : "s"}`,
     });
     score += 25;
   } else {

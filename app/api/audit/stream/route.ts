@@ -8,6 +8,7 @@ import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal, extractBrandName } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
+import { discoverInternalLinks } from "@/lib/crawler";
 import {
   calculateOverallScore,
   getGrade,
@@ -171,21 +172,50 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
 
   const $home = cheerio.load(homePage.html);
   const modules: ModuleResult[] = [];
+  const pagesAudited: string[] = [normalizedUrl];
 
   const emitModule = (m: ModuleResult) => {
     modules.push(m);
     emit({ type: "module", slug: m.slug, name: m.name, score: m.score });
   };
 
+  // Discover a handful of high-signal internal pages (product pages, FAQ,
+  // about, reviews) and fetch them in parallel. Schema and content
+  // analyzers then aggregate across all of them so a brand isn't
+  // penalized for marketing-focused homepage content when their real
+  // product detail lives on /products/*.
+  emit({ type: "stage", name: "crawl", detail: "Peeking at a few more pages on your site…" });
+  const internalLinks = discoverInternalLinks(
+    $home,
+    parsedUrl.origin,
+    normalizedUrl,
+    3
+  );
+  const extraPageResults = await Promise.allSettled(
+    internalLinks.map((l) => fetchPage(l.url))
+  );
+  const extraPages: import("cheerio").CheerioAPI[] = [];
+  for (let i = 0; i < extraPageResults.length; i++) {
+    const r = extraPageResults[i];
+    if (r.status !== "fulfilled" || !r.value || !r.value.ok) continue;
+    try {
+      extraPages.push(cheerio.load(r.value.html));
+      pagesAudited.push(internalLinks[i].url);
+    } catch {
+      // skip pages we can't parse
+    }
+  }
+  const allPages = [$home, ...extraPages];
+
   // Fast on-page analyzers — run sequentially so the client sees them appear
   emit({ type: "stage", name: "schema", detail: "Reading your schema labels…" });
-  emitModule(analyzeSchema($home));
+  emitModule(analyzeSchema(allPages));
 
   emit({ type: "stage", name: "meta", detail: "Scanning your meta tags…" });
   emitModule(analyzeMeta($home));
 
   emit({ type: "stage", name: "content", detail: "Measuring your content structure…" });
-  emitModule(analyzeContent($home));
+  emitModule(analyzeContent(allPages));
 
   emit({ type: "stage", name: "technical", detail: "Checking whether AI crawlers can get in…" });
   emitModule(analyzeTechnical($home, technicalCtx));
@@ -268,7 +298,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
     grade: getGrade(overallScore),
     modules,
     topRecommendations: getTopRecommendations(modules),
-    pagesAudited: [normalizedUrl],
+    pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
     slug,

@@ -8,6 +8,7 @@ import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { extractBrandName } from "@/lib/analyzers/external";
+import { discoverInternalLinks } from "@/lib/crawler";
 import {
   calculateOverallScore,
   getGrade,
@@ -21,7 +22,6 @@ import {
   makeSlug,
 } from "@/lib/audit-store";
 
-const MAX_PAGES = 5;
 const FETCH_TIMEOUT = 10000;
 
 async function fetchPage(url: string) {
@@ -42,83 +42,8 @@ async function fetchPage(url: string) {
   return { html: await res.text(), headers };
 }
 
-function discoverLinks($: cheerio.CheerioAPI, origin: string): string[] {
-  const found = new Set<string>();
-  const priority = [
-    "/about",
-    "/faq",
-    "/pricing",
-    "/blog",
-    "/contact",
-    "/products",
-    "/services",
-    "/features",
-    "/help",
-    "/support",
-  ];
-
-  $("a[href]").each((_, el) => {
-    const href = $(el).attr("href") || "";
-    if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:"))
-      return;
-    try {
-      const resolved = new URL(href, origin);
-      if (resolved.origin === origin && resolved.pathname !== "/") {
-        found.add(resolved.origin + resolved.pathname.replace(/\/$/, ""));
-      }
-    } catch {
-      // invalid URL
-    }
-  });
-
-  const urls = [...found];
-  urls.sort((a, b) => {
-    const aP = priority.findIndex((p) => a.toLowerCase().includes(p));
-    const bP = priority.findIndex((p) => b.toLowerCase().includes(p));
-    const aScore = aP >= 0 ? aP : 100;
-    const bScore = bP >= 0 ? bP : 100;
-    return aScore - bScore;
-  });
-
-  return urls.slice(0, MAX_PAGES - 1);
-}
-
-function mergeModules(all: ModuleResult[][]): ModuleResult[] {
-  const bySlug = new Map<string, ModuleResult[]>();
-  for (const modules of all) {
-    for (const m of modules) {
-      if (!bySlug.has(m.slug)) bySlug.set(m.slug, []);
-      bySlug.get(m.slug)!.push(m);
-    }
-  }
-
-  const merged: ModuleResult[] = [];
-  for (const [, instances] of bySlug) {
-    const best = instances.reduce((a, b) => (a.score >= b.score ? a : b));
-    const seenFindings = new Set<string>();
-    const uniqueFindings = instances
-      .flatMap((i) => i.findings)
-      .filter((f) => {
-        if (seenFindings.has(f.label)) return false;
-        seenFindings.add(f.label);
-        return true;
-      });
-    const seenRecs = new Set<string>();
-    const uniqueRecs = instances
-      .flatMap((i) => i.recommendations)
-      .filter((r) => {
-        if (seenRecs.has(r.title)) return false;
-        seenRecs.add(r.title);
-        return true;
-      });
-    merged.push({
-      ...best,
-      findings: uniqueFindings,
-      recommendations: uniqueRecs,
-    });
-  }
-  return merged;
-}
+// discoverLinks + mergeModules removed — both audit routes now share
+// lib/crawler.ts and the analyzers aggregate across pages internally.
 
 async function auditSingleUrl(
   rawUrl: string,
@@ -187,35 +112,39 @@ async function auditSingleUrl(
     );
   }
 
-  const homeModules = [
-    analyzeSchema($home),
-    analyzeMeta($home),
-    analyzeContent($home),
-    analyzeTechnical($home, technicalCtx),
-    analyzeAuthority($home, normalizedUrl),
-  ];
-
-  const internalLinks = discoverLinks($home, parsedUrl.origin);
-  const pagesAudited = [normalizedUrl];
-  const allModuleSets: ModuleResult[][] = [homeModules];
-
-  const pageResults = await Promise.allSettled(
-    internalLinks.map((link) => fetchPage(link))
+  // Crawl a few high-signal internal pages alongside the homepage so
+  // the schema + content analyzers see the whole site, not just the
+  // marketing splash. Shared crawler with the streaming route.
+  const internalLinks = discoverInternalLinks(
+    $home,
+    parsedUrl.origin,
+    normalizedUrl,
+    3
   );
-
+  const pagesAudited = [normalizedUrl];
+  const extraPages: cheerio.CheerioAPI[] = [];
+  const pageResults = await Promise.allSettled(
+    internalLinks.map((l) => fetchPage(l.url))
+  );
   for (let i = 0; i < pageResults.length; i++) {
     const r = pageResults[i];
     if (r.status !== "fulfilled" || !r.value) continue;
-    const $ = cheerio.load(r.value.html);
-    pagesAudited.push(internalLinks[i]);
-    allModuleSets.push([
-      analyzeSchema($),
-      analyzeMeta($),
-      analyzeContent($),
-    ]);
+    try {
+      extraPages.push(cheerio.load(r.value.html));
+      pagesAudited.push(internalLinks[i].url);
+    } catch {
+      // skip
+    }
   }
+  const allPages = [$home, ...extraPages];
 
-  const modules = mergeModules(allModuleSets);
+  const modules: ModuleResult[] = [
+    analyzeSchema(allPages),
+    analyzeMeta($home),
+    analyzeContent(allPages),
+    analyzeTechnical($home, technicalCtx),
+    analyzeAuthority($home, normalizedUrl),
+  ];
   const externalResult = await externalPromise;
   modules.push(externalResult);
 

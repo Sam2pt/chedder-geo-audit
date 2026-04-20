@@ -1,15 +1,26 @@
 import type { CheerioAPI } from "cheerio";
 import { Finding, ModuleResult, Recommendation } from "../types";
 
-export function analyzeContent($: CheerioAPI): ModuleResult {
+/**
+ * Analyze content quality across one or more pages.
+ *
+ * Accepts an array of loaded Cheerio instances (homepage first, then any
+ * crawled sub-pages). Most signals are best-case aggregated across pages
+ * — a site gets credit if /faq has FAQ content even if the homepage doesn't.
+ * The H1 and internal-linking findings stay homepage-centric because those
+ * are what AI tools see first when asked about the brand directly.
+ */
+export function analyzeContent(pages: CheerioAPI[]): ModuleResult {
   const findings: Finding[] = [];
   const recommendations: Recommendation[] = [];
   let score = 0;
 
-  // Heading hierarchy
-  const h1s = $("h1");
-  const h2s = $("h2");
-  const h3s = $("h3");
+  const $home = pages[0];
+
+  // Heading hierarchy (homepage-primary — this is the landing page's job)
+  const h1s = $home("h1");
+  const h2s = $home("h2");
+  // (h3s unused; kept in original for possible future signals)
 
   if (h1s.length === 1) {
     findings.push({
@@ -75,9 +86,12 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     });
   }
 
-  // Content length
-  const bodyText = $("body").text().replace(/\s+/g, " ").trim();
-  const wordCount = bodyText.split(/\s+/).length;
+  // Content length (aggregated across crawled pages)
+  let wordCount = 0;
+  for (const $p of pages) {
+    const text = $p("body").text().replace(/\s+/g, " ").trim();
+    wordCount += text ? text.split(/\s+/).length : 0;
+  }
 
   if (wordCount >= 800) {
     findings.push({
@@ -113,8 +127,10 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     });
   }
 
-  // Lists (AI-friendly format)
-  const lists = $("ul, ol");
+  // Lists (summed across pages so a product page's spec list counts)
+  let listsTotal = 0;
+  for (const $p of pages) listsTotal += $p("ul, ol").length;
+  const lists = { length: listsTotal } as { length: number };
   if (lists.length >= 2) {
     findings.push({
       label: "Lists",
@@ -151,29 +167,33 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     });
   }
 
-  // Tables
-  const tables = $("table");
-  if (tables.length > 0) {
+  // Tables (summed across pages)
+  let tablesTotal = 0;
+  for (const $p of pages) tablesTotal += $p("table").length;
+  if (tablesTotal > 0) {
     findings.push({
       label: "Data Tables",
       status: "pass",
-      detail: `${tables.length} table(s) found, great for AI data extraction`,
+      detail: `${tablesTotal} table${tablesTotal === 1 ? "" : "s"} found, great for AI data extraction`,
     });
     score += 10;
   }
 
-  // FAQ sections (even without schema)
-  const faqIndicators = $("*")
-    .filter(function () {
-      const text = $(this).text().toLowerCase();
-      return (
-        (text.includes("frequently asked") ||
-          text.includes("faq") ||
-          text.includes("common questions")) &&
-        $(this).is("h1, h2, h3, h4, [class*='faq'], [id*='faq']")
-      );
-    })
-    .length;
+  // FAQ sections — pass if ANY crawled page has an FAQ region.
+  let faqIndicators = 0;
+  for (const $p of pages) {
+    faqIndicators += $p("*")
+      .filter(function () {
+        const text = $p(this).text().toLowerCase();
+        return (
+          (text.includes("frequently asked") ||
+            text.includes("faq") ||
+            text.includes("common questions")) &&
+          $p(this).is("h1, h2, h3, h4, [class*='faq'], [id*='faq']")
+        );
+      })
+      .length;
+  }
 
   if (faqIndicators > 0) {
     findings.push({
@@ -226,9 +246,9 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     });
   }
 
-  // Internal links
-  const internalLinks = $("a[href^='/'], a[href^='#']").length;
-  const allLinks = $("a[href]").length;
+  // Internal linking — measure on the homepage since that's the entry
+  // point AI crawlers discover the site through.
+  const internalLinks = $home("a[href^='/'], a[href^='#']").length;
   if (internalLinks >= 5) {
     findings.push({
       label: "Internal Linking",
@@ -250,11 +270,17 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
     });
   }
 
-  // Images with alt text
-  const images = $("img");
-  const imagesWithAlt = $("img[alt]").filter(
-    (_, el) => ($(el).attr("alt") || "").trim().length > 0
-  );
+  // Images with alt text (aggregated across pages)
+  let imagesTotal = 0;
+  let imagesWithAltTotal = 0;
+  for (const $p of pages) {
+    imagesTotal += $p("img").length;
+    imagesWithAltTotal += $p("img[alt]").filter(
+      (_, el) => ($p(el).attr("alt") || "").trim().length > 0
+    ).length;
+  }
+  const images = { length: imagesTotal } as { length: number };
+  const imagesWithAlt = { length: imagesWithAltTotal } as { length: number };
 
   if (images.length > 0) {
     const ratio = imagesWithAlt.length / images.length;
