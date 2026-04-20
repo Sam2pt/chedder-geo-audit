@@ -2201,9 +2201,12 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
         )}
       </div>
 
-      {/* Sparkline */}
-      <div className="relative">
-        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[90px]" preserveAspectRatio="none">
+      {/* Sparkline — capped width so the trend line reads properly on
+          wide screens. The previous preserveAspectRatio="none" stretched
+          a 560×90 viewBox to 1500px wide on desktop, flattening the
+          line visually even when there were real audit-to-audit swings. */}
+      <div className="relative max-w-[720px] mx-auto">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[120px]">
           <defs>
             <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
