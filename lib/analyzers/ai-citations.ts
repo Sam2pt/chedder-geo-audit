@@ -868,6 +868,109 @@ async function inferCategoryLLM(
   }
 }
 
+/**
+ * Ask the LLM to suggest two category-tailored shopper queries for this
+ * specific brand. The baseline discovery set ("best X", "pick X",
+ * "market leaders X") is generic enough to miss niche strengths — a
+ * premium chocolate maker gets ignored in "best chocolate" but
+ * dominates "best single-origin dark chocolate." These extra queries
+ * probe the specific shopper intents most relevant to the brand's
+ * positioning.
+ *
+ * Returns [] on any failure — the audit still runs its baseline set.
+ * Costs roughly $0.00005 per audit on gpt-4o-mini with JSON mode.
+ */
+async function generateTailoredQueriesLLM(
+  brand: string,
+  domain: string,
+  category: string | null,
+  metaDescription: string | null
+): Promise<QuerySpec[]> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || !category) return [];
+
+  const systemPrompt = `You write realistic shopper questions to test whether a consumer brand gets recommended by AI. Given a brand, its category, and a short description, propose TWO discovery queries a real shopper might type into ChatGPT. The queries must:
+- NOT name the brand (we're testing whether AI recommends them unprompted)
+- Probe a specific shopper intent the brand might actually win: a use case ("for marathon training"), an attribute ("organic", "sustainable", "hypoallergenic"), a price tier ("budget", "premium"), a persona ("for older dogs", "for beginners"), or a quality signal
+- Be distinct from these generic baseline queries we already run:
+    "best {category}"
+    "I'm looking to buy {category}, which brands should I consider"
+    "which {category} brands are the most recommended"
+- Read naturally, like a shopper typing, not like a search engine query
+
+Return JSON in exactly this shape:
+{
+  "queries": [
+    { "scenario": "<short noun-phrase title for the finding card>", "query": "<the exact question a shopper would ask>" },
+    { "scenario": "...", "query": "..." }
+  ]
+}
+
+Scenario examples:
+  "When a shopper asks for the best budget {category}"
+  "When a shopper asks for organic {category}"
+  "When a shopper asks for {category} for sensitive skin"
+  "When a shopper asks which {category} last the longest"`;
+
+  const userPrompt = `Brand: ${brand}
+Domain: ${domain}
+Category: ${category}
+Description: ${(metaDescription ?? "").slice(0, 400)}`;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.3,
+        max_tokens: 250,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[ai-citations] tailored query gen HTTP ${res.status} ${res.statusText}`
+      );
+      return [];
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as {
+      queries?: Array<{ scenario?: string; query?: string }>;
+    };
+    const out: QuerySpec[] = [];
+    for (const q of parsed.queries ?? []) {
+      if (typeof q.scenario !== "string" || typeof q.query !== "string") continue;
+      const scenario = q.scenario.trim().slice(0, 120);
+      const query = q.query.trim().slice(0, 500);
+      if (scenario.length < 6 || query.length < 10) continue;
+      // Guard: the LLM must not leak the brand name into the query
+      // (that defeats the whole "brand-unaware" point of discovery).
+      if (query.toLowerCase().includes(brand.toLowerCase())) continue;
+      out.push({ scenario, query });
+      if (out.length >= 2) break;
+    }
+    return out;
+  } catch (e) {
+    console.warn(
+      "[ai-citations] tailored query gen error:",
+      e instanceof Error ? e.message : e
+    );
+    return [];
+  }
+}
+
 async function askOpenAI(
   query: string,
   apiKey: string
@@ -1449,7 +1552,18 @@ export async function analyzeAICitations(
     }
   }
 
-  const allQueries = generateQueries(brand, domain, category);
+  const baselineQueries = generateQueries(brand, domain, category);
+
+  // Fetch two category-tailored shopper queries in parallel with the
+  // category prompt. Merged into the full query list so the niche-
+  // strength probes get the same engine coverage as the baseline.
+  const tailoredQueries = await generateTailoredQueriesLLM(
+    brand,
+    domain,
+    category,
+    metaDescription
+  );
+  const allQueries = [...baselineQueries, ...tailoredQueries];
 
   // Distribute the daily query budget across engines. cap.remainingQueriesToday
   // is the total daily allowance; each engine runs up to perEngine queries.
