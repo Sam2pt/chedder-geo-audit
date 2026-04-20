@@ -8,6 +8,7 @@ import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal, extractBrandName } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
+import { generateCategoryRecommendationsLLM } from "@/lib/analyzers/tailored-recs";
 import { discoverInternalLinks } from "@/lib/crawler";
 import {
   calculateOverallScore,
@@ -72,6 +73,36 @@ async function fetchPage(url: string): Promise<FetchResult | null> {
     headers[k.toLowerCase()] = v;
   });
   return { ok: true, html: await res.text(), headers };
+}
+
+/**
+ * Merge LLM-generated tailored recommendations with the generic set
+ * from the analyzers. Tailored recs lead (they're more specific), then
+ * generics fill up to 8 total. Dedupes by title so a tailored rec
+ * about "FAQ schema for dark chocolate" doesn't double up with a
+ * generic "Add FAQ Schema" that says the same thing from a lower angle.
+ */
+function mergeRecommendations(
+  generic: import("@/lib/types").Recommendation[],
+  tailored: import("@/lib/types").Recommendation[]
+): import("@/lib/types").Recommendation[] {
+  const seen = new Set<string>();
+  const out: import("@/lib/types").Recommendation[] = [];
+  const keyOf = (t: string) =>
+    t
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, "")
+      .split(/\s+/)
+      .slice(0, 4)
+      .join(" ");
+  for (const r of [...tailored, ...generic]) {
+    const k = keyOf(r.title);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 type StreamEvent =
@@ -310,13 +341,39 @@ async function runAudit(
 
   emit({ type: "stage", name: "finalizing", detail: "Wrapping it all up and saving your audit…" });
 
+  // Run category-tailored recommendations in parallel with final
+  // enrichment. Fetches 1-2 specific action items keyed to the brand's
+  // category (e.g. "add nutrition schema covering X, Y, Z" for a food
+  // brand vs "add sizing schema..." for apparel).
+  const [benchmarksResult, historyResult, tailoredRecs] = await Promise.all([
+    (async () => {
+      const baseForBench: AuditResult = {
+        url: normalizedUrl,
+        domain: parsedUrl.hostname,
+        overallScore,
+        grade: getGrade(overallScore),
+        modules,
+        topRecommendations: [],
+        pagesAudited,
+        timestamp: new Date().toISOString(),
+        slug,
+      };
+      return getBenchmarks(baseForBench).catch(() => undefined);
+    })(),
+    getDomainHistory(parsedUrl.hostname, slug).catch(() => []),
+    generateCategoryRecommendationsLLM(brand, inferredCategory, modules),
+  ]);
+
   const base: AuditResult = {
     url: normalizedUrl,
     domain: parsedUrl.hostname,
     overallScore,
     grade: getGrade(overallScore),
     modules,
-    topRecommendations: getTopRecommendations(modules),
+    topRecommendations: mergeRecommendations(
+      getTopRecommendations(modules),
+      tailoredRecs
+    ),
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
@@ -325,15 +382,10 @@ async function runAudit(
     leadEmail: identity.leadEmail,
   };
 
-  const [benchmarks, history] = await Promise.all([
-    getBenchmarks(base).catch(() => undefined),
-    getDomainHistory(parsedUrl.hostname, slug).catch(() => []),
-  ]);
-
   const enriched: AuditResult = {
     ...base,
-    benchmarks,
-    history,
+    benchmarks: benchmarksResult,
+    history: historyResult,
   };
 
   await saveAudit(enriched).catch(() => {});

@@ -8,6 +8,7 @@ import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { extractBrandName } from "@/lib/analyzers/external";
+import { generateCategoryRecommendationsLLM } from "@/lib/analyzers/tailored-recs";
 import { discoverInternalLinks } from "@/lib/crawler";
 import {
   calculateOverallScore,
@@ -163,6 +164,7 @@ async function auditSingleUrl(
   }
 
   let aiCompetitors: import("@/lib/types").AICompetitor[] | undefined;
+  let inferredCategory: string | null = null;
   if (aiCitationsPromise) {
     const aiCitationsResult = await aiCitationsPromise;
     if (aiCitationsResult) {
@@ -170,10 +172,22 @@ async function auditSingleUrl(
       if (aiCitationsResult.competitors.length > 0) {
         aiCompetitors = aiCitationsResult.competitors;
       }
+      inferredCategory = aiCitationsResult.category;
     }
   }
 
   const overallScore = calculateOverallScore(modules);
+
+  // Category-tailored recommendations that sit alongside the generic
+  // module recs. Silent empty list on API failure. Skipped for
+  // competitor audits since those skip AI citations entirely.
+  const tailoredRecs = options.skipAI
+    ? []
+    : await generateCategoryRecommendationsLLM(
+        extractBrandName($home, parsedUrl.hostname),
+        inferredCategory,
+        modules
+      );
 
   return {
     url: normalizedUrl,
@@ -181,11 +195,37 @@ async function auditSingleUrl(
     overallScore,
     grade: getGrade(overallScore),
     modules,
-    topRecommendations: getTopRecommendations(modules),
+    topRecommendations: mergeRecommendations(
+      getTopRecommendations(modules),
+      tailoredRecs
+    ),
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
   };
+}
+
+function mergeRecommendations(
+  generic: import("@/lib/types").Recommendation[],
+  tailored: import("@/lib/types").Recommendation[]
+): import("@/lib/types").Recommendation[] {
+  const seen = new Set<string>();
+  const out: import("@/lib/types").Recommendation[] = [];
+  const keyOf = (t: string) =>
+    t
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, "")
+      .split(/\s+/)
+      .slice(0, 4)
+      .join(" ");
+  for (const r of [...tailored, ...generic]) {
+    const k = keyOf(r.title);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 export async function POST(req: NextRequest) {
