@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveLead } from "@/lib/leads";
+import { saveEvent } from "@/lib/events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +25,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, role, company, email, sourceAuditSlug } = body as {
+  const { name, role, company, email, sourceAuditSlug, deviceId } = body as {
     name?: unknown;
     role?: unknown;
     company?: unknown;
     email?: unknown;
     sourceAuditSlug?: unknown;
+    deviceId?: unknown;
   };
 
   // Shape-check (saveLead does deep validation).
@@ -52,6 +54,21 @@ export async function POST(req: NextRequest) {
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
+  }
+
+  // Server-side lead.signup event — always fires on a successful save,
+  // so our event log captures signups even if the client-side
+  // gate.submitted beacon was dropped.
+  if (typeof deviceId === "string" && deviceId.length >= 6) {
+    await saveEvent({
+      deviceId,
+      type: "lead.signup",
+      leadEmail: result.lead.email,
+      slug: result.lead.sourceAuditSlug,
+      meta: { role: result.lead.role, company: result.lead.company },
+      ua: req.headers.get("user-agent") ?? undefined,
+      referrer: req.headers.get("referer") ?? undefined,
+    });
   }
 
   return NextResponse.json({ ok: true });

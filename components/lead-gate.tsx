@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track, getDeviceId } from "@/lib/track";
 
 /**
  * Soft gate form shown after a user's first free audit. Captures
@@ -38,7 +39,14 @@ export function LeadGate({
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, role, company, email, sourceAuditSlug }),
+        body: JSON.stringify({
+          name,
+          role,
+          company,
+          email,
+          sourceAuditSlug,
+          deviceId: getDeviceId(),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -56,6 +64,11 @@ export function LeadGate({
       } catch {
         // ignore storage errors
       }
+      track(
+        "gate.submitted",
+        { role: role.slice(0, 60), company: company.slice(0, 60) },
+        { slug: sourceAuditSlug }
+      );
       onComplete();
     } catch {
       setError("Could not reach our servers. Try again in a moment.");

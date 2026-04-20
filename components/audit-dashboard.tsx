@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AuditResult, ModuleResult, Finding, Recommendation } from "@/lib/types";
 import { generateAuditPDF } from "@/lib/generate-pdf";
 import { CodeSnippet } from "@/components/code-snippet";
+import { track } from "@/lib/track";
 
 /* ── Module color palette ────────────────────────────────────────── */
 
@@ -1405,14 +1406,17 @@ function AppChrome({
       await navigator.clipboard.writeText(shareUrl);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 1800);
+      track("audit.shared", { via: "copy" }, { slug: result.slug });
     } catch {
       window.prompt("Copy this URL:", shareUrl);
+      track("audit.shared", { via: "prompt_fallback" }, { slug: result.slug });
     }
   }
 
   async function onReaudit() {
     if (reauditing) return;
     setReauditing(true);
+    track("audit.reaudit", { url: result.url }, { slug: result.slug });
     try {
       const res = await fetch("/api/audit", {
         method: "POST",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { LeadGate } from "@/components/lead-gate";
+import { track, getDeviceId } from "@/lib/track";
 
 export default function Home() {
   // inline helper — updates URL to /a/<slug> without a full navigation
@@ -27,6 +28,20 @@ export default function Home() {
     Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>
   >([]);
   const [currentStage, setCurrentStage] = useState<string>("Firing up the cheese wheel…");
+
+  // Fire session.start once per tab load and ensure the deviceId is
+  // minted before any later event might need it. Also emits a page.viewed
+  // for the home with referrer metadata, which lets us attribute inbound
+  // traffic (e.g. when a TPT prospect opens a link we sent them).
+  useEffect(() => {
+    getDeviceId(); // lazy-initializes the localStorage key
+    track("session.start", {
+      referrer:
+        typeof document !== "undefined" && document.referrer
+          ? document.referrer.slice(0, 400)
+          : null,
+    });
+  }, []);
 
   // Soft gate state. First audit is free + anon; second audit asks for
   // name + role + company + email. Tracked in localStorage (easily
@@ -76,6 +91,7 @@ export default function Home() {
     if (hasFirstAudit() && !hasSignedUp()) {
       setPendingAuditKickoff(() => () => void runAudit());
       setShowLeadGate(true);
+      track("gate.shown", { url: url.trim() });
       return;
     }
 
@@ -88,6 +104,10 @@ export default function Home() {
     setResult(null);
     setProgress([]);
     setCurrentStage("Firing up the cheese wheel…");
+
+    const targetUrl = url.trim();
+    const withCompetitors = competitors.filter((c) => c.trim().length > 0).length;
+    track("audit.started", { url: targetUrl, withCompetitors });
 
     const cleanCompetitors = competitors
       .map((c) => c.trim())
@@ -105,13 +125,24 @@ export default function Home() {
         const data = await res.json();
         if (!res.ok) {
           setError(data.error || "Something went wrong");
+          track("audit.failed", { url: targetUrl, reason: data.error ?? "http" });
           return;
         }
         setResult(data);
         markFirstAuditDone();
         updateUrlWithSlug(data?.slug);
+        track(
+          "compare.completed",
+          {
+            url: targetUrl,
+            overallScore: data?.overallScore ?? null,
+            competitors: cleanCompetitors.length,
+          },
+          { slug: data?.slug }
+        );
       } catch {
         setError("Failed to connect. Please try again.");
+        track("audit.failed", { url: targetUrl, reason: "network" });
       } finally {
         setLoading(false);
       }
@@ -173,9 +204,21 @@ export default function Home() {
         setResult(finalResult);
         markFirstAuditDone();
         updateUrlWithSlug(finalResult.slug);
+        track(
+          "audit.completed",
+          {
+            url: targetUrl,
+            overallScore: finalResult.overallScore,
+            grade: finalResult.grade,
+          },
+          { slug: finalResult.slug }
+        );
+      } else {
+        track("audit.failed", { url: targetUrl, reason: "no_result" });
       }
     } catch {
       setError("Failed to connect. Please try again.");
+      track("audit.failed", { url: targetUrl, reason: "network" });
     } finally {
       setLoading(false);
     }
@@ -208,6 +251,7 @@ export default function Home() {
       onDismiss={() => {
         setShowLeadGate(false);
         setPendingAuditKickoff(null);
+        track("gate.dismissed");
       }}
     />
   ) : null;
