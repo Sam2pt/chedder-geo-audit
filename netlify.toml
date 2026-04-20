@@ -4,3 +4,20 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# The rendered HTML is tied to specific JS/CSS chunk hashes. If a stale
+# HTML response is served by the CDN after a new deploy has shipped
+# different chunk names, the browser hits ChunkLoadError and the page
+# fails to render. Force the HTML to revalidate on every request so the
+# client always sees HTML that matches the currently-deployed chunks.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Hashed static assets (including _next/static chunks) are immutable and
+# can be cached aggressively, so override the root rule for those paths.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
