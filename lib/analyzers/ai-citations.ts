@@ -481,6 +481,139 @@ function productNameToDomain(name: string): string | null {
   return firstWord + ".com";
 }
 
+// Extract competing brand names from AI-generated shopping answer prose,
+// and resolve them to canonical domains — in a single LLM pass. This is
+// the primary competitor signal path: regex can only catch **bold** names
+// and bare domains, but AI answers often name peers in plain text
+// ("Back to Nature Classic Creme Cookies..."). An LLM that reads the
+// whole answer catches those, handles name-to-domain mapping, and filters
+// retailers/publishers via the system prompt in one shot.
+//
+// Input: array of {engine, scenario, content} tuples from the engines.
+// Output: Map<root-domain, Set<EngineName>> — which engines mentioned each
+// competitor. Cross-engine agreement is applied downstream.
+//
+// Cost: one gpt-4o-mini call per audit regardless of engine count.
+// ~$0.0003 at typical answer lengths. Returns an empty map on any failure
+// so the regex-based fallback can still populate competitors.
+interface ExtractedBrandRef {
+  name: string;
+  domain: string;
+  engines: Array<"perplexity" | "openai" | "brave">;
+}
+
+async function extractBrandsFromAnswersLLM(
+  responses: Array<{
+    engine: "perplexity" | "openai" | "brave";
+    content: string;
+  }>,
+  ownBrand: string,
+  ownDomain: string,
+  category: string | null
+): Promise<ExtractedBrandRef[]> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey || responses.length === 0) return [];
+
+  // Cap the prose we send so we don't blow the context window for long
+  // answers — 1500 chars per answer is plenty for brand name extraction.
+  const corpus = responses
+    .map(
+      (r) =>
+        `--- ${r.engine} ---\n${r.content.slice(0, 1500).replace(/\s+/g, " ").trim()}`
+    )
+    .join("\n\n");
+
+  const systemPrompt = `You extract consumer product BRAND mentions from AI-generated shopping answers, for a competitor analysis.
+
+Rules — include a brand only if:
+- It is a real, recognizable consumer product brand (not a product line, variant, or SKU).
+- It competes in or is adjacent to the given category.
+- It is NOT the target brand (exclude variants like "Brand Sleep", "Brand Co", "Brand, Inc.").
+- It is NOT a retailer (Amazon, Walmart, Target, Best Buy, Costco, Chewy, Petco, Sephora, etc.).
+- It is NOT a publisher/review site (Wirecutter, NYT Strategist, Good Housekeeping, Consumer Reports, TechRadar, Sporked, etc.).
+- It is NOT a generic category word (e.g. "alkaline water", "dark chocolate").
+
+For each qualifying brand, return:
+  name: as it appears in the text
+  domain: canonical official website, lowercase, no www/path/protocol
+  engines: which of the provided engine sections mentioned it — use the engine keys exactly as in the source ("perplexity", "openai", "brave")
+
+Return ONLY valid JSON in this exact shape:
+{ "brands": [ { "name": "...", "domain": "...", "engines": ["perplexity","openai"] } ] }
+
+Only include brands you are CONFIDENT about. Skip if you are unsure.`;
+
+  const userPrompt = `TARGET BRAND: ${ownBrand} (${ownDomain})
+CATEGORY: ${category || "(unknown)"}
+
+ANSWERS:
+${corpus}`;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0,
+        max_tokens: 900,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      console.warn(
+        `[ai-citations] brand extractor HTTP ${res.status} ${res.statusText}`
+      );
+      return [];
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as {
+      brands?: Array<{
+        name?: string;
+        domain?: string;
+        engines?: string[];
+      }>;
+    };
+    const out: ExtractedBrandRef[] = [];
+    for (const b of parsed.brands ?? []) {
+      if (!b.name || !b.domain) continue;
+      const name = b.name.trim();
+      const domain = b.domain
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/.*$/, "");
+      if (!/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/.test(domain)) continue;
+      const engines = (b.engines ?? [])
+        .map((e) => e.toLowerCase())
+        .filter((e): e is "perplexity" | "openai" | "brave" =>
+          e === "perplexity" || e === "openai" || e === "brave"
+        );
+      if (engines.length === 0) continue;
+      out.push({ name, domain, engines });
+    }
+    return out;
+  } catch (e) {
+    console.warn(
+      "[ai-citations] brand extractor error:",
+      e instanceof Error ? e.message : e
+    );
+    return [];
+  }
+}
+
 // Only pull competitor candidates from scenarios that explicitly ask the AI
 // to list competing products. Citations from "tell me about X" or "is X
 // trustworthy" are primarily sources about the brand itself (integration
@@ -866,6 +999,7 @@ type TaggedResponse = {
 
 async function extractCompetitorsFromResponses(
   responses: TaggedResponse[],
+  ownBrand: string,
   ownDomain: string,
   category: string | null
 ): Promise<AICompetitor[]> {
@@ -885,74 +1019,93 @@ async function extractCompetitorsFromResponses(
     }
   >();
 
-  // First pass: collect all prose-mentioned product names so we can
-  // batch-resolve them with a single LLM call (scales to any DTC category
-  // without a hand-curated dictionary).
-  const allMentions: Array<{
-    engine: EngineName;
-    scenario: string;
-    name: string;
-  }> = [];
-  for (const { engine, spec, response } of responses) {
-    if (!response) continue;
-    if (!isCompetitorScenario(spec.scenario)) continue;
-    for (const name of extractProductMentionsFromText(response.content)) {
-      allMentions.push({ engine, scenario: spec.scenario, name });
+  // Helper: add a candidate root domain under a specific engine + scenario.
+  const addCandidate = (
+    root: string,
+    engine: EngineName,
+    scenario: string
+  ) => {
+    if (!root) return;
+    if (NON_COMPETITOR_DOMAINS.has(root)) return;
+    if (root === ownRoot) return;
+    const token = domainToToken(root);
+    if (token.length < 3) return;
+    if (token === ownToken) return;
+    if (!counts.has(root)) {
+      counts.set(root, {
+        domain: root,
+        engines: new Set(),
+        queries: new Set(),
+      });
+    }
+    const entry = counts.get(root)!;
+    entry.engines.add(engine);
+    entry.queries.add(scenario);
+  };
+
+  // ── Source 1: LLM prose extractor ──────────────────────────────────
+  // Single call reads full answer text across all competitor-scenario
+  // responses and returns structured {name, domain, engines} tuples.
+  // Catches plain-text brand mentions that the regex misses ("Back to
+  // Nature", "Newman-O's") and resolves them to canonical domains in
+  // the same step.
+  const competitorResponses = responses.filter(
+    (r) => r.response && isCompetitorScenario(r.spec.scenario)
+  );
+  const proseInput = competitorResponses.map((r) => ({
+    engine: r.engine,
+    content: r.response!.content,
+  }));
+  const llmBrands = await extractBrandsFromAnswersLLM(
+    proseInput,
+    ownBrand,
+    ownDomain,
+    category
+  );
+  for (const b of llmBrands) {
+    const root = rootDomain(b.domain);
+    // Attribute to every engine the LLM said mentioned this brand, under
+    // the matching scenario for that engine's response. If we can't find
+    // a matching scenario, use the first-seen competitor scenario.
+    for (const engine of b.engines) {
+      const r = competitorResponses.find((x) => x.engine === engine);
+      const scenario = r?.spec.scenario ?? competitorResponses[0]?.spec.scenario;
+      if (!scenario) continue;
+      addCandidate(root, engine, scenario);
     }
   }
-  const uniqueNames = Array.from(
-    new Set(allMentions.map((m) => m.name.toLowerCase()))
-  );
-  const llmResolved = await resolveBrandDomainsLLM(uniqueNames, category);
 
-  // Helper: resolve a name → domain using LLM map first, then local
-  // overrides + firstword.com fallback.
-  const resolve = (name: string): string | null => {
+  // ── Source 2: regex-based prose extraction + overrides (safety net)
+  //   Catches **bold** names and bare domains even if the LLM pass fails.
+  const allNames = Array.from(
+    new Set(
+      competitorResponses.flatMap((r) =>
+        extractProductMentionsFromText(r.response!.content)
+      )
+    )
+  );
+  const llmResolved = await resolveBrandDomainsLLM(allNames, category);
+  const resolveName = (name: string): string | null => {
     const key = name.toLowerCase();
     const llm = llmResolved.get(key);
     if (llm) return llm;
     return productNameToDomain(name);
   };
 
-  for (const { engine, spec, response } of responses) {
-    if (!response) continue;
-    if (!isCompetitorScenario(spec.scenario)) continue;
-
-    // 1) Citations: domains linked from the answer.
-    for (const url of response.citations) {
+  // ── Source 3: direct citation URLs from engine responses ────────────
+  for (const { engine, spec, response } of competitorResponses) {
+    for (const url of response!.citations) {
       try {
         const u = new URL(url);
         const host = u.hostname.replace(/^www\./, "").toLowerCase();
-        const root = rootDomain(host);
-        addCandidate(root);
+        addCandidate(rootDomain(host), engine, spec.scenario);
       } catch {
         // invalid URL
       }
     }
-
-    // 2) Prose mentions — domains resolved via LLM when possible.
-    for (const name of extractProductMentionsFromText(response.content)) {
-      const resolved = resolve(name);
-      if (resolved) addCandidate(rootDomain(resolved));
-    }
-
-    function addCandidate(root: string) {
-      if (!root) return;
-      if (NON_COMPETITOR_DOMAINS.has(root)) return;
-      if (root === ownRoot) return;
-      const token = domainToToken(root);
-      if (token.length < 3) return;
-      if (token === ownToken) return;
-      if (!counts.has(root)) {
-        counts.set(root, {
-          domain: root,
-          engines: new Set(),
-          queries: new Set(),
-        });
-      }
-      const entry = counts.get(root)!;
-      entry.engines.add(engine);
-      entry.queries.add(spec.scenario);
+    for (const name of extractProductMentionsFromText(response!.content)) {
+      const resolved = resolveName(name);
+      if (resolved) addCandidate(rootDomain(resolved), engine, spec.scenario);
     }
   }
 
@@ -1566,6 +1719,7 @@ export async function analyzeAICitations(
 
   const aiCompetitors = await extractCompetitorsFromResponses(
     results,
+    brand,
     domain,
     category
   );
