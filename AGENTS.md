@@ -30,9 +30,12 @@ Default to an LLM pass for any fuzzy NLP task: category inference, brand name to
 - Fail soft: on HTTP error or parse failure, return empty/null so the regex fallback kicks in
 
 ### Netlify + Next.js caching
-Root HTML on this site **must** revalidate on every request. Chunk hashes rotate per deploy and a stale cached HTML will reference JS chunks that no longer exist, producing a browser-only `ChunkLoadError` while `curl` returns 200. `netlify.toml` handles this; don't remove those headers without replacing them:
-- `/*` → `public, max-age=0, must-revalidate`
-- `/_next/static/*` → `public, max-age=31536000, immutable`
+Root HTML on this site **must not be cached at the Netlify edge at all**, and must revalidate in the browser. Chunk hashes rotate per deploy and a stale cached HTML will reference JS chunks that no longer exist, producing a browser-only `ChunkLoadError` while `curl` returns 200. Browser headers alone are not enough because Netlify's Durable cache has its own stale-while-revalidate semantics and ignores browser `must-revalidate`. You must set both:
+
+- Browser: `Cache-Control: public, max-age=0, must-revalidate`
+- Netlify edge: `Netlify-CDN-Cache-Control: no-store`
+
+This is the combo in `netlify.toml` for `/*`. Do not remove either side. For hashed static assets (`/_next/static/*`) both layers can cache aggressively since the content is immutable. If you see `cache-status: ...; fwd=stale` in a response header, the edge is still caching HTML and you need to re-check the headers.
 
 ### Compare endpoint timeouts
 `/api/audit` has `maxDuration = 90`. Primary and competitor audits fan out in parallel with `Promise.all`. Competitor audits skip AI citations and external checks (`skipAI: true, skipExternal: true`). If you add a module that calls a slow external service, gate it behind a `skipExternal`-style flag for the compare path.

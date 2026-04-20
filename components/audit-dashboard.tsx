@@ -2084,18 +2084,26 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
           {biggestGain.delta > 0 && (
             <div className="p-3 rounded-xl bg-[#34c759]/[0.06] border border-[#34c759]/20">
               <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#248a3d]">Biggest gain</div>
-              <div className="mt-1 text-[14px] font-semibold">
-                {moduleName(biggestGain.slug).split(" ")[0]}{" "}
-                <span className="tabular-nums text-[#248a3d]">+{biggestGain.delta}</span>
+              <div className="mt-1 text-[14px] font-semibold leading-snug">
+                <span className="tabular-nums text-[#248a3d] mr-1.5">
+                  +{biggestGain.delta}
+                </span>
+                <span className="text-foreground/80 font-medium">
+                  {moduleName(biggestGain.slug)}
+                </span>
               </div>
             </div>
           )}
           {biggestLoss.delta < 0 && (
             <div className="p-3 rounded-xl bg-[#ff453a]/[0.06] border border-[#ff453a]/20">
               <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#ff453a]">Regression</div>
-              <div className="mt-1 text-[14px] font-semibold">
-                {moduleName(biggestLoss.slug).split(" ")[0]}{" "}
-                <span className="tabular-nums text-[#ff453a]">{biggestLoss.delta}</span>
+              <div className="mt-1 text-[14px] font-semibold leading-snug">
+                <span className="tabular-nums text-[#ff453a] mr-1.5">
+                  {biggestLoss.delta}
+                </span>
+                <span className="text-foreground/80 font-medium">
+                  {moduleName(biggestLoss.slug)}
+                </span>
               </div>
             </div>
           )}
