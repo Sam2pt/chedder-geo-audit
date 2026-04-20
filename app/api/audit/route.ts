@@ -200,31 +200,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    // Primary audit (required)
-    const primary = await auditSingleUrl(url);
+    // Fan out primary and competitor audits concurrently so the whole
+    // compare finishes in roughly max(audit time), not sum. The primary
+    // runs the full set of modules including AI + external. Competitors
+    // skip AI + external since we only need their on-site signals for
+    // the side by side.
+    const validCompetitors = Array.isArray(competitors)
+      ? competitors
+          .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+          .slice(0, 3)
+      : [];
+
+    const [primary, ...competitorOutcomes] = await Promise.all([
+      auditSingleUrl(url),
+      ...validCompetitors.map((c) =>
+        auditSingleUrl(c, { skipAI: true, skipExternal: true })
+      ),
+    ]);
+
     if ("error" in primary) {
       return NextResponse.json({ error: primary.error }, { status: 422 });
     }
 
-    // Competitor audits (optional, up to 3)
-    let competitorResults: AuditResult[] = [];
-    if (Array.isArray(competitors) && competitors.length > 0) {
-      const validCompetitors = competitors
-        .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
-        .slice(0, 3);
-
-      const results = await Promise.all(
-        validCompetitors.map((c) =>
-          // Skip the slow AI + external checks on competitors — we only
-          // need their on-site signals (schema, content, meta, technical,
-          // authority) for the side by side comparison.
-          auditSingleUrl(c, { skipAI: true, skipExternal: true })
-        )
-      );
-      competitorResults = results.filter(
-        (r): r is AuditResult => !("error" in r)
-      );
-    }
+    const competitorResults: AuditResult[] = competitorOutcomes.filter(
+      (r): r is AuditResult => !("error" in r)
+    );
 
     // Persist + enrich with benchmarks and history.
     // These run in parallel; if blobs aren't available, we degrade silently.
