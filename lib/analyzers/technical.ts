@@ -342,12 +342,12 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
   }
 
   return {
-    name: "Technical GEO Signals",
+    name: "Is AI allowed inside?",
     slug: "technical",
     score: Math.min(score, 100),
     icon: "⚙️",
     description:
-      "Technical setup determines whether AI crawlers can access and index your content",
+      "Whether AI crawlers (GPTBot, ClaudeBot, Google Extended, and friends) can actually read your pages.",
     findings,
     recommendations,
   };

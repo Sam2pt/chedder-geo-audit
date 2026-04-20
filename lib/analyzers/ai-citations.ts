@@ -1562,7 +1562,7 @@ export async function analyzeAICitations(
     // Finding label leads with the human scenario; the detail text names the
     // specific AI tool. This keeps the card readable even if a user hasn't
     // heard of Perplexity or Brave Search.
-    const scenarioLabel = `${spec.scenario} — via ${engineLabel}`;
+    const scenarioLabel = `${spec.scenario} · via ${engineLabel}`;
     const eb = byEngine[engine];
     eb.total++;
 
@@ -1589,7 +1589,7 @@ export async function analyzeAICitations(
       findings.push({
         label: scenarioLabel,
         status: "pass",
-        detail: `${engineLabel} lists ${brand} among its top picks — this is exactly where you want to be.`,
+        detail: `${engineLabel} lists ${brand} among its top picks. This is exactly where you want to be.`,
         excerpt: cleanExcerpt(analysis.excerpt),
         highlight: brand,
         sourceUrl: firstCitation(response.citations),
@@ -1598,7 +1598,7 @@ export async function analyzeAICitations(
       eb.mentioned++;
       const detail =
         analysis.collisionHosts.length > 0
-          ? `${engineLabel} is thinking of a different company with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}) — you were not the subject of the answer.`
+          ? `${engineLabel} is thinking of a different company with the name "${brand}" (${analysis.collisionHosts.slice(0, 2).join(", ")}). You were not the subject of the answer.`
           : `${engineLabel} mentions ${brand}, but buries it below other recommendations. Customers who scan the top picks will miss you.`;
       findings.push({
         label: scenarioLabel,
@@ -1614,12 +1614,12 @@ export async function analyzeAICitations(
         ? cleanExcerpt(analysis.excerpt)
         : firstSnippet(response.content);
       const detail = analysis.refused
-        ? `${engineLabel} doesn't recognize ${brand} — it told the user it didn't know the company.`
+        ? `${engineLabel} doesn't recognize ${brand}. It told the user it didn't know the company.`
         : recommended.length > 0
           ? `${brand} doesn't come up in ${engineLabel}. It recommends ${recommended.join(
               ", "
             )} instead.`
-          : `${brand} doesn't come up in ${engineLabel} at all — you're invisible for this question.`;
+          : `${brand} doesn't come up in ${engineLabel} at all. You're invisible for this question.`;
       findings.push({
         label: scenarioLabel,
         status: "fail",
@@ -1710,7 +1710,7 @@ export async function analyzeAICitations(
       recommendations.push({
         priority: "medium",
         title: `Not showing up in ${weakList}`,
-        description: `You're visible in some AI tools but not ${weakList}. Each tool leans on different signals — the ones missing you tend to weight fresh web content, review-site coverage, and links from well-known lifestyle or category publications. Earned press from the right outlets closes this gap fastest.`,
+        description: `You're visible in some AI tools but not ${weakList}. Each tool leans on different signals. The ones missing you tend to weight fresh web content, review site coverage, and links from well known lifestyle or category publications. Earned press from the right outlets closes this gap fastest.`,
       });
     }
   }
@@ -1727,7 +1727,7 @@ export async function analyzeAICitations(
   const engineList = engines.map((e) => e.label).join(", ");
   const description =
     engines.length > 1
-      ? `We asked real customer questions to ${engineList} and checked whether ${brand} came up — ${engineSummary.join(
+      ? `We asked real customer questions to ${engineList} and checked whether ${brand} came up · ${engineSummary.join(
           " · "
         )}`
       : `We asked real customer questions to ${engineList} and checked whether ${brand} came up (${usedQueries}/${results.length} questions answered).`;

@@ -184,8 +184,8 @@ Founding story in 2-3 sentences. Specific year, specific problem.
 Describe your ideal customer in their language.
 
 ## The team
-- **Jane Doe**, CEO — 10 years in X, previously at Y.
-- **John Smith**, CTO — Built Z at $BIGCO.
+- **Jane Doe**, CEO. 10 years in X, previously at Y.
+- **John Smith**, CTO. Built Z at $BIGCO.
 
 ## Trust signals
 - Founded in 2020
@@ -325,12 +325,12 @@ Describe your ideal customer in their language.
   }
 
   return {
-    name: "Authority & Trust Signals",
+    name: "Why you're worth trusting",
     slug: "authority",
     score: Math.min(score, 100),
     icon: "🛡️",
     description:
-      "AI models prefer citing authoritative, trustworthy sources with strong E-E-A-T signals",
+      "The little signals that tell AI you're a real business: social links, contact info, about page, legal pages.",
     findings,
     recommendations,
   };

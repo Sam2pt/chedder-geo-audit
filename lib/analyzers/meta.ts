@@ -127,7 +127,7 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
         "Add missing OG tags (title, description, image, type, url). These help AI models and social platforms understand your content.",
       snippetTarget: "Add to <head>",
       language: "html",
-      fixSnippet: `<meta property="og:title" content="Your Brand — Page Title" />
+      fixSnippet: `<meta property="og:title" content="Your Brand · Page Title" />
 <meta property="og:description" content="120-160 char summary of the page." />
 <meta property="og:image" content="https://yourdomain.com/og-image.png" />
 <meta property="og:type" content="website" />
@@ -146,7 +146,7 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
         "OpenGraph tags provide AI and social platforms with structured metadata about your pages. Add og:title, og:description, og:image, og:type, and og:url.",
       snippetTarget: "Add to <head>",
       language: "html",
-      fixSnippet: `<meta property="og:title" content="Your Brand — Page Title" />
+      fixSnippet: `<meta property="og:title" content="Your Brand · Page Title" />
 <meta property="og:description" content="120-160 char summary of the page." />
 <meta property="og:image" content="https://yourdomain.com/og-image.png" />
 <meta property="og:type" content="website" />
@@ -179,7 +179,7 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
       language: "html",
       fixSnippet: `<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@yourbrand" />
-<meta name="twitter:title" content="Your Brand — Page Title" />
+<meta name="twitter:title" content="Your Brand · Page Title" />
 <meta name="twitter:description" content="120-160 char summary." />
 <meta name="twitter:image" content="https://yourdomain.com/og-image.png" />`,
     });
@@ -262,12 +262,12 @@ export function analyzeMeta($: CheerioAPI): ModuleResult {
   }
 
   return {
-    name: "Meta & OpenGraph Tags",
+    name: "Your page's elevator pitch",
     slug: "meta",
     score: Math.min(score, 100),
     icon: "🏷️",
     description:
-      "Meta tags help AI models understand your page purpose and brand identity",
+      "The short summary AI tools see first when they visit your page, so it needs to be sharp.",
     findings,
     recommendations,
   };

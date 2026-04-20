@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 
@@ -376,7 +376,7 @@ export default function Home() {
               {
                 color: "#14b8a6",
                 title: "Real AI search tests",
-                desc: "We ask ChatGPT, Perplexity, and Brave Search real customer questions about your category and check whether your brand comes up — with exact verbatim excerpts.",
+                desc: "We ask ChatGPT, Perplexity, and Brave Search real customer questions about your category and check whether your brand comes up, with exact verbatim excerpts.",
                 badge: "Killer feature",
               },
               {
@@ -439,7 +439,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s, even both side-by-side." },
-              { num: "2", title: "Chedder audits everything", desc: "Crawls your pages, runs real questions through ChatGPT, Perplexity, and Brave Search, and checks Wikipedia and Reddit — scoring every signal." },
+              { num: "2", title: "Chedder audits everything", desc: "Crawls your pages, runs real questions through ChatGPT, Perplexity, and Brave Search, and checks Wikipedia and Reddit, scoring every signal." },
               { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
             ].map((step, i) => (
               <div key={i} className="relative p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
@@ -519,6 +519,27 @@ function scoreAccent(score: number) {
   return "#ff453a";
 }
 
+// Rotating fun quips shown under the stage text while the audit runs.
+// Mix of cheese puns and legitimate "did you know" stats so the wait feels
+// like someone's chatting with you, not a progress bar. Keep lines short
+// enough to read in about 3 seconds.
+const LOADING_QUIPS = [
+  "Did you know. About 1 in 4 shoppers now start product research with ChatGPT.",
+  "The top three AI picks get most of the clicks. The top pick gets most of those.",
+  "Fun cheese fact. Aging improves both flavor and AI visibility.",
+  "AI tools love FAQs. Even more than a good cracker.",
+  "Good visibility compounds. Every honest mention adds up.",
+  "Brands get cited for being specific, not clever.",
+  "Most CPG brands score below 60 on their first audit. Solid room to grow.",
+  "Reddit is the secret sauce. AI weighs organic opinions heavily.",
+  "Wikipedia is gold. Even a short stub helps you show up.",
+  "Curds up. Great AI visibility is built, not rushed.",
+  "Structured data is the wrapping paper AI unwraps first.",
+  "Over 40 signals checked in every audit. Almost there.",
+  "If AI can't read you, it can't recommend you. We're checking that now.",
+  "Great answers beat great ads in the AI era. We're grading your answers.",
+];
+
 function CheeseWheelLoader({
   url,
   stage,
@@ -528,6 +549,18 @@ function CheeseWheelLoader({
   stage: string;
   progress: Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>;
 }) {
+  const [quipIdx, setQuipIdx] = useState(() =>
+    Math.floor(Math.random() * LOADING_QUIPS.length)
+  );
+  useEffect(() => {
+    const id = setInterval(
+      () => setQuipIdx((i) => (i + 1) % LOADING_QUIPS.length),
+      3500
+    );
+    return () => clearInterval(id);
+  }, []);
+  const quip = LOADING_QUIPS[quipIdx];
+
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
       <div className="max-w-[520px] w-full space-y-8">
@@ -554,12 +587,20 @@ function CheeseWheelLoader({
             </svg>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">
               Analyzing {url.replace(/^https?:\/\//, "")}
             </h2>
             <p className="text-[14px] text-muted-foreground min-h-[20px]">
               {stage}
+            </p>
+            {/* Cycling human quip. Key makes React remount so the fade
+                animation replays each time the quip changes. */}
+            <p
+              key={quipIdx}
+              className="text-[12.5px] text-muted-foreground/70 italic max-w-[440px] mx-auto leading-snug animate-[fadeIn_600ms_ease-out]"
+            >
+              {quip}
             </p>
           </div>
         </div>

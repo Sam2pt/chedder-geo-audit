@@ -282,12 +282,12 @@ export function analyzeContent($: CheerioAPI): ModuleResult {
   }
 
   return {
-    name: "Content Structure & Quality",
+    name: "The words on your page",
     slug: "content",
     score: Math.min(score, 100),
     icon: "📝",
     description:
-      "Well-structured content is more likely to be cited by AI models",
+      "Clear headings, lists, and FAQs make it easy for AI to lift your answers verbatim.",
     findings,
     recommendations,
   };

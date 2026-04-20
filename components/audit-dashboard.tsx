@@ -766,8 +766,8 @@ const HORIZON_META: Record<
   },
   soon: {
     label: "Next",
-    timeframe: "2–4 weeks",
-    blurb: "A small content or dev cycle — structured pages, contact blocks, robots rules.",
+    timeframe: "2 to 4 weeks",
+    blurb: "A small content or dev cycle. Structured pages, contact blocks, robots rules.",
     accent: "#ff9f0a",
     light: "rgba(255,159,10,0.1)",
     ring: "rgba(255,159,10,0.28)",
@@ -775,7 +775,7 @@ const HORIZON_META: Record<
   later: {
     label: "Later",
     timeframe: "This quarter",
-    blurb: "Authority signals, external mentions, AI citation wins — compounding work.",
+    blurb: "Authority signals, external mentions, AI citation wins. Compounding work.",
     accent: "#8b5cf6",
     light: "rgba(139,92,246,0.1)",
     ring: "rgba(139,92,246,0.28)",

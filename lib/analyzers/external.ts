@@ -535,7 +535,7 @@ export async function analyzeExternal(
       priority: "medium",
       title: "Grow Reddit discussion around your brand",
       description:
-        "AI models weight organic Reddit discussions heavily for shopper intent — r/BuyItForLife and category subreddits are gold. Seed genuine conversations by answering questions in your category honestly (even when it doesn't route to your product), and encourage happy customers to post reviews. Avoid astroturfing — it's detected and penalized.",
+        "AI models weight organic Reddit discussions heavily for shopper intent. Subreddits like r/BuyItForLife and your category's own sub are gold. Seed genuine conversations by answering questions in your category honestly (even when it doesn't route to your product), and encourage happy customers to post reviews. Avoid astroturfing. It's detected and penalized.",
     });
   } else {
     findings.push({
@@ -547,7 +547,7 @@ export async function analyzeExternal(
       priority: "high",
       title: "Build organic Reddit presence",
       description:
-        "Reddit is a top-tier source AI models cite for honest shopper opinions. Identify 2–3 subreddits where your target shopper hangs out (r/BuyItForLife and your category-specific subs), and contribute genuinely helpful, non-promotional comments. Ask happy customers to share their experience — organic threads outrank any paid campaign here.",
+        "Reddit is a top tier source AI models cite for honest shopper opinions. Identify 2 or 3 subreddits where your target shopper hangs out (r/BuyItForLife and your category specific subs), and contribute genuinely helpful, non promotional comments. Ask happy customers to share their experience. Organic threads outrank any paid campaign here.",
     });
   }
 
@@ -571,7 +571,7 @@ export async function analyzeExternal(
         priority: "medium",
         title: "Expand web presence",
         description:
-          "Broaden where your brand shows up online — pitch reviews to lifestyle and category publications, send product to creators in your niche for honest reviews, get on roundup lists, and pursue podcast mentions. AI tools learn from fresh, varied coverage.",
+          "Broaden where your brand shows up online. Pitch reviews to lifestyle and category publications, send product to creators in your niche for honest reviews, get on roundup lists, and pursue podcast mentions. AI tools learn from fresh, varied coverage.",
       });
     } else {
       findings.push({
@@ -614,12 +614,12 @@ export async function analyzeExternal(
   }
 
   return {
-    name: "External Brand Signals",
+    name: "What the web whispers about you",
     slug: "external",
     score: Math.min(score, 100),
     icon: "🌐",
     description:
-      "AI models cross-reference your brand against Wikipedia, Reddit, and the broader web",
+      "When AI tools look you up on Wikipedia, Reddit, and across the open web, what do they actually find?",
     findings,
     recommendations,
   };

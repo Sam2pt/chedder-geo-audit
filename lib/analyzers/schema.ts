@@ -273,12 +273,12 @@ export function analyzeSchema($: CheerioAPI): ModuleResult {
   }
 
   return {
-    name: "Schema & Structured Data",
+    name: "The labels AI reads first",
     slug: "schema",
     score: Math.min(score, 100),
     icon: "🏗️",
     description:
-      "Structured data helps AI models extract and cite your content accurately",
+      "Structured data tags give AI tools a clean summary of your brand, products, and answers.",
     findings,
     recommendations,
   };

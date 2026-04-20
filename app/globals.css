@@ -129,3 +129,10 @@ html {
 .pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
+
+/* Gentle fade-up used on the rotating loading quip so each new line
+   enters without jarring the eye. */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

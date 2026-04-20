@@ -136,7 +136,7 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
       // allow requests from Chedder's user-agent. Otherwise try a different URL."
       message = `${parsedUrl.hostname} blocks automated audits (${homePage.protectedBy} bot protection, HTTP ${homePage.status}). If this is your site, ask your team to allow the Chedder user-agent. Otherwise try a different URL.`;
     } else if (homePage && !homePage.ok) {
-      message = `${parsedUrl.hostname} returned HTTP ${homePage.status} — the site may be down or blocking automated requests.`;
+      message = `${parsedUrl.hostname} returned HTTP ${homePage.status}. The site may be down or blocking automated requests.`;
     } else {
       message = `Could not reach ${parsedUrl.hostname}. Check the URL and try again.`;
     }
@@ -194,13 +194,13 @@ async function runAudit(rawUrl: string, emit: (e: StreamEvent) => void) {
   emitModule(analyzeAuthority($home, normalizedUrl));
 
   // External + AI run in parallel (slow — Wikipedia/Reddit/Perplexity)
-  emit({ type: "stage", name: "external", detail: "Asking around — Wikipedia, Reddit, the wider web…" });
+  emit({ type: "stage", name: "external", detail: "Asking around Wikipedia, Reddit, and the wider web…" });
   const externalPromise = analyzeExternal($home, parsedUrl.hostname);
 
   const brand = extractBrandName($home, parsedUrl.hostname);
   const metaDescription = $home('meta[name="description"]').attr("content")?.trim() || null;
 
-  emit({ type: "stage", name: "ai", detail: "Putting you to the test — asking ChatGPT, Perplexity, and Brave Search…" });
+  emit({ type: "stage", name: "ai", detail: "Putting you to the test. Asking ChatGPT, Perplexity, and Brave Search…" });
   const aiPromise = analyzeAICitations(brand, parsedUrl.hostname, metaDescription);
 
   const externalResult = await externalPromise;
