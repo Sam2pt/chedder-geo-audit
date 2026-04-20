@@ -5,19 +5,28 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# The rendered HTML is tied to specific JS/CSS chunk hashes. If a stale
-# HTML response is served by the CDN after a new deploy has shipped
-# different chunk names, the browser hits ChunkLoadError and the page
-# fails to render. Force the HTML to revalidate on every request so the
-# client always sees HTML that matches the currently-deployed chunks.
+# The rendered HTML is tied to specific JS/CSS chunk hashes. Netlify's
+# Durable cache honors stale-while-revalidate semantics even when the
+# browser header says must-revalidate, which means a stale HTML can be
+# served to the browser pointing at chunks that no longer exist — the
+# browser then hits ChunkLoadError and the page fails to render.
+#
+# Fix:
+#  - Cache-Control tells the BROWSER the HTML is always revalidated
+#    (max-age=0, must-revalidate).
+#  - Netlify-CDN-Cache-Control tells Netlify's EDGE not to store it at
+#    all (no-store). Every request hits origin so the chunk references
+#    are always in sync with the deployed build.
 [[headers]]
   for = "/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+    Netlify-CDN-Cache-Control = "no-store"
 
-# Hashed static assets (including _next/static chunks) are immutable and
-# can be cached aggressively, so override the root rule for those paths.
+# Hashed static assets are immutable (content-hashed) so they can be
+# cached aggressively at both the browser and the CDN.
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+    Netlify-CDN-Cache-Control = "public, max-age=31536000, immutable"
