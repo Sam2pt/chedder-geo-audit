@@ -889,7 +889,7 @@ async function generateTailoredQueriesLLM(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || !category) return [];
 
-  const systemPrompt = `You write realistic shopper questions to test whether a consumer brand gets recommended by AI. Given a brand, its category, and a short description, propose TWO discovery queries a real shopper might type into ChatGPT. The queries must:
+  const systemPrompt = `You write realistic shopper questions to test whether a consumer brand gets recommended by AI. Given a brand, its category, and a short description, propose ONE discovery query a real shopper might type into ChatGPT. The query must:
 - NOT name the brand (we're testing whether AI recommends them unprompted)
 - Probe a specific shopper intent the brand might actually win: a use case ("for marathon training"), an attribute ("organic", "sustainable", "hypoallergenic"), a price tier ("budget", "premium"), a persona ("for older dogs", "for beginners"), or a quality signal
 - Be distinct from these generic baseline queries we already run:
@@ -901,8 +901,7 @@ async function generateTailoredQueriesLLM(
 Return JSON in exactly this shape:
 {
   "queries": [
-    { "scenario": "<short noun-phrase title for the finding card>", "query": "<the exact question a shopper would ask>" },
-    { "scenario": "...", "query": "..." }
+    { "scenario": "<short noun-phrase title for the finding card>", "query": "<the exact question a shopper would ask>" }
   ]
 }
 
@@ -959,7 +958,10 @@ Description: ${(metaDescription ?? "").slice(0, 400)}`;
       // (that defeats the whole "brand-unaware" point of discovery).
       if (query.toLowerCase().includes(brand.toLowerCase())) continue;
       out.push({ scenario, query });
-      if (out.length >= 2) break;
+      // Only keep the first high-quality tailored query — adding a
+      // second pushed total audit time past the streaming timeout
+      // because Brave's serial 2 req/sec cap dominates the AI stage.
+      break;
     }
     return out;
   } catch (e) {

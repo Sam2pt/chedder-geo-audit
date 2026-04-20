@@ -24,6 +24,12 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// The streaming audit now runs up to 5 scenarios across 3 engines,
+// plus a multi-page crawl and a quality-review pass. With Brave's
+// Answers tier capped at 2 req/sec (serialized client-side) the
+// AI stage alone can take 60-80s. Set maxDuration generously; the
+// stream keeps the connection alive so Netlify's edge won't bail.
+export const maxDuration = 120;
 
 const FETCH_TIMEOUT = 10000;
 
