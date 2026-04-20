@@ -2023,29 +2023,41 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
           </g>
         ))}
 
-        {/* labels */}
-        {points.map((p) => (
-          <g key={`l-${p.slug}`}>
-            <text
-              x={p.lx}
-              y={p.ly - 5}
-              textAnchor="middle"
-              className="text-[10px] font-semibold fill-foreground"
-              style={{ letterSpacing: "0.02em", textTransform: "uppercase" }}
-            >
-              {p.name}
-            </text>
-            <text
-              x={p.lx}
-              y={p.ly + 8}
-              textAnchor="middle"
-              className="text-[13px] font-bold tabular-nums"
-              style={{ fill: p.color }}
-            >
-              {p.score}
-            </text>
-          </g>
-        ))}
+        {/* labels — anchor side-based so long labels near the edges
+            don't get clipped. Left column uses start-anchor + right-
+            shift, right column uses end-anchor + left-shift. */}
+        {points.map((p) => {
+          const leftEdge = p.lx < cx - 40;
+          const rightEdge = p.lx > cx + 40;
+          const anchor: "start" | "middle" | "end" = leftEdge
+            ? "start"
+            : rightEdge
+              ? "end"
+              : "middle";
+          const labelX = leftEdge ? p.lx - 16 : rightEdge ? p.lx + 16 : p.lx;
+          return (
+            <g key={`l-${p.slug}`}>
+              <text
+                x={labelX}
+                y={p.ly - 5}
+                textAnchor={anchor}
+                className="text-[10px] font-semibold fill-foreground"
+                style={{ letterSpacing: "0.02em", textTransform: "uppercase" }}
+              >
+                {p.name}
+              </text>
+              <text
+                x={labelX}
+                y={p.ly + 8}
+                textAnchor={anchor}
+                className="text-[13px] font-bold tabular-nums"
+                style={{ fill: p.color }}
+              >
+                {p.score}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
