@@ -1941,6 +1941,19 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
   const step = (2 * Math.PI) / n;
   const start = -Math.PI / 2;
 
+  // Short radar-chart labels. The full module names ("The labels AI
+  // reads first", "What the web whispers about you") don't fit the
+  // radial layout. Hand-tuned per slug so the axis reads naturally.
+  const radarLabel: Record<string, string> = {
+    schema: "Schema",
+    meta: "Meta",
+    content: "Content",
+    technical: "AI access",
+    authority: "Trust",
+    external: "Web mentions",
+    "ai-citations": "AI visibility",
+  };
+
   const points = modules.map((m, i) => {
     const angle = start + i * step;
     const r = (m.score / 100) * maxR;
@@ -1953,7 +1966,7 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
       lx: cx + Math.cos(angle) * (outer + 30),
       ly: cy + Math.sin(angle) * (outer + 30),
       score: m.score,
-      name: m.name.split(/[\s&]/)[0],
+      name: radarLabel[m.slug] ?? m.name.slice(0, 12),
       slug: m.slug,
       color: moduleColor(m.slug).accent,
       angle,
