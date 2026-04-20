@@ -22,6 +22,13 @@ import {
   makeSlug,
 } from "@/lib/audit-store";
 
+// Compare audits fan out to multiple sites in parallel (primary + up to 3
+// competitors), each running their own multi-page crawl. The default
+// Netlify function timeout is too short to cover that. Bump it so the
+// compare endpoint has room to finish.
+export const maxDuration = 90;
+export const runtime = "nodejs";
+
 const FETCH_TIMEOUT = 10000;
 
 async function fetchPage(url: string) {
@@ -47,7 +54,7 @@ async function fetchPage(url: string) {
 
 async function auditSingleUrl(
   rawUrl: string,
-  options: { skipAI?: boolean } = {}
+  options: { skipAI?: boolean; skipExternal?: boolean } = {}
 ): Promise<AuditResult | { error: string }> {
   let normalizedUrl = rawUrl.trim();
   if (!normalizedUrl.startsWith("http")) {
@@ -97,7 +104,12 @@ async function auditSingleUrl(
   };
 
   const $home = cheerio.load(homePage.html);
-  const externalPromise = analyzeExternal($home, parsedUrl.hostname);
+  // The external check hits Wikipedia + Reddit (via Brave) and is slow.
+  // Skipped for competitor audits in a compare run — we only need their
+  // on-site signals for the land-grab comparison.
+  const externalPromise = options.skipExternal
+    ? null
+    : analyzeExternal($home, parsedUrl.hostname);
 
   // AI citation testing runs in parallel (skipped for competitors to save cost)
   let aiCitationsPromise: ReturnType<typeof analyzeAICitations> | null = null;
@@ -145,8 +157,10 @@ async function auditSingleUrl(
     analyzeTechnical($home, technicalCtx),
     analyzeAuthority($home, normalizedUrl),
   ];
-  const externalResult = await externalPromise;
-  modules.push(externalResult);
+  if (externalPromise) {
+    const externalResult = await externalPromise;
+    modules.push(externalResult);
+  }
 
   let aiCompetitors: import("@/lib/types").AICompetitor[] | undefined;
   if (aiCitationsPromise) {
@@ -200,7 +214,12 @@ export async function POST(req: NextRequest) {
         .slice(0, 3);
 
       const results = await Promise.all(
-        validCompetitors.map((c) => auditSingleUrl(c, { skipAI: true }))
+        validCompetitors.map((c) =>
+          // Skip the slow AI + external checks on competitors — we only
+          // need their on-site signals (schema, content, meta, technical,
+          // authority) for the side by side comparison.
+          auditSingleUrl(c, { skipAI: true, skipExternal: true })
+        )
       );
       competitorResults = results.filter(
         (r): r is AuditResult => !("error" in r)
