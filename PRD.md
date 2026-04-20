@@ -8,9 +8,11 @@ This is a living document. It captures what Chedder is, who it serves, and what 
 
 ## What Chedder is
 
-Chedder is Two Point Technologies' Generative Engine Optimization audit tool, and the first release in a cheese-named product line (Chedder, then Brie, then Slices, and so on as the product matures). It answers one vague but increasingly important question for a consumer brand: **do you show up when someone asks a chat or an AI search for a recommendation in your category?**
+Chedder is Two Point Technologies' Generative Engine Optimization audit tool, and the first release in a cheese-named GEO product line (Chedder, then Brie, then Slices, and so on as the GEO product matures). Non-GEO tools TPT builds later get their own names — the cheese theme is specifically for this line, not a forever pattern.
 
-It's free to use. It's intentionally inclusive and inviting in tone. It serves three audiences at once: the TPT team, TPT's paying clients, and a public beta audience we're learning from.
+Chedder answers one vague but increasingly important question for a consumer brand: **do you show up when someone asks a chat or an AI search for a recommendation in your category?**
+
+It's free to try. It's intentionally inclusive and inviting in tone. It doubles as TPT's working tool and as a conversation-opener for TPT's sales flow.
 
 ## Mission
 
@@ -20,11 +22,11 @@ That's it. One question, one clear answer, one short path to what to do next.
 
 ## Who it serves
 
-**Two Point Technologies — the team.** Chedder is an internal tool for running audits before sales calls, baselining new client engagements, and tracking progress during the work. The "beta" branding means we can iterate openly while TPT is the first power user.
+**Two Point Technologies — the team.** Chedder is an internal tool for running audits before sales calls, baselining new client engagements, and tracking progress during the work. The "beta" branding means we can iterate openly while TPT is the first power user. This is the audience the product optimizes for.
 
 **TPT's paying clients.** Clients get access to Chedder as part of their engagement. It makes the work tangible. They can run audits, share permalinks, and see the signals we're improving for them. The software cost blends into TPT's services pricing rather than being sold as a separate SaaS subscription.
 
-**The public.** A free public beta positions TPT as a technology partner that drives revenue, not just a marketing agency. Self-serve audits demonstrate capability, seed word of mouth, and teach us how people actually use the tool before we commit to a monetization model.
+**The public (as sales funnel, not a retention target).** A free public beta positions TPT as a technology partner that drives revenue, not just a marketing agency. Public users are inbound leads in waiting — someone curious enough to audit their brand is someone who might benefit from TPT doing the work. The tool is a conversation-opener, not a consumer product we measure by retention.
 
 ## Core job to be done
 
@@ -56,10 +58,11 @@ The underlying analysis is substantive. We run real queries on real AI tools, cr
 
 In order:
 
-1. **Analytics / behavior tracking.** We cannot learn what's working without observability. Lightweight first (Plausible or similar), then event-level as we decide what matters. Precondition for any later monetization conversation.
-2. **Login + database.** The "private vessel" step. Users sign in, see their saved audits, give their company a name, watch their trend. Turns the tool from public single-shot to personal.
-3. **Richer recommendations.** Category-specific action plans (apparel wants sizing guides, food wants nutrition schema, beauty wants ingredient lists). Copy paste templates for Reddit, Wirecutter pitches, product-page schema.
-4. **More query variety.** Use-case queries ("best X for Y"), price-tier queries, attribute queries ("best organic X"). Surfaces where a brand is strong that today's three discovery queries miss.
+1. **Soft gate after first free audit (lead capture).** First search is free and anonymous — stays inviting. To run a second search, the user signs up with name, position, company, and email. This is the single highest leverage change right now: every person who cares enough to run a second audit enters TPT's funnel as a warm lead. Positioned as "save your audit and run more" not "pay a wall."
+2. **Analytics / behavior tracking.** Observe how people use the tool: which brands they audit, how far they scroll, whether they share the permalink, whether they come back. Lightweight first (Plausible or similar), then event-level as we decide what matters. Complements the lead capture with aggregate signal.
+3. **Login + database.** The "private vessel" step that the sign-up in step 1 implies. Once a user has an account they can see their saved audits, give their company a name, watch their trend over time. Turns the tool from single-shot to personal.
+4. **Richer recommendations.** Category-specific action plans (apparel wants sizing guides, food wants nutrition schema, beauty wants ingredient lists). Copy paste templates for Reddit, Wirecutter pitches, product-page schema.
+5. **More query variety.** Use-case queries ("best X for Y"), price-tier queries, attribute queries ("best organic X"). Surfaces where a brand is strong that today's three discovery queries miss.
 
 ## Later (explicitly not now)
 
@@ -95,15 +98,15 @@ Not yet. The operating cost is low and the learning return on keeping it free is
 We don't have a single KPI. The concept is proven when:
 
 - TPT uses Chedder in real sales cycles and clients respond well to it
-- Public users come back to re-audit their brand (return visits > one-shot)
+- The soft gate produces a steady trickle of qualified inbound leads (people who chose to hand over a name + email in exchange for a second audit — a real signal of interest)
 - The tool produces insights the TPT team wouldn't have otherwise had about a given brand
-- We learn enough from public usage patterns to know what a paid tier should actually be
+- We learn enough from behavior patterns to know what a paid tier should actually be
 
 ## Open questions (parked)
 
-- `?` What specifically is "returning use" worth? A user who re-audits their own site monthly vs. shares ten audit links vs. runs a competitor compare — which matters most?
-- `?` When we launch login, do we ask for company name up front or progressively disclose (first audit anon, second prompt to save)?
-- `?` Does the public beta benefit from being gated (email capture) or does that poison the "inclusive and inviting" feel?
+- `?` What does the soft gate page look like in practice? Phrasing matters ("Save this audit and run another" vs. "Sign up to continue"). Stays on the inviting side of the line.
+- `?` What happens to the first (anon) audit after the user signs up? Attach to the new account? Let them revisit from the link?
+- `?` Do we want an agency flag on the sign-up (position = "marketing agency") to handle case where an agency is running audits on behalf of clients? Could be a future lead signal.
 - `?` When does category-specific recommendation work justify its own sub-product vs. living inside Chedder?
 
 ---
