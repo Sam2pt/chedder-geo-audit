@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createMagicLinkToken } from "@/lib/auth";
 import { sendMagicLink } from "@/lib/email";
 import { saveEvent } from "@/lib/events";
+import { checkMagicLinkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,33 @@ export async function POST(req: NextRequest) {
   const { email, deviceId } = body as { email?: unknown; deviceId?: unknown };
   if (typeof email !== "string" || !email.includes("@") || email.length > 200) {
     return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
+  }
+
+  // Rate-limit magic-link requests so nobody can spam-mail an address.
+  // 3/hr per email + 3/hr per IP, whichever trips first.
+  const rl = await checkMagicLinkRateLimit({
+    email,
+    ip: getClientIp(req.headers),
+  });
+  if (!rl.allowed) {
+    const mins = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 60000));
+    return NextResponse.json(
+      {
+        error: `Too many sign-in attempts. Try again in ${mins} min.`,
+        resetAt: rl.resetAt,
+      },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+          "Retry-After": String(
+            Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000))
+          ),
+        },
+      }
+    );
   }
 
   // Shape check passed — create the token and fire the email.

@@ -593,31 +593,35 @@ export default function Home() {
       <section className="px-6 py-24 border-t border-black/[0.04]">
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Dogfooded</div>
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Built for CPG</div>
             <h2 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.03em] leading-[1.1]">
-              We&apos;ve run Chedder on the brands you know.
+              The categories shoppers ask AI about.
             </h2>
             <p className="text-[16px] text-muted-foreground max-w-[580px] mx-auto leading-[1.6]">
-              Every release goes through a dogfood pass against real consumer brands before it ships. A few recent guinea pigs:
+              Chedder is tuned for direct-to-consumer and traditional retail. If people ask ChatGPT which one to buy, Chedder works:
             </p>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-6 gap-y-8 items-center justify-items-center">
+          <div className="flex flex-wrap gap-2 justify-center max-w-[640px] mx-auto">
             {[
-              "Casper",
-              "Oreo",
-              "Warby Parker",
-              "Allbirds",
-              "Glossier",
-              "Haus",
-              "Olipop",
-              "Tushy",
-            ].map((brand) => (
+              "Mattresses",
+              "Pet food",
+              "Dog beds",
+              "Beauty",
+              "Chocolate",
+              "Beverages",
+              "Detergent",
+              "Candles",
+              "Supplements",
+              "Skincare",
+              "Coffee",
+              "Apparel",
+            ].map((category) => (
               <div
-                key={brand}
-                className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                key={category}
+                className="px-3.5 py-1.5 rounded-full bg-white border border-black/[0.08] text-[13px] font-medium text-foreground/70"
               >
-                {brand}
+                {category}
               </div>
             ))}
           </div>
@@ -626,18 +630,18 @@ export default function Home() {
             {[
               {
                 stat: "60",
-                label: "Typical first-audit score. Even for nine-figure ad budgets.",
+                label: "Typical first-audit score. Even for brands with nine-figure ad budgets.",
                 color: "#ff9f0a",
                 prefix: "<",
               },
               {
-                stat: "2 of 3",
-                label: "Top AI chat questions your brand could be winning but isn't.",
+                stat: "1 in 2",
+                label: "Brands we audit are blocking an AI crawler without meaning to.",
                 color: "#0071e3",
               },
               {
-                stat: "30%",
-                label: "Average visibility lift after a 90-day Chedder action plan.",
+                stat: "40",
+                label: "Individual signals scored per audit, grouped into 7 modules.",
                 color: "#34c759",
                 suffix: "+",
               },

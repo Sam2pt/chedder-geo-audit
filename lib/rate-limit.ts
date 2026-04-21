@@ -23,6 +23,9 @@ const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 export const LIMITS = {
   anonymous: 5,
   signedUp: 25,
+  // Magic-link requests: tighter cap so an attacker can't spam-mail a
+  // single address. Keyed by email + IP.
+  magicLink: 3,
 } as const;
 
 function getRateStore() {
@@ -149,6 +152,71 @@ export async function checkAuditRateLimit(opts: {
 
   const tightest = entries.reduce((min, e) =>
     e.pruned.length > min.pruned.length ? e : min
+  );
+  return {
+    allowed: true,
+    limit,
+    remaining: Math.max(0, limit - (tightest.pruned.length + 1)),
+    resetAt: (tightest.pruned[0] ?? now) + WINDOW_MS,
+  };
+}
+
+/**
+ * Rate-limit magic-link requests so nobody can spam-mail an email address
+ * with sign-in links. Keyed independently by the target email and the
+ * requester's IP — whichever trips first wins.
+ *
+ * Window: 1 hour. Limit: 3 requests per email, 3 per IP. A normal user
+ * who mistyped their address once still has plenty of headroom.
+ */
+export async function checkMagicLinkRateLimit(opts: {
+  email: string;
+  ip?: string;
+}): Promise<RateLimitResult> {
+  const store = getRateStore();
+  const limit = LIMITS.magicLink;
+  const now = Date.now();
+  const windowStart = now - WINDOW_MS;
+
+  if (!store) {
+    return { allowed: true, limit, remaining: limit, resetAt: now + WINDOW_MS };
+  }
+
+  const normalizedEmail = opts.email.trim().toLowerCase();
+  const keys: Array<{ scope: "device" | "ip"; key: string }> = [
+    { scope: "device", key: `magic:email:${sanitizeKey(normalizedEmail)}` },
+  ];
+  if (opts.ip) {
+    keys.push({ scope: "ip", key: `magic:ip:${sanitizeKey(opts.ip)}` });
+  }
+
+  const entries = await Promise.all(
+    keys.map(async ({ scope, key }) => {
+      const entry = await loadEntry(store, key);
+      const pruned = entry.hits.filter((t) => t > windowStart);
+      return { scope, key, pruned };
+    })
+  );
+
+  for (const e of entries) {
+    if (e.pruned.length >= limit) {
+      const oldest = e.pruned[0] ?? now;
+      return {
+        allowed: false,
+        limit,
+        remaining: 0,
+        resetAt: oldest + WINDOW_MS,
+        scope: e.scope,
+      };
+    }
+  }
+
+  await Promise.all(
+    entries.map((e) => saveEntry(store, e.key, { hits: [...e.pruned, now] }))
+  );
+
+  const tightest = entries.reduce((max, e) =>
+    e.pruned.length > max.pruned.length ? e : max
   );
   return {
     allowed: true,
