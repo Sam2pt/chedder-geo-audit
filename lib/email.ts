@@ -17,6 +17,14 @@
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded file contents. Resend accepts base64 strings. */
+  content: string;
+  /** Optional MIME type. Resend will guess from the filename if omitted. */
+  contentType?: string;
+}
+
 interface SendEmailInput {
   to: string | string[];
   subject: string;
@@ -26,6 +34,8 @@ interface SendEmailInput {
   replyTo?: string;
   /** Optional tags shown in Resend's dashboard for filtering. */
   tags?: Array<{ name: string; value: string }>;
+  /** Optional attachments (PDFs, images, etc.). */
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -67,6 +77,11 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         text: input.text,
         reply_to: input.replyTo,
         tags: input.tags,
+        attachments: input.attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          content_type: a.contentType,
+        })),
       }),
     });
 
@@ -202,6 +217,62 @@ export async function notifyContactSubmission(input: {
     ],
   }).catch(() => {
     // never throw from a notify
+  });
+}
+
+/**
+ * Deliver the audit PDF to the requester. Called after they enter their
+ * name + email in the PDF-download popup. PDF is generated server-side
+ * from the saved audit so the client payload stays tiny.
+ * Fire-and-forget style; returns the send result so the caller can log.
+ */
+export async function sendAuditPdf(input: {
+  to: string;
+  name: string;
+  domain: string;
+  overallScore: number;
+  grade: string;
+  pdfBase64: string;
+}): Promise<SendEmailResult> {
+  const greeting = input.name.trim().split(/\s+/)[0] || "there";
+  const viewOnline = `https://chedder.2pt.ai/?url=${encodeURIComponent(input.domain)}`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1d1d1f; max-width: 520px; margin: 0 auto; padding: 24px;">
+      <div style="display: inline-block; background: linear-gradient(135deg, #FFB800, #E5A500); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
+      <h2 style="margin: 0 0 12px; font-size: 22px; letter-spacing: -0.02em;">Your Chedder audit for ${escapeHtml(input.domain)}</h2>
+      <p style="color: #5a5a60; margin: 0 0 20px;">
+        Hey ${escapeHtml(greeting)}, here's the full PDF. Your score is <strong>${input.overallScore}/100</strong> (grade ${escapeHtml(input.grade)}).
+      </p>
+      <p style="color: #5a5a60; margin: 0 0 24px;">
+        The attached PDF has your action plan. If any of it would be faster with help, just reply to this email and we'll take a look.
+      </p>
+      <a href="${viewOnline}" style="display: inline-block; background: #1d1d1f; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;">Re-run the audit</a>
+      <p style="color: #8b8b90; font-size: 12px; margin: 32px 0 0;">Sent from Chedder · chedder.2pt.ai</p>
+    </div>
+  `;
+  const text =
+    `Your Chedder audit for ${input.domain}\n\n` +
+    `Hey ${greeting}, here's the full PDF. Your score is ${input.overallScore}/100 (grade ${input.grade}).\n\n` +
+    `The attached PDF has your action plan. If any of it would be faster with help, just reply to this email.\n\n` +
+    `Re-run the audit anytime: ${viewOnline}\n`;
+
+  const safeDomain = input.domain.replace(/[^a-z0-9.-]/gi, "_").slice(0, 60);
+  return sendEmail({
+    to: input.to,
+    subject: `Your Chedder audit · ${input.domain}`,
+    html,
+    text,
+    tags: [
+      { name: "type", value: "audit_pdf" },
+      { name: "domain", value: safeDomain.slice(0, 40) },
+    ],
+    attachments: [
+      {
+        filename: `${safeDomain}-geo-audit.pdf`,
+        content: input.pdfBase64,
+        contentType: "application/pdf",
+      },
+    ],
   });
 }
 

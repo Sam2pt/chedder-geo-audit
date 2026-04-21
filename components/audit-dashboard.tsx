@@ -291,19 +291,27 @@ function ChatPopup({ result }: { result: AuditResult }) {
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [sending, setSending] = useState(false);
+  // Tracks whether the server actually emailed the PDF — so the "Done"
+  // state can say "check your inbox" (truthful) vs. only "downloads
+  // folder" (the fallback when email isn't wired up yet).
+  const [emailDelivered, setEmailDelivered] = useState(false);
 
   async function submitPDF() {
     if (!name.trim() || !email.trim()) return;
     setSending(true);
     const lead = {
-      name, email,
+      name,
+      email,
       website: result.domain,
       message: `PDF download requested. Company: ${company || "N/A"}`,
       score: result.overallScore,
       source: "pdf-download" as const,
       company,
+      // slug lets the server regenerate the PDF and email it as an
+      // attachment without us having to ship PDF bytes from the browser.
+      slug: result.slug,
     };
-    await Promise.allSettled([
+    const [, contactRes] = await Promise.allSettled([
       (async () => {
         const fd = new URLSearchParams();
         fd.append("form-name", "pdf-download");
@@ -316,6 +324,21 @@ function ChatPopup({ result }: { result: AuditResult }) {
       })(),
       fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(lead) }),
     ]);
+
+    // Whether the server-side email attachment delivery succeeded
+    let pdfSent = false;
+    if (contactRes.status === "fulfilled") {
+      try {
+        const data = (await contactRes.value.json()) as { pdfSent?: boolean };
+        pdfSent = !!data?.pdfSent;
+      } catch {
+        // ignore
+      }
+    }
+    setEmailDelivered(pdfSent);
+
+    // Also save locally as a belt-and-braces copy so the user has the
+    // file in their downloads folder even if the email bounces.
     const doc = generateAuditPDF(result);
     doc.save(`${result.domain}-geo-audit.pdf`);
     setSending(false);
@@ -390,8 +413,14 @@ function ChatPopup({ result }: { result: AuditResult }) {
               </div>
               <div className="flex-1">
                 <div className="inline-block max-w-full p-3 rounded-2xl rounded-tl-md bg-[#f5f5f7] text-[13px] leading-[1.55] text-foreground">
-                  {mode === "intro" && <>Want the full audit for <strong>{result.domain}</strong> as a PDF? Pop your details in and I&apos;ll send it over.</>}
-                  {mode === "done" && <>Done 🎉 Check your downloads folder for <strong>{result.domain}-geo-audit.pdf</strong>. We&apos;ve saved your details so we can reach out if helpful.</>}
+                  {mode === "intro" && <>Want the full audit for <strong>{result.domain}</strong> as a PDF? Pop your details in and I&apos;ll email it over.</>}
+                  {mode === "done" && (
+                    emailDelivered ? (
+                      <>Sent 🎉 Check <strong>{email}</strong> for your <strong>{result.domain}-geo-audit.pdf</strong>. A copy is in your downloads folder too. We&apos;ll reach out if we can help with any of the findings.</>
+                    ) : (
+                      <>Saved 🎉 Your <strong>{result.domain}-geo-audit.pdf</strong> is in your downloads folder. Email delivery didn&apos;t land this time, so check the local copy for your action plan.</>
+                    )
+                  )}
                 </div>
               </div>
             </div>

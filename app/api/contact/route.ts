@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { notifyContactSubmission } from "@/lib/email";
+import { notifyContactSubmission, sendAuditPdf } from "@/lib/email";
+import { getAudit } from "@/lib/audit-store";
+import { generateAuditPDF } from "@/lib/generate-pdf";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 /**
  * Contact API endpoint.
@@ -22,6 +27,7 @@ export async function POST(req: NextRequest) {
       score,
       source = "contact",
       company,
+      slug,
     } = body as {
       name?: string;
       email?: string;
@@ -30,6 +36,7 @@ export async function POST(req: NextRequest) {
       score?: number;
       source?: "contact" | "pdf-download";
       company?: string;
+      slug?: string;
     };
 
     if (!name || !email) {
@@ -61,6 +68,41 @@ export async function POST(req: NextRequest) {
       message,
       score,
     });
+
+    // If this is a PDF-download request, actually email the PDF to the
+    // submitter. Regenerate server-side from the saved audit so the
+    // client only ships a small JSON payload. We await this one so the
+    // client knows whether delivery succeeded.
+    let pdfSent = false;
+    let pdfError: string | undefined;
+    if (source === "pdf-download" && typeof slug === "string" && slug.length > 0) {
+      try {
+        const audit = await getAudit(slug);
+        if (!audit) {
+          pdfError = "Audit not found";
+        } else {
+          // jsPDF output("arraybuffer") → Buffer → base64 (Resend accepts base64)
+          const doc = generateAuditPDF(audit);
+          const ab = doc.output("arraybuffer") as ArrayBuffer;
+          const pdfBase64 = Buffer.from(ab).toString("base64");
+          const result = await sendAuditPdf({
+            to: email,
+            name,
+            domain: audit.domain,
+            overallScore: audit.overallScore,
+            grade: audit.grade,
+            pdfBase64,
+          });
+          pdfSent = result.ok;
+          if (!result.ok && !result.skipped) {
+            pdfError = result.error || "Send failed";
+          }
+        }
+      } catch (e) {
+        pdfError = e instanceof Error ? e.message : "PDF send failed";
+        console.error("[contact] PDF email error:", e);
+      }
+    }
 
     // Forward to Netlify Forms (server-side)
     // NOTE: This only works on Netlify-hosted sites. URL_RAW or DEPLOY_URL env vars
@@ -102,6 +144,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       netlifySubmitted,
+      pdfSent,
+      pdfError,
     });
   } catch (e) {
     console.error("Contact API error:", e);
