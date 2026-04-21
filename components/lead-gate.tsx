@@ -162,7 +162,10 @@ export function LeadGate({
         )}
 
         <p className="text-[11px] text-muted-foreground/60 text-center leading-snug">
-          No spam. We use your details to follow up only if it makes sense for your brand.
+          No spam. We use your details to follow up only if it makes sense for your brand. See our{" "}
+          <a href="/privacy" target="_blank" className="underline hover:text-muted-foreground">privacy policy</a>
+          {" "}and{" "}
+          <a href="/terms" target="_blank" className="underline hover:text-muted-foreground">terms</a>.
         </p>
       </div>
     </div>
