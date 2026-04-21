@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getAdminSummary } from "@/lib/admin-data";
 
 export const metadata: Metadata = {
-  title: "Admin · Chedder",
+  title: "Admin",
   robots: { index: false, follow: false },
 };
 

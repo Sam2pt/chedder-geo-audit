@@ -564,7 +564,7 @@ export default function Home() {
           <div className="text-center space-y-4">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#34c759]">How It Works</div>
             <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
-              From URL to action plan in 30 seconds.
+              From URL to action plan in under a minute.
             </h2>
           </div>
 

@@ -33,9 +33,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const result = await getAudit(slug);
   if (!result) {
-    return { title: "Audit not found · Chedder" };
+    return { title: { absolute: "Audit not found · Chedder" } };
   }
-  const title = `${result.domain} · AI Search Visibility · Chedder`;
+  // Bare base; the root layout's title template appends " · Chedder".
+  // Use `absolute` only on OG/Twitter (social scrapers ignore templates).
+  const baseTitle = `${result.domain} · AI Search Visibility`;
+  const title = baseTitle;
+  const socialTitle = `${baseTitle} · Chedder`;
   const description = `${result.domain} scored ${result.overallScore}/100 (${result.grade}) on Chedder's AI search visibility audit. See how the brand shows up in ChatGPT, Perplexity, and Brave Search.`;
   const permalink = `https://chedder.2pt.ai/a/${slug}`;
   return {
@@ -46,7 +50,7 @@ export async function generateMetadata({
     // Slack/Twitter/LinkedIn render a rich card.
     alternates: { canonical: permalink },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url: permalink,
       siteName: "Chedder",
@@ -54,7 +58,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
     },
   };

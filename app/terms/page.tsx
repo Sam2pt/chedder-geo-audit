@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms · Chedder",
+  title: "Terms",
   description:
     "The rules for using Chedder, the AI search visibility audit tool from Two Point Technologies.",
 };
