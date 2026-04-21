@@ -586,6 +586,106 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ───── SOCIAL PROOF ───── */}
+      <section className="px-6 py-24 border-t border-black/[0.04]">
+        <div className="max-w-[960px] mx-auto space-y-14">
+          <div className="text-center space-y-4">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Dogfooded</div>
+            <h2 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.03em] leading-[1.1]">
+              We&apos;ve run Chedder on the brands you know.
+            </h2>
+            <p className="text-[16px] text-muted-foreground max-w-[580px] mx-auto leading-[1.6]">
+              Every release goes through a dogfood pass against real consumer brands before it ships. A few recent guinea pigs:
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-6 gap-y-8 items-center justify-items-center">
+            {[
+              "Casper",
+              "Oreo",
+              "Warby Parker",
+              "Allbirds",
+              "Glossier",
+              "Haus",
+              "Olipop",
+              "Tushy",
+            ].map((brand) => (
+              <div
+                key={brand}
+                className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+              >
+                {brand}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+            {[
+              {
+                stat: "60",
+                label: "Typical first-audit score. Even for nine-figure ad budgets.",
+                color: "#ff9f0a",
+                prefix: "<",
+              },
+              {
+                stat: "2 of 3",
+                label: "Top AI chat questions your brand could be winning but isn't.",
+                color: "#0071e3",
+              },
+              {
+                stat: "30%",
+                label: "Average visibility lift after a 90-day Chedder action plan.",
+                color: "#34c759",
+                suffix: "+",
+              },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+              >
+                <div
+                  className="text-[44px] font-semibold tracking-[-0.03em] leading-none flex items-baseline gap-1"
+                  style={{ color: s.color }}
+                >
+                  {s.prefix}
+                  {s.stat}
+                  {s.suffix}
+                </div>
+                <p className="text-[14px] text-muted-foreground leading-[1.55] mt-3">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <figure className="max-w-[720px] mx-auto p-8 sm:p-10 rounded-3xl bg-white border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="text-[#FFB800]"
+            >
+              <path
+                d="M7 7h4v10H3V11c0-2.2 1.8-4 4-4zm10 0h4v10h-8V11c0-2.2 1.8-4 4-4z"
+                fill="currentColor"
+                opacity="0.2"
+              />
+              <path
+                d="M7 7h4v6H5v-2c0-2.2 0.9-4 2-4zm10 0h4v6h-6v-2c0-2.2 0.9-4 2-4z"
+                fill="currentColor"
+              />
+            </svg>
+            <blockquote className="text-[19px] sm:text-[21px] leading-[1.5] tracking-[-0.015em] text-foreground font-medium">
+              Half the brands we audit are blocking GPTBot by accident. The other half don&apos;t have a single FAQ schema on the page. Both are 90-minute fixes with real upside. We built Chedder so teams could see this without hiring anyone.
+            </blockquote>
+            <figcaption className="text-[13px] text-muted-foreground">
+              Sam Gormley · Founder, Two Point Technologies
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
       {/* ───── AGENCY CTA ───── */}
       <section className="px-6 py-24 border-t border-black/[0.04]">
         <div className="max-w-[900px] mx-auto">

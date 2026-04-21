@@ -1200,7 +1200,7 @@ function buildLandGrabInsights(
       lead.push({
         kind: "lead",
         title: `You lead on ${moduleName.toLowerCase()}`,
-        detail: `You score ${myMod.score}, ${Math.round(delta)} points above the competitor average. Keep investing here — this is a defensible strength.`,
+        detail: `You score ${myMod.score}, ${Math.round(delta)} points above the competitor average. Keep investing here. This is a defensible strength.`,
         weight: delta,
       });
     }
@@ -1941,7 +1941,7 @@ function KPIStrip({ result }: { result: AuditResult }) {
   const kpis: Array<{ label: string; value: string; sublabel: string; color: string }> = [
     {
       label: "AI Mention Rate",
-      value: aiTotal > 0 ? `${aiMentions}/${aiTotal}` : "—",
+      value: aiTotal > 0 ? `${aiMentions}/${aiTotal}` : "·",
       sublabel: aiTotal > 0 ? "queries include you" : "no AI test run",
       color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#34c759" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#ff9f0a" : "#ff453a",
     },

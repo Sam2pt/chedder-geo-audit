@@ -64,7 +64,7 @@ export default async function AdminPage({ searchParams }: Props) {
             value={
               audits[0]?.timestamp
                 ? new Date(audits[0].timestamp).toLocaleString()
-                : "—"
+                : "·"
             }
             small
           />
@@ -157,7 +157,7 @@ export default async function AdminPage({ searchParams }: Props) {
                             {l.sourceAuditSlug}
                           </Link>
                         ) : (
-                          "—"
+                          "·"
                         )}
                       </Td>
                     </tr>
@@ -204,7 +204,7 @@ export default async function AdminPage({ searchParams }: Props) {
                       </Td>
                       <Td mono>{a.overallScore}</Td>
                       <Td>{a.grade}</Td>
-                      <Td mono>{a.leadEmail || "—"}</Td>
+                      <Td mono>{a.leadEmail || "·"}</Td>
                       <Td mono>
                         <Link
                           href={`/a/${a.slug}`}

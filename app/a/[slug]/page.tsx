@@ -35,7 +35,7 @@ export async function generateMetadata({
   if (!result) {
     return { title: "Audit not found · Chedder" };
   }
-  const title = `${result.domain} — AI Search Visibility · Chedder`;
+  const title = `${result.domain} · AI Search Visibility · Chedder`;
   const description = `${result.domain} scored ${result.overallScore}/100 (${result.grade}) on Chedder's AI search visibility audit. See how the brand shows up in ChatGPT, Perplexity, and Brave Search.`;
   const permalink = `https://chedder.2pt.ai/a/${slug}`;
   return {

@@ -180,7 +180,7 @@ export function getClientIp(headers: Headers): string | undefined {
 export function rateLimitMessage(result: RateLimitResult): string {
   const mins = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 60000));
   if (result.limit <= LIMITS.anonymous) {
-    return `You've run ${result.limit} audits in the last hour. Sign up and you'll get ${LIMITS.signedUp}/hr — or try again in ${mins} min.`;
+    return `You've run ${result.limit} audits in the last hour. Sign up and you'll get ${LIMITS.signedUp} per hour, or try again in ${mins} min.`;
   }
   return `Whoa, that's ${result.limit} audits in an hour. Give it ${mins} min and we'll pick back up.`;
 }

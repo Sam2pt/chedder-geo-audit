@@ -43,9 +43,8 @@ export const metadata: Metadata = {
     description:
       "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
   },
-  icons: {
-    icon: "/2pt-logo.svg",
-  },
+  // Favicon comes from app/icon.tsx (auto-detected by Next.js).
+  // OG image comes from app/opengraph-image.tsx (auto-detected).
 };
 
 export default function RootLayout({
