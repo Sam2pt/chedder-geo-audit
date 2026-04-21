@@ -178,7 +178,9 @@
       "Bash(curl -s \"https://chedder.2pt.ai\" -H \"Cache-Control: no-cache\")",
       "Bash(curl -sN -X POST https://chedder.2pt.ai/api/audit/stream -H 'Content-Type: application/json' -d '{\"url\":\"https://casper.com\"}' --max-time 120)",
       "Bash(awk 'NR<16 || NR>189' app/api/audit/route.ts)",
-      "Bash(mv /tmp/route.ts.new app/api/audit/route.ts)"
+      "Bash(mv /tmp/route.ts.new app/api/audit/route.ts)",
+      "Bash(netlify status *)",
+      "Bash(npx netlify *)"
     ]
   }
 }

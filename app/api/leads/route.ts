@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveLead } from "@/lib/leads";
 import { saveEvent } from "@/lib/events";
+import { notifyNewLead } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
       referrer: req.headers.get("referer") ?? undefined,
     });
   }
+
+  // Fire-and-forget internal notification to sam@twopointtechnologies.com.
+  // No-op if RESEND_API_KEY isn't set, so pre-launch deploys stay quiet.
+  void notifyNewLead({
+    name: result.lead.name,
+    email: result.lead.email,
+    role: result.lead.role,
+    company: result.lead.company,
+    sourceAuditSlug: result.lead.sourceAuditSlug,
+  });
 
   return NextResponse.json({ ok: true });
 }
