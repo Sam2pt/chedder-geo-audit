@@ -140,6 +140,49 @@ export async function notifyNewLead(lead: {
   });
 }
 
+/**
+ * Send a magic-link sign-in email. If Resend isn't configured, logs the
+ * link to the server console and returns skipped:true so local dev still
+ * works (the caller can surface the link in a response).
+ */
+export async function sendMagicLink(input: {
+  to: string;
+  link: string;
+  expiresAt: number;
+}): Promise<SendEmailResult> {
+  const minutes = Math.max(
+    1,
+    Math.round((input.expiresAt - Date.now()) / 60000)
+  );
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1d1d1f; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <div style="display: inline-block; background: linear-gradient(135deg, #FFB800, #E5A500); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
+      <h2 style="margin: 0 0 12px; font-size: 22px; letter-spacing: -0.02em;">Sign in to Chedder</h2>
+      <p style="color: #5a5a60; margin: 0 0 24px;">Click the button below to log in. This link expires in ${minutes} minutes and can only be used once.</p>
+      <a href="${input.link}" style="display: inline-block; background: #1d1d1f; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 14px;">Sign in to Chedder</a>
+      <p style="color: #8b8b90; font-size: 12px; margin: 32px 0 0;">Didn't request this? You can ignore this email. Nobody gets signed in without clicking the button.</p>
+      <p style="color: #8b8b90; font-size: 12px; margin: 8px 0 0;">Or paste this link: <a href="${input.link}" style="color:#0071e3;">${escapeHtml(input.link)}</a></p>
+    </div>
+  `;
+  const text = `Sign in to Chedder\n\nClick the link below to log in (expires in ${minutes} minutes, one-time use):\n\n${input.link}\n\nDidn't request this? Ignore this email.`;
+
+  if (!process.env.RESEND_API_KEY) {
+    // Dev mode — no email provider yet. Log and skip.
+    console.log(
+      `[auth] Magic link for ${input.to} (no RESEND_API_KEY set): ${input.link}`
+    );
+    return { ok: false, skipped: true };
+  }
+
+  return sendEmail({
+    to: input.to,
+    subject: "Your Chedder sign-in link",
+    html,
+    text,
+    tags: [{ name: "type", value: "magic_link" }],
+  });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveLead } from "@/lib/leads";
 import { saveEvent } from "@/lib/events";
-import { notifyNewLead } from "@/lib/email";
+import { notifyNewLead, sendMagicLink } from "@/lib/email";
+import {
+  createMagicLinkToken,
+  createSession,
+  sessionCookieOptions,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,5 +87,45 @@ export async function POST(req: NextRequest) {
     sourceAuditSlug: result.lead.sourceAuditSlug,
   });
 
-  return NextResponse.json({ ok: true });
+  // Creating a session here is safe: the user just typed this email into
+  // the form on our page, so they control it (or at least this browser
+  // does). It spares them a round trip through a magic-link email for
+  // the immediate next audit. We still email them a magic link for
+  // future sign-ins from other devices.
+  const { sessionId, expiresAt } = await createSession(
+    result.lead.email,
+    req.headers.get("user-agent") ?? undefined
+  );
+
+  // Fire off a magic-link email too, so the user has a bookmarkable
+  // way to come back from another device. No-op if Resend isn't set.
+  void (async () => {
+    try {
+      const { token, expiresAt: linkExpiresAt } = await createMagicLinkToken(
+        result.lead.email
+      );
+      const origin =
+        req.headers.get("origin") ||
+        `https://${req.headers.get("host") || "chedder.2pt.ai"}`;
+      const link = `${origin}/api/auth/verify?token=${encodeURIComponent(token)}`;
+      await sendMagicLink({
+        to: result.lead.email,
+        link,
+        expiresAt: linkExpiresAt,
+      });
+    } catch (e) {
+      console.warn("[leads] magic-link send failed:", e);
+    }
+  })();
+
+  const res = NextResponse.json({ ok: true, signedIn: true });
+  const opts = sessionCookieOptions(expiresAt);
+  res.cookies.set(opts.name, sessionId, {
+    httpOnly: opts.httpOnly,
+    secure: opts.secure,
+    sameSite: opts.sameSite,
+    path: opts.path,
+    expires: opts.expires,
+  });
+  return res;
 }

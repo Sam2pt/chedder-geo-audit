@@ -302,6 +302,9 @@ export default function Home() {
         <div className="absolute top-[10%] right-[-20%] w-[40%] h-[40%] rounded-full bg-[#af52de]/[0.03] blur-[100px]" />
       </div>
 
+      {/* Top nav with sign-in / my-audits affordance */}
+      <TopNav />
+
       {/* ───── HERO ───── */}
       <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
       <div className="w-full max-w-[620px] text-center space-y-10">
@@ -736,6 +739,7 @@ export default function Home() {
             </span>
           </a>
           <div className="flex items-center gap-4 text-[12px] text-muted-foreground/50">
+            <a href="/sign-in" className="hover:text-foreground transition-colors">Sign in</a>
             <a href="/blog" className="hover:text-foreground transition-colors">Blog</a>
             <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
             <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
@@ -745,6 +749,60 @@ export default function Home() {
       </footer>
       {gate}
     </main>
+  );
+}
+
+/**
+ * Small fixed top nav. Fetches /api/auth/me once on mount and swaps
+ * "Sign in" for "My audits" once the user has a session.
+ */
+function TopNav() {
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.email) setEmail(d.email);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return (
+    <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between">
+      <a href="/" className="inline-flex items-center gap-2 group">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center">
+          <svg viewBox="0 0 100 100" className="w-4 h-4">
+            <circle cx="34" cy="37" r="8" fill="#C88700" />
+            <circle cx="64" cy="33" r="6" fill="#C88700" />
+            <circle cx="58" cy="62" r="10" fill="#C88700" />
+          </svg>
+        </div>
+        <span className="text-[14px] font-semibold tracking-[-0.01em] text-foreground/80 group-hover:text-foreground transition-colors">Chedder</span>
+      </a>
+      <div className="flex items-center gap-2">
+        {email ? (
+          <a
+            href="/my-audits"
+            className="h-9 px-3.5 rounded-lg bg-foreground text-background text-[13px] font-semibold tracking-[-0.01em] inline-flex items-center gap-1.5 hover:bg-foreground/90 transition-colors"
+          >
+            My audits
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        ) : (
+          <a
+            href="/sign-in"
+            className="h-9 px-3.5 rounded-lg bg-white border border-black/[0.08] text-[13px] font-medium text-foreground/80 hover:text-foreground hover:bg-black/[0.02] transition-colors inline-flex items-center"
+          >
+            Sign in
+          </a>
+        )}
+      </div>
+    </nav>
   );
 }
 
