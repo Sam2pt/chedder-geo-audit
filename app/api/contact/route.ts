@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyContactSubmission } from "@/lib/email";
 
 /**
  * Contact API endpoint.
  *
- * Accepts lead data and forwards to Netlify Forms via a server-side POST.
- * This is more reliable than browser-only AJAX submissions because:
- *   1. It avoids CORS/browser quirks.
- *   2. It hits the Netlify form endpoint from a server context.
- *   3. We can always log server-side as a fallback.
+ * Accepts lead data from the PDF-download popup and any other contact
+ * surfaces. Fires an email notification to sam@twopointtechnologies.com
+ * (via lib/email.ts) so new leads hit the inbox immediately. Also
+ * forwards to Netlify Forms as a belt-and-braces capture (Netlify Forms
+ * needs a static form declaration to route correctly, so treat it as a
+ * best-effort redundant copy rather than the primary notification).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -47,6 +49,18 @@ export async function POST(req: NextRequest) {
     console.log(`Company: ${company || "N/A"}`);
     console.log(`Message: ${message || "(none)"}`);
     console.log("========================");
+
+    // Fire-and-forget email notification to NOTIFY_EMAIL (sam@twopointtechnologies.com).
+    // No-op if RESEND_API_KEY isn't set; never blocks the response.
+    void notifyContactSubmission({
+      name,
+      email,
+      source,
+      website,
+      company,
+      message,
+      score,
+    });
 
     // Forward to Netlify Forms (server-side)
     // NOTE: This only works on Netlify-hosted sites. URL_RAW or DEPLOY_URL env vars

@@ -141,6 +141,71 @@ export async function notifyNewLead(lead: {
 }
 
 /**
+ * Fire a notification when someone submits the contact form or requests
+ * the PDF download. Both surfaces hit /api/contact and both deserve a
+ * "hey, someone wants to talk" ping to sam@twopointtechnologies.com.
+ * Fire-and-forget, never throws.
+ */
+export async function notifyContactSubmission(input: {
+  name: string;
+  email: string;
+  source: "contact" | "pdf-download" | string;
+  website?: string;
+  company?: string;
+  message?: string;
+  score?: number;
+}): Promise<void> {
+  const sourceLabel =
+    input.source === "pdf-download"
+      ? "PDF download"
+      : input.source === "contact"
+        ? "Contact form"
+        : input.source;
+
+  const auditLink = input.website
+    ? `https://chedder.2pt.ai/?url=${encodeURIComponent(input.website)}`
+    : null;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1d1d1f;">
+      <h2 style="margin: 0 0 16px; font-size: 18px;">🧀 New Chedder contact · ${escapeHtml(sourceLabel)}</h2>
+      <table cellpadding="6" style="border-collapse: collapse;">
+        <tr><td style="color:#666;">Name</td><td><strong>${escapeHtml(input.name)}</strong></td></tr>
+        <tr><td style="color:#666;">Email</td><td><a href="mailto:${escapeHtml(input.email)}">${escapeHtml(input.email)}</a></td></tr>
+        ${input.company ? `<tr><td style="color:#666;">Company</td><td>${escapeHtml(input.company)}</td></tr>` : ""}
+        ${input.website ? `<tr><td style="color:#666;">Website</td><td>${auditLink ? `<a href="${auditLink}">${escapeHtml(input.website)}</a>` : escapeHtml(input.website)}</td></tr>` : ""}
+        ${typeof input.score === "number" ? `<tr><td style="color:#666;">Score</td><td>${input.score}/100</td></tr>` : ""}
+        <tr><td style="color:#666;">Source</td><td>${escapeHtml(sourceLabel)}</td></tr>
+        ${input.message ? `<tr><td style="color:#666; vertical-align:top;">Message</td><td style="white-space:pre-wrap;">${escapeHtml(input.message)}</td></tr>` : ""}
+      </table>
+      <p style="color:#888; font-size:12px; margin-top:24px;">Sent from Chedder · chedder.2pt.ai</p>
+    </div>
+  `;
+  const text =
+    `New Chedder contact (${sourceLabel})\n\n` +
+    `Name: ${input.name}\n` +
+    `Email: ${input.email}\n` +
+    (input.company ? `Company: ${input.company}\n` : "") +
+    (input.website ? `Website: ${input.website}\n` : "") +
+    (typeof input.score === "number" ? `Score: ${input.score}/100\n` : "") +
+    (input.message ? `\nMessage:\n${input.message}\n` : "");
+
+  await sendEmail({
+    to: getNotifyEmail(),
+    subject: `New Chedder ${sourceLabel.toLowerCase()}: ${input.name}${input.company ? ` · ${input.company}` : ""}`,
+    html,
+    text,
+    replyTo: input.email,
+    tags: [
+      { name: "type", value: "contact_submission" },
+      { name: "source", value: (input.source || "contact").slice(0, 40) },
+    ],
+  }).catch(() => {
+    // never throw from a notify
+  });
+}
+
+/**
  * Send a magic-link sign-in email. If Resend isn't configured, logs the
  * link to the server console and returns skipped:true so local dev still
  * works (the caller can surface the link in a response).

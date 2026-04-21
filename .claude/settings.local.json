@@ -185,7 +185,26 @@
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\); a.forEach\\(x=>console.log\\(x.state, x.commit_ref?.slice\\(0,7\\), x.created_at\\)\\)}\\)\")",
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\); a.forEach\\(x=>console.log\\(x.state, x.commit_ref?.slice\\(0,7\\)\\)\\)}\\)\")",
       "mcp__Claude_in_Chrome__resize_window",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(curl -sS -o /tmp/chedder.html -w \"HTTP %{http_code} size=%{size_download}\\\\n\" https://chedder.2pt.ai/)",
+      "Bash(nslookup chedder.2pt.ai)",
+      "Bash(nslookup 2pt.ai)",
+      "Bash(dig @8.8.8.8 chedder.2pt.ai +short)",
+      "Bash(dig @1.1.1.1 chedder.2pt.ai ANY +short)",
+      "Bash(dig @8.8.8.8 chedder.2pt.ai NS +noall +answer)",
+      "Bash(dig @8.8.8.8 chedder.2pt.ai CNAME +noall +answer)",
+      "Bash(dig @8.8.8.8 chedder.2pt.ai A +noall +answer)",
+      "Bash(dig @8.8.8.8 chedder.2pt.ai TXT +noall +answer)",
+      "Bash(dig @8.8.8.8 2pt.ai NS +noall +answer)",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const s=JSON.parse\\(d\\); console.log\\('custom_domain:', s.custom_domain\\); console.log\\('domain_aliases:', s.domain_aliases\\); console.log\\('ssl_url:', s.ssl_url\\);}\\)\")",
+      "Bash(dig @ns77.domaincontrol.com chedder.2pt.ai ANY +noall +answer)",
+      "Bash(dig @ns77.domaincontrol.com 2pt.ai ANY +noall +answer)",
+      "Bash(dig @ns77.domaincontrol.com chedder.2pt.ai CNAME +short)",
+      "Bash(curl -sSI https://chedder.2pt.ai/)",
+      "Bash(sudo killall *)",
+      "Bash(dscacheutil -flushcache)",
+      "Bash(curl -sSI --resolve chedder.2pt.ai:443:18.208.88.157 https://chedder.2pt.ai/)",
+      "Bash(curl -sS -X POST https://chedder.2pt.ai/api/auth/send-link -H 'Content-Type: application/json' -d '{\"email\":\"sam@twopointtechnologies.com\",\"deviceId\":\"curl-test-123456\"}' -w '\\\\nHTTP %{http_code}\\\\n')"
     ]
   }
 }
