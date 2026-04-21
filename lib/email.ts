@@ -77,18 +77,23 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         text: input.text,
         reply_to: input.replyTo,
         tags: input.tags,
+        // Resend accepts attachments with `filename` + `content` (base64).
+        // We let Resend infer content type from the filename; sending a
+        // separate content_type field has tripped 422s in the past.
         attachments: input.attachments?.map((a) => ({
           filename: a.filename,
           content: a.content,
-          content_type: a.contentType,
         })),
       }),
     });
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.warn("[email] Resend rejected send:", res.status, body.slice(0, 300));
-      return { ok: false, error: `Resend ${res.status}` };
+      console.warn("[email] Resend rejected send:", res.status, body.slice(0, 500));
+      // Include a snippet of the Resend error so the API response is
+      // useful for debugging (without leaking anything sensitive).
+      const snippet = body.replace(/\s+/g, " ").slice(0, 160);
+      return { ok: false, error: `Resend ${res.status}${snippet ? `: ${snippet}` : ""}` };
     }
 
     const data = (await res.json().catch(() => ({}))) as { id?: string };
