@@ -739,7 +739,10 @@ function AICompetitors({
       { slug: result.slug }
     );
     try {
-      const res = await fetch("/api/audit", {
+      // Streaming endpoint — keeps the SSE connection alive past the
+      // ~30s browser-side edge idle timeout that killed the previous
+      // non-streaming POST.
+      const res = await fetch("/api/audit/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -749,13 +752,46 @@ function AICompetitors({
           leadEmail: getLeadEmail(),
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data?.slug) {
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
         setError(data?.error || "Compare didn't finish. Try again.");
         setRunning(false);
         return;
       }
-      window.location.href = `/a/${data.slug}`;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalSlug: string | null = null;
+      let finalError: string | null = null;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+        for (const frame of frames) {
+          const line = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          try {
+            const evt = JSON.parse(line.slice(5).trim());
+            if (evt.type === "done") finalSlug = evt.result?.slug ?? null;
+            else if (evt.type === "error") finalError = evt.message ?? "Compare failed";
+          } catch {
+            // malformed frame
+          }
+        }
+      }
+      if (finalError) {
+        setError(finalError);
+        setRunning(false);
+        return;
+      }
+      if (!finalSlug) {
+        setError("Compare finished but we couldn't find the result. Try again.");
+        setRunning(false);
+        return;
+      }
+      window.location.href = `/a/${finalSlug}`;
     } catch {
       setError("Couldn't reach our servers. Try again in a moment.");
       setRunning(false);
@@ -779,26 +815,10 @@ function AICompetitors({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        {competitors.map((c, i) => (
-          <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
-            <div className="w-7 h-7 rounded-lg bg-foreground/[0.06] flex items-center justify-center shrink-0">
-              <span className="text-[12px] font-bold text-muted-foreground tabular-nums">{i + 1}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-semibold text-foreground truncate">{c.domain}</div>
-              <div className="text-[11px] text-muted-foreground">
-                Cited in {c.mentions} {c.mentions === 1 ? "query" : "queries"}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Run-a-compare CTA. Land-grab insights only unlock once we've
-          actually audited the competitors; this button kicks that off
-          in one click. */}
-      <div className="pt-2 border-t border-black/[0.05]">
+      {/* CTA sits above the list so the "take land" action is the first
+          thing a user sees after the heading. Under-list placement made
+          it feel like an afterthought once scrolling through competitors. */}
+      <div>
         <button
           onClick={runLandGrabCompare}
           disabled={running}
@@ -824,6 +844,25 @@ function AICompetitors({
             {error}
           </div>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 pt-2 border-t border-black/[0.05]">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">
+          The {competitors.length} brands AI names most
+        </div>
+        {competitors.map((c, i) => (
+          <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
+            <div className="w-7 h-7 rounded-lg bg-foreground/[0.06] flex items-center justify-center shrink-0">
+              <span className="text-[12px] font-bold text-muted-foreground tabular-nums">{i + 1}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-semibold text-foreground truncate">{c.domain}</div>
+              <div className="text-[11px] text-muted-foreground">
+                Cited in {c.mentions} {c.mentions === 1 ? "query" : "queries"}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

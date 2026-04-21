@@ -10,6 +10,7 @@ import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
 import { generateCategoryRecommendationsLLM } from "@/lib/analyzers/tailored-recs";
 import { discoverInternalLinks } from "@/lib/crawler";
+import { auditSingleUrl } from "@/lib/audit-runner";
 import {
   calculateOverallScore,
   getGrade,
@@ -113,10 +114,11 @@ type StreamEvent =
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { url, deviceId, leadEmail } = body as {
+  const { url, deviceId, leadEmail, competitors } = body as {
     url?: string;
     deviceId?: string;
     leadEmail?: string;
+    competitors?: string[];
   };
 
   if (!url || typeof url !== "string") {
@@ -133,6 +135,12 @@ export async function POST(req: NextRequest) {
     leadEmail: typeof leadEmail === "string" ? leadEmail : undefined,
   };
 
+  const validCompetitors = Array.isArray(competitors)
+    ? competitors
+        .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+        .slice(0, 3)
+    : [];
+
   const stream = new ReadableStream({
     async start(controller) {
       const emit = (e: StreamEvent) => {
@@ -140,8 +148,25 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(frame));
       };
 
+      // Kick off competitor audits in parallel with the primary. They
+      // run silently in the background while the primary streams stage
+      // events to the client (which keeps the SSE connection alive).
+      // When the primary's `done` event is about to fire we await the
+      // competitor results and attach them to the final payload so the
+      // LandGrab view lands with real data.
+      const competitorPromise =
+        validCompetitors.length > 0
+          ? Promise.all(
+              validCompetitors.map((c) =>
+                auditSingleUrl(c, { skipAI: true, skipExternal: true }).catch(
+                  () => null
+                )
+              )
+            )
+          : Promise.resolve([]);
+
       try {
-        await runAudit(url, emit, identity);
+        await runAudit(url, emit, identity, competitorPromise);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Unknown error";
         emit({ type: "error", message });
@@ -164,7 +189,8 @@ export async function POST(req: NextRequest) {
 async function runAudit(
   rawUrl: string,
   emit: (e: StreamEvent) => void,
-  identity: { deviceId?: string; leadEmail?: string } = {}
+  identity: { deviceId?: string; leadEmail?: string } = {},
+  competitorPromise: Promise<Array<AuditResult | null | { error: string }>> = Promise.resolve([])
 ) {
   let normalizedUrl = rawUrl.trim();
   if (!normalizedUrl.startsWith("http")) normalizedUrl = "https://" + normalizedUrl;
@@ -382,10 +408,32 @@ async function runAudit(
     leadEmail: identity.leadEmail,
   };
 
+  // If the client asked for a compare, the competitor audits have been
+  // running in parallel the whole time. Emit a stage so the UI can show
+  // that we're waiting on them, then wait. Any failures are silently
+  // skipped — we'd rather ship a partial compare than none at all.
+  let competitorResults: AuditResult[] = [];
+  try {
+    const settled = await competitorPromise;
+    if (settled.length > 0) {
+      emit({
+        type: "stage",
+        name: "compare",
+        detail: "Lining up the competitor audits for your land grab view…",
+      });
+    }
+    competitorResults = settled.filter(
+      (r): r is AuditResult => !!r && !("error" in r)
+    );
+  } catch {
+    competitorResults = [];
+  }
+
   const enriched: AuditResult = {
     ...base,
     benchmarks: benchmarksResult,
     history: historyResult,
+    competitors: competitorResults.length > 0 ? competitorResults : undefined,
   };
 
   await saveAudit(enriched).catch(() => {});
