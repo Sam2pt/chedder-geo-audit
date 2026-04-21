@@ -23,6 +23,11 @@ import {
   getDomainHistory,
   makeSlug,
 } from "@/lib/audit-store";
+import {
+  checkAuditRateLimit,
+  getClientIp,
+  rateLimitMessage,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,6 +131,31 @@ export async function POST(req: NextRequest) {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  // Rate limit up-front (same rules as the non-streaming endpoint).
+  // Stream callers get a plain JSON 429 — the SSE connection never opens.
+  const rl = await checkAuditRateLimit({
+    deviceId: typeof deviceId === "string" ? deviceId : undefined,
+    ip: getClientIp(req.headers),
+    signedUp: typeof leadEmail === "string" && leadEmail.length > 0,
+  });
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({ error: rateLimitMessage(rl), resetAt: rl.resetAt }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+          "Retry-After": String(
+            Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000))
+          ),
+        },
+      }
+    );
   }
 
   const encoder = new TextEncoder();

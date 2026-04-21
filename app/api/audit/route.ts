@@ -7,6 +7,11 @@ import {
   getDomainHistory,
   makeSlug,
 } from "@/lib/audit-store";
+import {
+  checkAuditRateLimit,
+  getClientIp,
+  rateLimitMessage,
+} from "@/lib/rate-limit";
 
 // Compare audits fan out to multiple sites in parallel (primary + up to 3
 // competitors). Bump the function timeout accordingly.
@@ -26,6 +31,31 @@ export async function POST(req: NextRequest) {
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    }
+
+    // Rate limit before doing any work — audits are expensive
+    // (Brave + Perplexity + OpenAI spend). Signed-up users get a higher
+    // ceiling; anonymous callers get a tighter one.
+    const rl = await checkAuditRateLimit({
+      deviceId: typeof deviceId === "string" ? deviceId : undefined,
+      ip: getClientIp(req.headers),
+      signedUp: typeof leadEmail === "string" && leadEmail.length > 0,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: rateLimitMessage(rl), resetAt: rl.resetAt },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": String(rl.limit),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+            "Retry-After": String(
+              Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000))
+            ),
+          },
+        }
+      );
     }
 
     // Fan out primary and competitor audits concurrently so the whole
