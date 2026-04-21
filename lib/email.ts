@@ -17,6 +17,17 @@
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+/**
+ * Resend rejects tag values that contain anything other than ASCII
+ * letters, numbers, underscores, or dashes. Every caller that plugs a
+ * user-provided string into a tag should run it through this first so a
+ * domain like "barkerbeds.com" or a company name with spaces doesn't
+ * blow up the whole send with a 422.
+ */
+function safeTagValue(raw: string, max = 40): string {
+  return raw.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, max) || "unknown";
+}
+
 interface EmailAttachment {
   filename: string;
   /** Base64-encoded file contents. Resend accepts base64 strings. */
@@ -153,7 +164,7 @@ export async function notifyNewLead(lead: {
     replyTo: lead.email,
     tags: [
       { name: "type", value: "lead_signup" },
-      { name: "company", value: lead.company.slice(0, 40) },
+      { name: "company", value: safeTagValue(lead.company) },
     ],
   }).catch(() => {
     // never throw from a notify
@@ -218,7 +229,7 @@ export async function notifyContactSubmission(input: {
     replyTo: input.email,
     tags: [
       { name: "type", value: "contact_submission" },
-      { name: "source", value: (input.source || "contact").slice(0, 40) },
+      { name: "source", value: safeTagValue(input.source || "contact") },
     ],
   }).catch(() => {
     // never throw from a notify
@@ -261,7 +272,9 @@ export async function sendAuditPdf(input: {
     `The attached PDF has your action plan. If any of it would be faster with help, just reply to this email.\n\n` +
     `Re-run the audit anytime: ${viewOnline}\n`;
 
-  const safeDomain = input.domain.replace(/[^a-z0-9.-]/gi, "_").slice(0, 60);
+  // Filename keeps dots; tag value must not (Resend rejects anything
+  // outside [A-Za-z0-9_-] in tag values).
+  const filenameDomain = input.domain.replace(/[^a-z0-9.-]/gi, "_").slice(0, 60);
   return sendEmail({
     to: input.to,
     subject: `Your Chedder audit · ${input.domain}`,
@@ -269,11 +282,11 @@ export async function sendAuditPdf(input: {
     text,
     tags: [
       { name: "type", value: "audit_pdf" },
-      { name: "domain", value: safeDomain.slice(0, 40) },
+      { name: "domain", value: safeTagValue(input.domain) },
     ],
     attachments: [
       {
-        filename: `${safeDomain}-geo-audit.pdf`,
+        filename: `${filenameDomain}-geo-audit.pdf`,
         content: input.pdfBase64,
         contentType: "application/pdf",
       },
