@@ -65,5 +65,14 @@ Any copy or UI change must be verified in Chrome MCP against the live site, not 
 ### Ship small, ship often
 This codebase ships roughly 20 deploys in a productive session. Prefer small commits with a focused scope and dogfood verification over large batched changes. Failed hooks or typechecks are not blockers; they're a signal to split into smaller pieces.
 
+### Don't run `netlify-cli deploy` after a `git push`
+Pushing to `main` already triggers an auto-deploy via the Netlify ↔ GitHub integration. Running `netlify-cli deploy --prod --build` right after a push races against the auto-deploy: both build the same commit, the later one often errors out with "site in deploying state" or similar, and the error shows up in the deploy history even though the git-triggered one landed fine. Use one or the other, not both. Default: commit + push, then wait for the auto-deploy task-notification. Only use `netlify-cli deploy` when you need to deploy without a git push (e.g. env var changes).
+
+### Streaming edge SSE timeout
+Netlify's streaming edge drops SSE connections at roughly 30–40s regardless of `export const maxDuration`. The AI citation audit lives right at that boundary with 1 scenario × 3 engines; pushing to 3+ scenarios breaks the stream even though the function itself runs longer. Three known ways to break through when we need to:
+  - Send periodic heartbeat events during long stages to keep the edge from dropping.
+  - Run long audits via the non-streaming `/api/audit` route (has real `maxDuration: 90` that's respected).
+  - Split tailored queries off to engines that don't have Brave's rate-limit serialization.
+
 ### Financial and account creation actions are always user-driven
 Subscribing to APIs (Brave, Perplexity, etc.), accepting Terms of Use, completing CAPTCHAs, entering payment info: all require explicit user confirmation in chat even inside an autonomous session. Walk the user up to the button; never click it yourself.
