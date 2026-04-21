@@ -714,8 +714,53 @@ function HighlightedText({ text, highlight }: { text: string; highlight?: string
 
 /* ── AI Competitors ──────────────────────────────────────────────── */
 
-function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitors"] }) {
+function AICompetitors({
+  result,
+  competitors,
+}: {
+  result: AuditResult;
+  competitors: AuditResult["aiCompetitors"];
+}) {
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   if (!competitors || competitors.length === 0) return null;
+
+  // Top 3 competitor domains, HTTPS-prefixed so /api/audit can consume them.
+  const topDomains = competitors.slice(0, 3).map((c) => `https://${c.domain}`);
+
+  async function runLandGrabCompare() {
+    if (running) return;
+    setRunning(true);
+    setError(null);
+    track(
+      "compare.started",
+      { source: "ai-competitors", competitors: topDomains.length },
+      { slug: result.slug }
+    );
+    try {
+      const res = await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: result.url,
+          competitors: topDomains,
+          deviceId: getDeviceId(),
+          leadEmail: getLeadEmail(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.slug) {
+        setError(data?.error || "Compare didn't finish. Try again.");
+        setRunning(false);
+        return;
+      }
+      window.location.href = `/a/${data.slug}`;
+    } catch {
+      setError("Couldn't reach our servers. Try again in a moment.");
+      setRunning(false);
+    }
+  }
 
   return (
     <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
@@ -748,6 +793,37 @@ function AICompetitors({ competitors }: { competitors: AuditResult["aiCompetitor
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Run-a-compare CTA. Land-grab insights only unlock once we've
+          actually audited the competitors; this button kicks that off
+          in one click. */}
+      <div className="pt-2 border-t border-black/[0.05]">
+        <button
+          onClick={runLandGrabCompare}
+          disabled={running}
+          className="w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] disabled:opacity-60 disabled:cursor-wait hover:bg-foreground/90 transition-colors flex items-center justify-center gap-2"
+        >
+          {running ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+              </svg>
+              Auditing competitors, this takes about a minute…
+            </>
+          ) : (
+            <>See where you can take land from them</>
+          )}
+        </button>
+        <p className="text-[11.5px] text-muted-foreground/80 text-center mt-2 leading-snug">
+          We'll audit the top {topDomains.length} and show you the openings where they're ahead, where you lead, and specific fixes that close the gap.
+        </p>
+        {error && (
+          <div className="text-[12.5px] text-[#d70015] bg-[#ff453a]/[0.06] border border-[#ff453a]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
+            {error}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -2370,7 +2446,9 @@ function CompetitiveTab({
       {hasUserCompetitors && (
         <CompetitorComparison primary={result} competitors={result.competitors!} />
       )}
-      {hasAICompetitors && <AICompetitors competitors={result.aiCompetitors} />}
+      {hasAICompetitors && (
+        <AICompetitors result={result} competitors={result.aiCompetitors} />
+      )}
     </div>
   );
 }
