@@ -636,6 +636,7 @@ export default function Home() {
             </span>
           </a>
           <div className="flex items-center gap-4 text-[12px] text-muted-foreground/50">
+            <a href="/blog" className="hover:text-foreground transition-colors">Blog</a>
             <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
             <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
             <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">twopointtechnologies.com</a>
