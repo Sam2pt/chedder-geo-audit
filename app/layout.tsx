@@ -13,9 +13,39 @@ export const metadata: Metadata = {
   // otherwise Next.js resolves them against http://localhost:3000 in
   // dev-style output even in production builds.
   metadataBase: new URL("https://chedder.2pt.ai"),
-  title: "Chedder · AI Search Visibility",
+  title: {
+    default: "Chedder · AI Search Visibility",
+    template: "%s · Chedder",
+  },
   description:
-    "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
+    "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations. Free audit in under a minute.",
+  keywords: [
+    "AI search visibility",
+    "generative engine optimization",
+    "GEO",
+    "ChatGPT SEO",
+    "Perplexity",
+    "brand audit",
+    "CPG marketing",
+  ],
+  authors: [{ name: "Two Point Technologies", url: "https://twopointtechnologies.com" }],
+  openGraph: {
+    type: "website",
+    siteName: "Chedder",
+    title: "Chedder · AI Search Visibility",
+    description:
+      "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
+    url: "https://chedder.2pt.ai",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chedder · AI Search Visibility",
+    description:
+      "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
+  },
+  icons: {
+    icon: "/2pt-logo.svg",
+  },
 };
 
 export default function RootLayout({

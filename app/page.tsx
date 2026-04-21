@@ -424,11 +424,11 @@ export default function Home() {
         <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
-            Free · no signup
+            First audit free
           </div>
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
-            Results in 30 seconds
+            Results in under a minute
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
