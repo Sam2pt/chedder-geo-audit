@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAdminSummary } from "@/lib/admin-data";
+import {
+  getAdminSummary,
+  getUsageDashboard,
+  type DailyBucket,
+  type FunnelStats,
+} from "@/lib/admin-data";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -33,7 +38,10 @@ export default async function AdminPage({ searchParams }: Props) {
     notFound();
   }
 
-  const data = await getAdminSummary();
+  const [data, usage] = await Promise.all([
+    getAdminSummary(),
+    getUsageDashboard({ days: 14 }),
+  ]);
   const { audits, leads, events } = data;
 
   return (
@@ -68,6 +76,72 @@ export default async function AdminPage({ searchParams }: Props) {
             }
             small
           />
+        </section>
+
+        {/* Funnel (last N days) */}
+        <FunnelSection funnel={usage.funnel} />
+
+        {/* Daily activity chart (last N days) */}
+        <DailySection daily={usage.daily} />
+
+        {/* Top brands + top referrers */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
+              Top brands audited
+            </h2>
+            <p className="text-[12px] text-muted-foreground">
+              Last {usage.funnel.days} days, ranked by audit count.
+            </p>
+            {usage.topBrands.length === 0 ? (
+              <EmptyBlock>No audits yet in this window.</EmptyBlock>
+            ) : (
+              <div className="rounded-xl border border-black/[0.06] bg-white divide-y divide-black/[0.04]">
+                {usage.topBrands.map((b) => (
+                  <div
+                    key={b.domain}
+                    className="flex items-center justify-between px-3 py-2 text-[13px]"
+                  >
+                    <span className="font-mono text-foreground/85 truncate">
+                      {b.domain}
+                    </span>
+                    <span className="text-foreground font-semibold tabular-nums">
+                      {b.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
+              Where visitors came from
+            </h2>
+            <p className="text-[12px] text-muted-foreground">
+              Last {usage.funnel.days} days, sessions with a known referrer.
+            </p>
+            {usage.topReferrers.length === 0 ? (
+              <EmptyBlock>
+                No referrers captured yet (direct visits don&apos;t carry one).
+              </EmptyBlock>
+            ) : (
+              <div className="rounded-xl border border-black/[0.06] bg-white divide-y divide-black/[0.04]">
+                {usage.topReferrers.map((r) => (
+                  <div
+                    key={r.source}
+                    className="flex items-center justify-between px-3 py-2 text-[13px]"
+                  >
+                    <span className="text-foreground/85 truncate">
+                      {r.source}
+                    </span>
+                    <span className="text-foreground font-semibold tabular-nums">
+                      {r.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Events by type */}
@@ -277,5 +351,195 @@ function EmptyBlock({ children }: { children: React.ReactNode }) {
     <div className="rounded-xl border border-dashed border-black/[0.1] bg-white/40 px-4 py-6 text-[13px] text-muted-foreground">
       {children}
     </div>
+  );
+}
+
+function pct(num: number, denom: number): string {
+  if (!denom) return "·";
+  const r = Math.round((num / denom) * 100);
+  return `${r}%`;
+}
+
+/**
+ * Session → audit → completion → lead signup funnel for the last N
+ * days. Each step shows the absolute count and the percentage relative
+ * to the step above it, so you can see where users drop off.
+ */
+function FunnelSection({ funnel }: { funnel: FunnelStats }) {
+  const steps = [
+    {
+      label: "Sessions",
+      sub: "Unique visitors",
+      value: funnel.sessions,
+      ofPrev: null as number | null,
+      accent: "#0071e3",
+    },
+    {
+      label: "Audits started",
+      sub: "Hit Analyze",
+      value: funnel.auditsStarted,
+      ofPrev: funnel.sessions,
+      accent: "#8b5cf6",
+    },
+    {
+      label: "Audits completed",
+      sub: "Saw a result",
+      value: funnel.auditsCompleted,
+      ofPrev: funnel.auditsStarted,
+      accent: "#ec4899",
+    },
+    {
+      label: "Lead signups",
+      sub: "Crossed the soft gate",
+      value: funnel.leadSignups,
+      ofPrev: funnel.auditsCompleted,
+      accent: "#34c759",
+    },
+    {
+      label: "PDF requests",
+      sub: "Total downloads/emails",
+      value: funnel.pdfRequested,
+      ofPrev: null,
+      accent: "#FFB800",
+    },
+  ];
+  const maxBar = Math.max(funnel.sessions, 1);
+  return (
+    <section className="space-y-3">
+      <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
+        Funnel · last {funnel.days} days
+      </h2>
+      <div className="rounded-2xl border border-black/[0.06] bg-white p-4 sm:p-5 space-y-2.5">
+        {steps.map((s) => {
+          const widthPct = Math.max(2, (s.value / maxBar) * 100);
+          return (
+            <div key={s.label} className="space-y-1">
+              <div className="flex items-center justify-between gap-3 text-[12.5px]">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{ background: s.accent }}
+                  />
+                  <span className="font-semibold text-foreground">
+                    {s.label}
+                  </span>
+                  <span className="text-muted-foreground/80">{s.sub}</span>
+                </div>
+                <div className="flex items-center gap-3 tabular-nums">
+                  <span className="text-foreground font-semibold">
+                    {s.value}
+                  </span>
+                  {s.ofPrev !== null && (
+                    <span className="text-[11.5px] text-muted-foreground w-10 text-right">
+                      {pct(s.value, s.ofPrev)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${widthPct}%`,
+                    background: s.accent,
+                    transition: "width 600ms ease-out",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Compact stacked-bar chart for daily activity. One column per day in
+ * the window, with sessions / audits started / completed / signups
+ * shown as a 4-color stack. Drawn as plain divs (no chart library).
+ */
+function DailySection({ daily }: { daily: DailyBucket[] }) {
+  const max = Math.max(
+    1,
+    ...daily.map((d) =>
+      Math.max(d.sessions, d.auditsStarted, d.auditsCompleted, d.leadSignups)
+    )
+  );
+  // Skip days that are entirely zero on the leading edge to reduce noise
+  return (
+    <section className="space-y-3">
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
+            Daily activity
+          </h2>
+          <p className="text-[12px] text-muted-foreground">
+            {daily.length} days, unique-device sessions and audit funnel events.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+          <LegendDot color="#0071e3" label="Sessions" />
+          <LegendDot color="#8b5cf6" label="Audits" />
+          <LegendDot color="#ec4899" label="Completed" />
+          <LegendDot color="#34c759" label="Signups" />
+        </div>
+      </div>
+      <div className="rounded-2xl border border-black/[0.06] bg-white p-4 overflow-x-auto">
+        <div className="flex items-end gap-1.5 h-[140px] min-w-[280px]">
+          {daily.map((d) => {
+            const cols: Array<{ v: number; color: string; label: string }> = [
+              { v: d.sessions, color: "#0071e3", label: "Sessions" },
+              { v: d.auditsStarted, color: "#8b5cf6", label: "Audits started" },
+              { v: d.auditsCompleted, color: "#ec4899", label: "Audits completed" },
+              { v: d.leadSignups, color: "#34c759", label: "Signups" },
+            ];
+            const day = d.date.slice(8);
+            return (
+              <div
+                key={d.date}
+                className="flex-1 min-w-0 flex flex-col items-center gap-1"
+                title={cols
+                  .map((c) => `${c.label}: ${c.v}`)
+                  .concat([`Date: ${d.date}`])
+                  .join("\n")}
+              >
+                <div className="flex items-end gap-[2px] h-[120px] w-full justify-center">
+                  {cols.map((c, i) => {
+                    const h = (c.v / max) * 100;
+                    return (
+                      <div
+                        key={i}
+                        className="w-[3px] rounded-t-sm transition-all"
+                        style={{
+                          height: c.v > 0 ? `${Math.max(2, h)}%` : "0",
+                          background: c.color,
+                          opacity: c.v > 0 ? 1 : 0,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="text-[9.5px] tabular-nums text-muted-foreground">
+                  {day}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span
+        className="inline-block w-2 h-2 rounded-full"
+        style={{ background: color }}
+      />
+      {label}
+    </span>
   );
 }
