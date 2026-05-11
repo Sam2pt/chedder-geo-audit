@@ -21,8 +21,11 @@ const STORE_NAME = "rate-limits";
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 export const LIMITS = {
-  anonymous: 5,
-  signedUp: 25,
+  // Bumped for launch — a CPG team auditing a few brands plus a couple
+  // of competitors from a shared office WiFi can easily hit 5+ in an
+  // hour and we don't want shared-IP collisions blocking real users.
+  anonymous: 15,
+  signedUp: 50,
   // Magic-link requests: tighter cap so an attacker can't spam-mail a
   // single address. Keyed by email + IP.
   magicLink: 3,

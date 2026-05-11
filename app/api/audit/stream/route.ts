@@ -329,7 +329,11 @@ async function runAudit(
   emit({ type: "stage", name: "authority", detail: "Looking for trust signals…" });
   emitModule(analyzeAuthority($home, normalizedUrl));
 
-  // External + AI run in parallel (slow — Wikipedia/Reddit/Perplexity)
+  // External + AI run in parallel (slow — Wikipedia/Reddit/Perplexity).
+  // The combined wait can hit 25-40s of silence which crosses Netlify's
+  // SSE edge idle timeout (~30s) and the connection gets dropped. We
+  // emit a heartbeat every 8 seconds during the parallel wait to keep
+  // the edge proxy happy. AGENTS.md doc'd this exact failure mode.
   emit({ type: "stage", name: "external", detail: "Asking around Wikipedia, Reddit, and the wider web…" });
   const externalPromise = analyzeExternal($home, parsedUrl.hostname);
 
@@ -339,10 +343,19 @@ async function runAudit(
   emit({ type: "stage", name: "ai", detail: "Putting you to the test across AI chats and AI search…" });
   const aiPromise = analyzeAICitations(brand, parsedUrl.hostname, metaDescription);
 
+  const heartbeat = setInterval(() => {
+    try {
+      emit({ type: "stage", name: "heartbeat", detail: "Still working on AI tests…" });
+    } catch {
+      // controller may already be closing; ignore
+    }
+  }, 8000);
+
   const externalResult = await externalPromise;
   emitModule(externalResult);
 
   const aiResult = await aiPromise;
+  clearInterval(heartbeat);
   let aiCompetitors: AICompetitor[] | undefined;
   let inferredCategory: string | null = null;
   if (aiResult) {
@@ -397,6 +410,17 @@ async function runAudit(
 
   emit({ type: "stage", name: "finalizing", detail: "Wrapping it all up and saving your audit…" });
 
+  // Another silent stretch — tailored recs is another OpenAI call (~3-6s)
+  // plus benchmark/history reads from blobs. Keep the heartbeat going so
+  // the SSE doesn't die right at the finish line.
+  const finalHeartbeat = setInterval(() => {
+    try {
+      emit({ type: "stage", name: "heartbeat", detail: "Wrapping up your audit…" });
+    } catch {
+      // ignore
+    }
+  }, 8000);
+
   // Run category-tailored recommendations in parallel with final
   // enrichment. Fetches 1-2 specific action items keyed to the brand's
   // category (e.g. "add nutrition schema covering X, Y, Z" for a food
@@ -419,6 +443,7 @@ async function runAudit(
     getDomainHistory(parsedUrl.hostname, slug).catch(() => []),
     generateCategoryRecommendationsLLM(brand, inferredCategory, modules),
   ]);
+  clearInterval(finalHeartbeat);
 
   const base: AuditResult = {
     url: normalizedUrl,
