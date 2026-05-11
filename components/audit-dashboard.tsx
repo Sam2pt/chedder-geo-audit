@@ -2252,17 +2252,17 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
       </p>
 
       <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
-        <div>
+        <div className="min-w-0">
           <div className="text-[20px] font-semibold tabular-nums text-[#34c759]">{passes}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Top pick</div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Top pick</div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-[20px] font-semibold tabular-nums text-[#ff9f0a]">{warns}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Also mentioned</div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Also seen</div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-[20px] font-semibold tabular-nums text-[#ff453a]">{fails}</div>
-          <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider mt-0.5">Not mentioned</div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Missing</div>
         </div>
       </div>
     </div>

@@ -306,7 +306,7 @@ export default function Home() {
       <TopNav />
 
       {/* ───── HERO ───── */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <section className="min-h-[90vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-12 sm:py-20">
       <div className="w-full max-w-[620px] text-center space-y-10">
         {/* Brand */}
         <div className="space-y-5">
@@ -454,7 +454,7 @@ export default function Home() {
       </section>
 
       {/* ───── WHY THIS MATTERS ───── */}
-      <section id="why" className="px-6 py-24 border-t border-black/[0.04]">
+      <section id="why" className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[900px] mx-auto space-y-16">
           <div className="text-center space-y-4">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0071e3]">The Shift</div>
@@ -467,17 +467,17 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
               { stat: "47%", label: "of Google searches now show AI Overviews", color: "#0071e3" },
               { stat: "1 in 4", label: "buyers start product research with ChatGPT", color: "#8b5cf6" },
-              { stat: "0", label: "clicks needed for AI to answer a question", color: "#ec4899" },
+              { stat: "0", label: "clicks needed for AI to answer", color: "#ec4899" },
             ].map((s, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="text-[44px] font-semibold tracking-[-0.03em] leading-none" style={{ color: s.color }}>
+              <div key={i} className="p-4 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <div className="text-[26px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-none" style={{ color: s.color }}>
                   {s.stat}
                 </div>
-                <p className="text-[14px] text-muted-foreground leading-[1.5] mt-3">{s.label}</p>
+                <p className="text-[11.5px] sm:text-[14px] text-muted-foreground leading-[1.4] sm:leading-[1.5] mt-2 sm:mt-3">{s.label}</p>
               </div>
             ))}
           </div>
@@ -493,7 +493,7 @@ export default function Home() {
       </section>
 
       {/* ───── WHAT CHEDDER DOES ───── */}
-      <section className="px-6 py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#8b5cf6]">The Audit</div>
@@ -562,7 +562,7 @@ export default function Home() {
       </section>
 
       {/* ───── HOW IT WORKS ───── */}
-      <section className="px-6 py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#34c759]">How It Works</div>
@@ -590,7 +590,7 @@ export default function Home() {
       </section>
 
       {/* ───── SOCIAL PROOF ───── */}
-      <section className="px-6 py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Built for CPG</div>
@@ -626,7 +626,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6">
             {[
               {
                 stat: "60",
@@ -648,17 +648,17 @@ export default function Home() {
             ].map((s, i) => (
               <div
                 key={i}
-                className="p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+                className="p-4 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
               >
                 <div
-                  className="text-[44px] font-semibold tracking-[-0.03em] leading-none flex items-baseline gap-1"
+                  className="text-[24px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-none flex items-baseline gap-[1px] sm:gap-1"
                   style={{ color: s.color }}
                 >
                   {s.prefix}
                   {s.stat}
                   {s.suffix}
                 </div>
-                <p className="text-[14px] text-muted-foreground leading-[1.55] mt-3">
+                <p className="text-[11.5px] sm:text-[14px] text-muted-foreground leading-[1.4] sm:leading-[1.55] mt-2 sm:mt-3">
                   {s.label}
                 </p>
               </div>
@@ -694,7 +694,7 @@ export default function Home() {
       </section>
 
       {/* ───── AGENCY CTA ───── */}
-      <section className="px-6 py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[900px] mx-auto">
           <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-[#6366f1]/[0.08] via-[#ec4899]/[0.06] to-[#14b8a6]/[0.08] border border-black/[0.06] space-y-6">
             <div className="space-y-3">
