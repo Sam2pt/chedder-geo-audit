@@ -139,7 +139,7 @@ export default async function AdminPage({ searchParams }: Props) {
               Top brands audited
             </h2>
             <p className="text-[12px] text-muted-foreground">
-              Last {usage.funnel.days} days, ranked by audit count.
+              {usage.funnel.days === 1 ? "Last 24 hours" : `Last ${usage.funnel.days} days`}, ranked by audit count.
             </p>
             {usage.topBrands.length === 0 ? (
               <EmptyBlock>No audits yet in this window.</EmptyBlock>
@@ -166,7 +166,7 @@ export default async function AdminPage({ searchParams }: Props) {
               Where visitors came from
             </h2>
             <p className="text-[12px] text-muted-foreground">
-              Last {usage.funnel.days} days, sessions with a known referrer.
+              {usage.funnel.days === 1 ? "Last 24 hours" : `Last ${usage.funnel.days} days`}, sessions with a known referrer.
             </p>
             {usage.topReferrers.length === 0 ? (
               <EmptyBlock>
@@ -455,7 +455,7 @@ function FunnelSection({ funnel }: { funnel: FunnelStats }) {
   return (
     <section className="space-y-3">
       <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
-        Funnel · last {funnel.days} days
+        Funnel · {funnel.days === 1 ? "last 24 hours" : `last ${funnel.days} days`}
       </h2>
       <div className="rounded-2xl border border-black/[0.06] bg-white p-4 sm:p-5 space-y-2.5">
         {steps.map((s) => {
