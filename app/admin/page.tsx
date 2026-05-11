@@ -27,20 +27,36 @@ export const runtime = "nodejs";
  */
 
 interface Props {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; days?: string }>;
 }
+
+// Allowed presets for the timeline selector. Anything else falls back
+// to the default to keep URL tampering harmless.
+const WINDOW_PRESETS: Array<{ label: string; days: number }> = [
+  { label: "24h", days: 1 },
+  { label: "7d", days: 7 },
+  { label: "14d", days: 14 },
+  { label: "30d", days: 30 },
+  { label: "90d", days: 90 },
+];
+const DEFAULT_DAYS = 14;
 
 export default async function AdminPage({ searchParams }: Props) {
   const expected = process.env.CHEDDER_ADMIN_TOKEN;
-  const { token } = await searchParams;
+  const { token, days: daysParam } = await searchParams;
 
   if (!expected || !token || token !== expected) {
     notFound();
   }
 
+  const parsedDays = daysParam ? parseInt(daysParam, 10) : NaN;
+  const selectedDays = WINDOW_PRESETS.some((p) => p.days === parsedDays)
+    ? parsedDays
+    : DEFAULT_DAYS;
+
   const [data, usage] = await Promise.all([
     getAdminSummary(),
-    getUsageDashboard({ days: 14 }),
+    getUsageDashboard({ days: selectedDays }),
   ]);
   const { audits, leads, events } = data;
 
@@ -78,11 +94,43 @@ export default async function AdminPage({ searchParams }: Props) {
           />
         </section>
 
+        {/* Timeline selector — drives all the windowed sections below.
+            Server-rendered links so it works without JS. */}
+        <section className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-[15px] font-semibold tracking-[-0.015em] text-foreground">
+              Usage window
+            </h2>
+            <p className="text-[12px] text-muted-foreground">
+              Funnel, daily activity, top brands, and referrers all use this range.
+            </p>
+          </div>
+          <div className="inline-flex rounded-xl border border-black/[0.08] bg-white p-0.5">
+            {WINDOW_PRESETS.map((p) => {
+              const active = p.days === selectedDays;
+              const url = `/admin?token=${encodeURIComponent(token)}&days=${p.days}`;
+              return (
+                <Link
+                  key={p.days}
+                  href={url}
+                  className={`px-3 py-1.5 rounded-lg text-[12.5px] font-semibold tracking-[-0.01em] transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03]"
+                  }`}
+                >
+                  {p.label}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Funnel (last N days) */}
         <FunnelSection funnel={usage.funnel} />
 
-        {/* Daily activity chart (last N days) */}
-        <DailySection daily={usage.daily} />
+        {/* Activity chart (granularity matches the timeline window) */}
+        <DailySection daily={usage.daily} granularity={usage.granularity} />
 
         {/* Top brands + top referrers */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -459,23 +507,34 @@ function FunnelSection({ funnel }: { funnel: FunnelStats }) {
  * the window, with sessions / audits started / completed / signups
  * shown as a 4-color stack. Drawn as plain divs (no chart library).
  */
-function DailySection({ daily }: { daily: DailyBucket[] }) {
+function DailySection({
+  daily,
+  granularity,
+}: {
+  daily: DailyBucket[];
+  granularity: "hour" | "day" | "week";
+}) {
   const max = Math.max(
     1,
     ...daily.map((d) =>
       Math.max(d.sessions, d.auditsStarted, d.auditsCompleted, d.leadSignups)
     )
   );
-  // Skip days that are entirely zero on the leading edge to reduce noise
+  const bucketWord =
+    granularity === "hour" ? "hours" : granularity === "week" ? "weeks" : "days";
+  const sectionTitle =
+    granularity === "hour" ? "Hourly activity" :
+    granularity === "week" ? "Weekly activity" :
+    "Daily activity";
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-[18px] font-semibold tracking-[-0.015em] text-foreground">
-            Daily activity
+            {sectionTitle}
           </h2>
           <p className="text-[12px] text-muted-foreground">
-            {daily.length} days, unique-device sessions and audit funnel events.
+            {daily.length} {bucketWord}, unique-device sessions and audit funnel events.
           </p>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -494,14 +553,13 @@ function DailySection({ daily }: { daily: DailyBucket[] }) {
               { v: d.auditsCompleted, color: "#ec4899", label: "Audits completed" },
               { v: d.leadSignups, color: "#34c759", label: "Signups" },
             ];
-            const day = d.date.slice(8);
             return (
               <div
                 key={d.date}
                 className="flex-1 min-w-0 flex flex-col items-center gap-1"
                 title={cols
                   .map((c) => `${c.label}: ${c.v}`)
-                  .concat([`Date: ${d.date}`])
+                  .concat([`Bucket: ${d.date}`])
                   .join("\n")}
               >
                 <div className="flex items-end gap-[2px] h-[120px] w-full justify-center">
@@ -521,7 +579,7 @@ function DailySection({ daily }: { daily: DailyBucket[] }) {
                   })}
                 </div>
                 <div className="text-[9.5px] tabular-nums text-muted-foreground">
-                  {day}
+                  {d.label}
                 </div>
               </div>
             );

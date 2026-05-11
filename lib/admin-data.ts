@@ -191,12 +191,17 @@ export async function getAdminSummary(): Promise<AdminSummary> {
 // ──────────────────────────────────────────────────────────────────────
 
 export interface DailyBucket {
-  date: string; // YYYY-MM-DD
-  sessions: number; // unique deviceIds with any event that day
+  /** Bucket key: YYYY-MM-DD (daily), YYYY-MM-DDTHH (hourly), or YYYY-Www (weekly). */
+  date: string;
+  /** Human label for this bucket (e.g. "11", "Mon", "14:00"). */
+  label: string;
+  sessions: number; // unique deviceIds in this bucket
   auditsStarted: number;
   auditsCompleted: number;
   leadSignups: number;
 }
+
+export type DashboardGranularity = "hour" | "day" | "week";
 
 export interface FunnelStats {
   /** Window in days the funnel covers. */
@@ -222,15 +227,49 @@ export interface UsageDashboard {
   totalEventsScanned: number;
   windowStart?: string;
   windowEnd?: string;
+  granularity: DashboardGranularity;
   daily: DailyBucket[];
   funnel: FunnelStats;
   topBrands: TopBrandRow[];
   topReferrers: TopReferrerRow[];
 }
 
-function isoDay(ts: string): string {
-  // YYYY-MM-DD slice. Safe across browsers + node.
-  return ts.slice(0, 10);
+/** Pick a sensible bucket granularity for a given window size. */
+function pickGranularity(days: number): DashboardGranularity {
+  if (days <= 1) return "hour";
+  if (days <= 30) return "day";
+  return "week";
+}
+
+/** Bucket key for a given timestamp at a given granularity. */
+function bucketKey(d: Date, granularity: DashboardGranularity): string {
+  if (granularity === "hour") {
+    // YYYY-MM-DDTHH (Z) — derived from ISO so DST doesn't drift
+    return d.toISOString().slice(0, 13);
+  }
+  if (granularity === "week") {
+    // ISO-ish week: anchor to the Monday of the week (UTC)
+    const monday = new Date(d);
+    const dow = monday.getUTCDay() || 7; // 1..7 (Mon..Sun)
+    monday.setUTCDate(monday.getUTCDate() - (dow - 1));
+    return monday.toISOString().slice(0, 10);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** Friendly axis label for a bucket key. */
+function bucketLabel(key: string, granularity: DashboardGranularity): string {
+  if (granularity === "hour") {
+    // Show hour-of-day in viewer's local time so "now" reads naturally
+    const d = new Date(key + ":00:00Z");
+    return d.toLocaleTimeString([], { hour: "numeric" }).toLowerCase().replace(/\s/g, "");
+  }
+  if (granularity === "week") {
+    // Week of Mon DD (or just DD)
+    const d = new Date(key);
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+  return key.slice(8); // DD
 }
 
 function normalizeReferrer(raw: string | undefined): string | null {
@@ -264,21 +303,31 @@ function normalizeReferrer(raw: string | undefined): string | null {
 
 /**
  * Build a usage dashboard from the events store. Reads a generous sample
- * of recent events, then computes daily activity, a session→signup
- * funnel, and a couple of "top N" tables. All aggregation is in-memory
- * so we make exactly one storage round-trip.
+ * of recent events, then computes a time-bucketed activity chart, a
+ * session→signup funnel, and a couple of "top N" tables. All aggregation
+ * is in-memory so we make exactly one storage round-trip.
+ *
+ * `days` controls both the window and the bucket granularity:
+ *   days = 1    → 24 hourly buckets
+ *   days <= 30  → daily buckets
+ *   days > 30   → weekly buckets
  */
 export async function getUsageDashboard(opts: {
   days?: number;
   sampleCap?: number;
+  granularity?: DashboardGranularity;
 } = {}): Promise<UsageDashboard> {
-  const days = opts.days ?? 14;
-  const sampleCap = opts.sampleCap ?? 3000;
+  const days = Math.max(1, Math.min(365, opts.days ?? 14));
+  const granularity = opts.granularity ?? pickGranularity(days);
+  // Scale the sample cap to the window so longer ranges actually capture
+  // their full content. Capped to keep storage costs bounded.
+  const sampleCap = Math.min(10000, opts.sampleCap ?? Math.max(2000, days * 250));
   const keys = await listKeys("events", "event:", sampleCap);
   if (keys.length === 0) {
     return {
       totalEventsScanned: 0,
-      daily: emptyDailyBuckets(days),
+      granularity,
+      daily: emptyBuckets(days, granularity),
       funnel: {
         days,
         sessions: 0,
@@ -312,33 +361,48 @@ export async function getUsageDashboard(opts: {
     return !Number.isNaN(t) && t >= cutoffMs;
   });
 
-  // ── Daily bins ────────────────────────────────────────────────────
+  // ── Time bins ─────────────────────────────────────────────────────
+  // Pre-seed buckets so any "quiet" days/hours still appear with zeros.
   const dailyMap = new Map<string, DailyBucket>();
-  for (let i = 0; i < days; i++) {
-    const d = new Date(Date.now() - (days - 1 - i) * 24 * 3600 * 1000);
-    const key = isoDay(d.toISOString());
-    dailyMap.set(key, {
-      date: key,
-      sessions: 0,
-      auditsStarted: 0,
-      auditsCompleted: 0,
-      leadSignups: 0,
-    });
+  const stepMs =
+    granularity === "hour" ? 3600 * 1000 :
+    granularity === "week" ? 7 * 24 * 3600 * 1000 :
+    24 * 3600 * 1000;
+  // We want `days` worth of buckets at the chosen granularity:
+  //   hour  → 24 buckets (one per hour over the last 24h)
+  //   day   → `days` buckets
+  //   week  → ceil(days/7) buckets
+  const bucketCount =
+    granularity === "hour" ? Math.min(24, Math.max(1, days * 24)) :
+    granularity === "week" ? Math.max(1, Math.ceil(days / 7)) :
+    days;
+  for (let i = 0; i < bucketCount; i++) {
+    const ts = new Date(Date.now() - (bucketCount - 1 - i) * stepMs);
+    const key = bucketKey(ts, granularity);
+    if (!dailyMap.has(key)) {
+      dailyMap.set(key, {
+        date: key,
+        label: bucketLabel(key, granularity),
+        sessions: 0,
+        auditsStarted: 0,
+        auditsCompleted: 0,
+        leadSignups: 0,
+      });
+    }
   }
 
-  // Track per-day device sets so "sessions" is unique deviceIds, not raw event counts
+  // Track per-bucket device sets so "sessions" is unique deviceIds, not raw event counts
   const dailyDevices = new Map<string, Set<string>>();
 
   for (const r of inWindow) {
-    const day = isoDay(r.createdAt);
-    const bucket = dailyMap.get(day);
+    const key = bucketKey(new Date(r.createdAt), granularity);
+    const bucket = dailyMap.get(key);
     if (!bucket) continue;
-    // Sessions = unique deviceIds per day across any event
     if (r.deviceId && r.deviceId !== "server") {
-      let set = dailyDevices.get(day);
+      let set = dailyDevices.get(key);
       if (!set) {
         set = new Set();
-        dailyDevices.set(day, set);
+        dailyDevices.set(key, set);
       }
       set.add(r.deviceId);
     }
@@ -346,8 +410,8 @@ export async function getUsageDashboard(opts: {
     else if (r.type === "audit.completed") bucket.auditsCompleted++;
     else if (r.type === "lead.signup") bucket.leadSignups++;
   }
-  for (const [day, set] of dailyDevices.entries()) {
-    const b = dailyMap.get(day);
+  for (const [key, set] of dailyDevices.entries()) {
+    const b = dailyMap.get(key);
     if (b) b.sessions = set.size;
   }
   const daily = Array.from(dailyMap.values());
@@ -422,6 +486,7 @@ export async function getUsageDashboard(opts: {
     .sort();
   return {
     totalEventsScanned: inWindow.length,
+    granularity,
     windowStart: sortedTs[0],
     windowEnd: sortedTs[sortedTs.length - 1],
     daily,
@@ -431,12 +496,22 @@ export async function getUsageDashboard(opts: {
   };
 }
 
-function emptyDailyBuckets(days: number): DailyBucket[] {
+function emptyBuckets(days: number, granularity: DashboardGranularity): DailyBucket[] {
+  const stepMs =
+    granularity === "hour" ? 3600 * 1000 :
+    granularity === "week" ? 7 * 24 * 3600 * 1000 :
+    24 * 3600 * 1000;
+  const bucketCount =
+    granularity === "hour" ? Math.min(24, Math.max(1, days * 24)) :
+    granularity === "week" ? Math.max(1, Math.ceil(days / 7)) :
+    days;
   const out: DailyBucket[] = [];
-  for (let i = 0; i < days; i++) {
-    const d = new Date(Date.now() - (days - 1 - i) * 24 * 3600 * 1000);
+  for (let i = 0; i < bucketCount; i++) {
+    const ts = new Date(Date.now() - (bucketCount - 1 - i) * stepMs);
+    const key = bucketKey(ts, granularity);
     out.push({
-      date: isoDay(d.toISOString()),
+      date: key,
+      label: bucketLabel(key, granularity),
       sessions: 0,
       auditsStarted: 0,
       auditsCompleted: 0,
