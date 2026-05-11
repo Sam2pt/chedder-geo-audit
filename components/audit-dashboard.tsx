@@ -341,6 +341,15 @@ function ChatPopup({ result }: { result: AuditResult }) {
     // file in their downloads folder even if the email bounces.
     const doc = generateAuditPDF(result);
     doc.save(`${result.domain}-geo-audit.pdf`);
+
+    // Tag the funnel: this is the conversion event we care about most
+    // (PDF requested + delivered). emailDelivered is captured above.
+    track(
+      "pdf.downloaded",
+      { domain: result.domain, emailDelivered: pdfSent ? "yes" : "no" },
+      { slug: result.slug }
+    );
+
     setSending(false);
     setMode("done");
   }

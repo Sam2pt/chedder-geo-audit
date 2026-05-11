@@ -239,6 +239,14 @@ function normalizeReferrer(raw: string | undefined): string | null {
     const u = new URL(raw);
     let host = u.hostname.toLowerCase();
     if (host.startsWith("www.")) host = host.slice(4);
+    // Filter out self-referrers (internal nav within Chedder)
+    if (host === "chedder.2pt.ai") return null;
+    // Filter out Netlify deploy-preview URLs (--<hash>.netlify.app)
+    if (host.endsWith(".netlify.app") || host.endsWith("netlify.app")) return null;
+    // Filter out localhost / dev hosts
+    if (host === "localhost" || host.startsWith("127.") || host.startsWith("192.168.")) {
+      return null;
+    }
     // Special-case the common social/SEO sources for nicer labels
     if (host === "lnkd.in" || host === "linkedin.com") return "LinkedIn";
     if (host === "t.co" || host === "twitter.com" || host === "x.com") return "X / Twitter";
@@ -246,6 +254,8 @@ function normalizeReferrer(raw: string | undefined): string | null {
     if (host === "reddit.com" || host.endsWith(".reddit.com")) return "Reddit";
     if (host === "google.com" || host.endsWith(".google.com")) return "Google";
     if (host === "facebook.com" || host.endsWith(".facebook.com")) return "Facebook";
+    if (host === "duckduckgo.com") return "DuckDuckGo";
+    if (host === "bing.com") return "Bing";
     return host;
   } catch {
     return null;
