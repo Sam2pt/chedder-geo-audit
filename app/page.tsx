@@ -323,7 +323,9 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Input */}
+        {/* Input. On mobile the Analyze button stacks below the field
+            so it never looks like a floating pill inside the search bar
+            at narrow widths. From sm: up, button slots inside the bar. */}
         <form onSubmit={handleAudit} className="space-y-4">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#0071e3]/20 via-[#34c759]/20 to-[#af52de]/20 rounded-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
@@ -339,10 +341,11 @@ export default function Home() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Enter any website..."
-                className="flex-1 h-[56px] px-3 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none tracking-[-0.01em]"
+                className="flex-1 min-w-0 h-[56px] px-3 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none tracking-[-0.01em]"
                 disabled={loading}
               />
-              <div className="pr-2">
+              {/* Desktop-only inline submit (hidden on mobile) */}
+              <div className="hidden sm:block pr-2">
                 <button
                   type="submit"
                   disabled={loading || !url.trim()}
@@ -352,6 +355,14 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            {/* Mobile-only stacked submit (full width, sits right below the input bar) */}
+            <button
+              type="submit"
+              disabled={loading || !url.trim()}
+              className="sm:hidden mt-2.5 w-full h-12 rounded-2xl bg-[#1d1d1f] text-white text-[15px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-30 disabled:pointer-events-none"
+            >
+              Analyze
+            </button>
           </div>
 
           {/* Competitors */}
