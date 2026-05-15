@@ -8,6 +8,7 @@ import { analyzeTechnical } from "./analyzers/technical";
 import { analyzeAuthority } from "./analyzers/authority";
 import { analyzeExternal, extractBrandName } from "./analyzers/external";
 import { analyzeAICitations } from "./analyzers/ai-citations";
+import { analyzeDestinations } from "./analyzers/destinations";
 import { generateCategoryRecommendationsLLM } from "./analyzers/tailored-recs";
 import { discoverInternalLinks } from "./crawler";
 import {
@@ -173,6 +174,7 @@ export async function auditSingleUrl(
 
   let aiCompetitors: AICompetitor[] | undefined;
   let inferredCategory: string | null = null;
+  let aiCitations: string[] = [];
   if (aiCitationsPromise) {
     const aiCitationsResult = await aiCitationsPromise;
     if (aiCitationsResult) {
@@ -181,8 +183,21 @@ export async function auditSingleUrl(
         aiCompetitors = aiCitationsResult.competitors;
       }
       inferredCategory = aiCitationsResult.category;
+      aiCitations = aiCitationsResult.citations || [];
     }
   }
+
+  // Classify AI citation URLs into own / marketplace / competitor / etc.
+  // so the audit can show "where AI sends customers" — the marketplace
+  // shadow signal that's unique to GEO.
+  const destinations =
+    aiCitations.length > 0
+      ? analyzeDestinations(
+          aiCitations,
+          parsedUrl.hostname,
+          aiCompetitors?.map((c) => c.domain) ?? []
+        ) ?? undefined
+      : undefined;
 
   const overallScore = calculateOverallScore(modules);
 
@@ -207,6 +222,7 @@ export async function auditSingleUrl(
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
+    destinations,
   };
 }
 

@@ -41,6 +41,30 @@ export interface AICompetitor {
 }
 
 /**
+ * Breakdown of where AI engines actually point customers when they
+ * cite a brand. Computed from `response.citations` across all engine
+ * responses and classified into own / marketplace / competitor /
+ * publisher / community / review / knowledge / other.
+ * Optional on AuditResult — only populated when at least one AI engine
+ * was queried and returned citations.
+ */
+export interface DestinationAnalysis {
+  totalCitations: number;
+  byKind: Array<{ kind: string; count: number; share: number }>;
+  topDomains: Array<{
+    kind: string;
+    domain: string;
+    count: number;
+    share: number;
+    examples: string[];
+  }>;
+  ownShare: number;
+  marketplaceShare: number;
+  competitorShare: number;
+  headline: string;
+}
+
+/**
  * Aggregate stats for a given module slug, computed from all stored audits.
  * Allows us to show "you're in the top X%" style context.
  */
@@ -84,6 +108,9 @@ export interface AuditResult {
   timestamp: string;
   competitors?: AuditResult[];
   aiCompetitors?: AICompetitor[];
+  /** Where AI sends people when it cites this brand. Populated when at
+   *  least one AI engine ran and returned citation URLs. */
+  destinations?: DestinationAnalysis;
   /** Short slug for shareable URL /a/[slug] — set after persistence. */
   slug?: string;
   /** Benchmark context populated when the audit is saved. */

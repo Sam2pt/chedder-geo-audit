@@ -1498,6 +1498,10 @@ export async function analyzeAICitations(
   /** The category the LLM (or regex fallback) inferred for the brand.
    *  Exposed so downstream quality-review can use it. */
   category: string | null;
+  /** Flat list of every URL any engine cited across all probe queries.
+   *  The destinations analyzer classifies these into own / marketplace /
+   *  competitor / publisher / community / etc. */
+  citations: string[];
 } | null> {
   const engines = configuredEngines();
   if (engines.length === 0) return null; // no keys configured → skip module
@@ -1525,6 +1529,7 @@ export async function analyzeAICitations(
       },
       competitors: [],
       category: null,
+      citations: [],
     };
   }
 
@@ -1614,6 +1619,20 @@ export async function analyzeAICitations(
 
   const usedQueries = results.filter((r) => r.response !== null).length;
   await recordSpend(usedQueries);
+
+  // Flat, dedup'd list of every URL any engine cited across all queries.
+  // The destinations analyzer reads this to classify where AI is
+  // actually sending people (own site, marketplaces, competitors, etc).
+  const allCitations: string[] = [];
+  const seenCitations = new Set<string>();
+  for (const r of results) {
+    if (!r.response?.citations) continue;
+    for (const u of r.response.citations) {
+      if (!u || seenCitations.has(u)) continue;
+      seenCitations.add(u);
+      allCitations.push(u);
+    }
+  }
 
   /* ── Build findings (tagged per engine) ────────────────────────── */
 
@@ -2010,5 +2029,6 @@ export async function analyzeAICitations(
     },
     competitors: aiCompetitors,
     category,
+    citations: allCitations,
   };
 }

@@ -7,6 +7,7 @@ import { analyzeTechnical } from "@/lib/analyzers/technical";
 import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal, extractBrandName } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
+import { analyzeDestinations } from "@/lib/analyzers/destinations";
 import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
 import { generateCategoryRecommendationsLLM } from "@/lib/analyzers/tailored-recs";
 import { discoverInternalLinks } from "@/lib/crawler";
@@ -358,10 +359,12 @@ async function runAudit(
   clearInterval(heartbeat);
   let aiCompetitors: AICompetitor[] | undefined;
   let inferredCategory: string | null = null;
+  let aiCitations: string[] = [];
   if (aiResult) {
     emitModule(aiResult.module);
     if (aiResult.competitors.length > 0) aiCompetitors = aiResult.competitors;
     inferredCategory = aiResult.category;
+    aiCitations = aiResult.citations || [];
   }
 
   // ── Quality check ───────────────────────────────────────────────
@@ -445,6 +448,18 @@ async function runAudit(
   ]);
   clearInterval(finalHeartbeat);
 
+  // Classify cited URLs into own / marketplace / competitor / etc.
+  // The destinations module surfaces the "marketplace shadow" signal —
+  // brands AI mentions but only by pointing customers at Amazon.
+  const destinations =
+    aiCitations.length > 0
+      ? analyzeDestinations(
+          aiCitations,
+          parsedUrl.hostname,
+          aiCompetitors?.map((c) => c.domain) ?? []
+        ) ?? undefined
+      : undefined;
+
   const base: AuditResult = {
     url: normalizedUrl,
     domain: parsedUrl.hostname,
@@ -458,6 +473,7 @@ async function runAudit(
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
+    destinations,
     slug,
     deviceId: identity.deviceId,
     leadEmail: identity.leadEmail,

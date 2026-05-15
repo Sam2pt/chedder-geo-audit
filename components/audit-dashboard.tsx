@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AuditResult, ModuleResult, Finding, Recommendation } from "@/lib/types";
+import { AuditResult, ModuleResult, Finding, Recommendation, DestinationAnalysis } from "@/lib/types";
 import { generateAuditPDF } from "@/lib/generate-pdf";
 import { CodeSnippet } from "@/components/code-snippet";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
+import {
+  destinationKindLabel,
+  destinationKindColor,
+  type DestinationKind,
+} from "@/lib/analyzers/destinations";
 
 // Shape returned by /api/audits/recent — kept inline to avoid a shared
 // type dependency loop. Must match RecentAuditEntry in audit-store.ts.
@@ -2288,6 +2293,14 @@ function OverviewTab({ result }: { result: AuditResult }) {
         <WhereResults result={result} />
       </div>
 
+      {/* Where AI sends people (marketplace shadow analysis) — full
+          width, only when we have citation data */}
+      {result.destinations && result.destinations.totalCitations > 0 && (
+        <div className="lg:col-span-12">
+          <DestinationsPanel destinations={result.destinations} />
+        </div>
+      )}
+
       {/* Performance over time — full width, only when we have history */}
       {hasHistory && (
         <div className="lg:col-span-12">
@@ -2314,6 +2327,126 @@ function OverviewTab({ result }: { result: AuditResult }) {
 }
 
 /* ── History timeline / performance over time ────────────────────── */
+
+/**
+ * Where AI sends people. Classified breakdown of every URL cited
+ * across all AI engine answers — own site vs. marketplace vs.
+ * competitor vs. publisher vs. community vs. review vs. knowledge.
+ *
+ * The headline at the top is the single most actionable framing of
+ * the breakdown, generated server-side based on whichever kind
+ * dominates. Below: a stacked horizontal bar and a top-domains list.
+ */
+function DestinationsPanel({
+  destinations,
+}: {
+  destinations: DestinationAnalysis;
+}) {
+  const { totalCitations, byKind, topDomains, headline } = destinations;
+  // Sort the stacked bar by importance to the brand owner:
+  // own → marketplace → competitor → publisher → community → review → knowledge → other
+  const bandOrder: DestinationKind[] = [
+    "own",
+    "marketplace",
+    "competitor",
+    "publisher",
+    "community",
+    "review",
+    "knowledge",
+    "other",
+  ];
+  const orderedBands = bandOrder
+    .map((k) => byKind.find((b) => b.kind === k))
+    .filter((b): b is (typeof byKind)[number] => !!b && b.count > 0);
+
+  return (
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
+        <h3 className="text-[17px] font-semibold tracking-[-0.01em]">
+          Where AI sends your customers
+        </h3>
+        <span className="text-[11.5px] text-muted-foreground tabular-nums">
+          {totalCitations} citation{totalCitations === 1 ? "" : "s"} analyzed
+        </span>
+      </div>
+      <p className="text-[13px] text-foreground/80 leading-[1.55] mb-4">
+        {headline}
+      </p>
+
+      {/* Stacked horizontal share bar */}
+      <div className="flex w-full h-3 rounded-full overflow-hidden bg-black/[0.04]">
+        {orderedBands.map((b) => (
+          <div
+            key={b.kind}
+            style={{
+              width: `${Math.max(1.5, b.share * 100)}%`,
+              background: destinationKindColor(b.kind as DestinationKind),
+            }}
+            title={`${destinationKindLabel(b.kind as DestinationKind)}: ${b.count} (${Math.round(b.share * 100)}%)`}
+          />
+        ))}
+      </div>
+
+      {/* Legend with counts */}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px]">
+        {orderedBands.map((b) => (
+          <div key={b.kind} className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: destinationKindColor(b.kind as DestinationKind) }}
+            />
+            <span className="text-foreground/80">
+              {destinationKindLabel(b.kind as DestinationKind)}
+            </span>
+            <span className="text-muted-foreground tabular-nums">
+              {b.count}
+              <span className="text-muted-foreground/70 ml-1">
+                ({Math.round(b.share * 100)}%)
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Top destinations table */}
+      {topDomains.length > 0 && (
+        <div className="mt-5 pt-4 border-t border-black/[0.05]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-2">
+            Top destinations AI links to
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            {topDomains.slice(0, 8).map((d) => (
+              <div
+                key={`${d.kind}-${d.domain}`}
+                className="flex items-center justify-between text-[13px] py-1"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{
+                      background: destinationKindColor(d.kind as DestinationKind),
+                    }}
+                  />
+                  <a
+                    href={`https://${d.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-foreground/85 hover:text-[#0071e3] hover:underline truncate"
+                  >
+                    {d.domain}
+                  </a>
+                </div>
+                <span className="text-foreground font-semibold tabular-nums text-[12.5px]">
+                  {d.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function HistoryTimeline({ result }: { result: AuditResult }) {
   const history = result.history || [];
