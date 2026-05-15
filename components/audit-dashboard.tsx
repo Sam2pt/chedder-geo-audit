@@ -2431,9 +2431,16 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
     } other brand${rows.length - 1 === 1 ? "" : "s"} in your category instead.`;
   } else {
     const ahead = rows.slice(0, yourRank - 1).map((r) => r.domain);
-    headline = `AI ranks you #${yourRank} of ${rows.length} brands in your category. ${
-      ahead.length === 1 ? ahead[0] : `${ahead.slice(0, 2).join(", ")}${ahead.length > 2 ? ` and ${ahead.length - 2} other${ahead.length - 2 === 1 ? "" : "s"}` : ""}`
-    } come up first.`;
+    const aheadLabel =
+      ahead.length === 1
+        ? ahead[0]
+        : `${ahead.slice(0, 2).join(", ")}${
+            ahead.length > 2
+              ? ` and ${ahead.length - 2} other${ahead.length - 2 === 1 ? "" : "s"}`
+              : ""
+          }`;
+    const verb = ahead.length === 1 ? "comes" : "come";
+    headline = `AI ranks you #${yourRank} of ${rows.length} brands in your category. ${aheadLabel} ${verb} up first.`;
   }
 
   // Price range summary across all brands, when we have any prices
