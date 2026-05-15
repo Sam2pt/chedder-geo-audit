@@ -2239,60 +2239,215 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
 
 /* ── Tab content: Overview ───────────────────────────────────────── */
 
+/**
+ * Live AI Answers panel.
+ *
+ * The old "Live AI Test" panel was weak because it just repeated
+ * numbers shown elsewhere — score, mention rate, etc. This rebuild
+ * does something nothing else on the page does: it surfaces the
+ * actual AI quote with the brand name highlighted. The proof, not
+ * the metric. Founders see a real chat-style bubble with what AI
+ * said about them when a shopper asked.
+ *
+ * Picks the "best" excerpt to feature:
+ *   1. Prefer a "pass" finding (positive mention shows you at best)
+ *   2. Otherwise "warn" (mention with caveats)
+ *   3. Otherwise "fail" (no-mention with competitor list)
+ *   Within each tier, prefer the longest excerpt for more context.
+ */
 function LiveAITestPanel({ result }: { result: AuditResult }) {
   const aiModule = result.modules.find((m) => m.slug === "ai-citations");
   if (!aiModule) return null;
 
   const findings = aiModule.findings.filter(
-    (f) => !f.label.toLowerCase().includes("spend") && !f.label.toLowerCase().includes("query failed")
+    (f) =>
+      !f.label.toLowerCase().includes("spend") &&
+      !f.label.toLowerCase().includes("query failed")
   );
+  const withExcerpt = findings.filter(
+    (f) => f.excerpt && f.excerpt.length > 20
+  );
+
   const passes = findings.filter((f) => f.status === "pass").length;
   const warns = findings.filter((f) => f.status === "warn").length;
   const fails = findings.filter((f) => f.status === "fail").length;
   const total = findings.length;
   const mentions = passes + warns;
 
-  let narrative = "";
-  if (aiModule.score >= 70) {
-    narrative = `AI tools brought up ${result.domain} in ${mentions} of ${total} customer questions. You're showing up where it matters.`;
-  } else if (aiModule.score >= 40) {
-    narrative = `AI tools brought up ${result.domain} in ${mentions} of ${total} customer questions, but rarely first. Competitors are getting recommended ahead of you.`;
-  } else {
-    narrative = `AI tools brought up ${result.domain} in only ${mentions} of ${total} customer questions. When people don't already know you by name, you're effectively invisible.`;
+  // Pick the best excerpt to feature: pass > warn > fail, longest wins
+  const tierOrder: Array<"pass" | "warn" | "fail"> = ["pass", "warn", "fail"];
+  const featured = (() => {
+    for (const tier of tierOrder) {
+      const inTier = withExcerpt
+        .filter((f) => f.status === tier)
+        .sort((a, b) => (b.excerpt?.length || 0) - (a.excerpt?.length || 0));
+      if (inTier.length > 0) return inTier[0];
+    }
+    return withExcerpt[0] || null;
+  })();
+
+  // Pull the scenario (the shopper question) from the finding label
+  // (format: "When a shopper asks for X · AI chats")
+  const cleanQuestion = featured
+    ? featured.label.replace(/\s·\s(AI chats|AI search).*$/i, "")
+    : "";
+  const channel = featured?.label.match(/(AI chats|AI search)/i)?.[0] || "";
+  const featuredStatusColor =
+    featured?.status === "pass"
+      ? "#34c759"
+      : featured?.status === "warn"
+        ? "#ff9f0a"
+        : "#ff453a";
+
+  // Strip leading ellipsis/markdown noise from excerpts, trim length
+  function cleanExcerpt(raw: string): string {
+    let s = raw
+      .replace(/^[.…\s]+/, "")
+      .replace(/\\n/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (s.length > 360) s = s.slice(0, 360).replace(/\s+\S*$/, "") + "…";
+    return s;
+  }
+
+  // Highlight occurrences of the brand name in the excerpt without
+  // dangerouslySetInnerHTML — split on the brand and interleave spans.
+  function renderHighlighted(text: string, highlight?: string) {
+    if (!highlight || highlight.length < 2) return text;
+    const re = new RegExp(
+      `(${highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi"
+    );
+    const parts = text.split(re);
+    return parts.map((p, i) =>
+      re.test(p) ? (
+        <mark
+          key={i}
+          className="bg-[#FFB800]/30 text-white font-semibold rounded px-0.5 py-px"
+          style={{ backgroundClip: "padding-box" }}
+        >
+          {p}
+        </mark>
+      ) : (
+        <span key={i}>{p}</span>
+      )
+    );
   }
 
   return (
-    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white h-full flex flex-col">
+    <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white h-full flex flex-col">
+      {/* Header */}
       <div className="flex items-center gap-2.5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-            <rect x="3" y="11" width="18" height="10" rx="2"/>
-            <circle cx="12" cy="5" r="2"/>
-            <path d="M12 7v4M8 16h0M16 16h0"/>
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.15)]">
+          <svg viewBox="0 0 100 100" className="w-5 h-5">
+            <circle cx="34" cy="37" r="9" fill="#1d1d1f" />
+            <circle cx="64" cy="33" r="6" fill="#1d1d1f" />
+            <circle cx="58" cy="62" r="11" fill="#1d1d1f" />
           </svg>
         </div>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">Live AI Test</div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">AI chats · AI search</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">
+            What AI is saying about you
+          </div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">
+            {mentions > 0
+              ? `Mentioned in ${mentions} of ${total} questions`
+              : "Not mentioned in any question"}
+          </div>
         </div>
       </div>
 
-      <p className="text-[14px] text-white/80 leading-[1.55] mt-4 flex-1">
-        {narrative}
-      </p>
+      {/* The featured AI quote */}
+      {featured ? (
+        <div className="mt-5 flex-1 flex flex-col">
+          {/* Question */}
+          <div className="text-[11.5px] text-white/50 mb-2 flex items-center gap-2 flex-wrap">
+            <span className="font-semibold uppercase tracking-[0.08em] text-white/45">
+              Shopper asked
+            </span>
+            {channel && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.08] text-white/70 font-medium">
+                {channel}
+              </span>
+            )}
+          </div>
+          <div className="text-[13.5px] text-white/85 leading-snug mb-3 italic">
+            &ldquo;{cleanQuestion}?&rdquo;
+          </div>
 
+          {/* AI answer bubble */}
+          <div className="relative">
+            <div
+              className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full"
+              style={{ background: featuredStatusColor }}
+            />
+            <div className="pl-4 pr-1">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/45 mb-1.5">
+                AI replied
+              </div>
+              <p className="text-[14px] leading-[1.55] text-white/90">
+                {renderHighlighted(
+                  cleanExcerpt(featured.excerpt!),
+                  featured.highlight
+                )}
+              </p>
+              {featured.sourceUrl && (
+                <a
+                  href={featured.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-3 text-[11px] text-white/50 hover:text-white/80 transition-colors"
+                >
+                  Source
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M7 17L17 7M7 7h10v10" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5 flex-1 flex items-center justify-center text-center">
+          <p className="text-[13px] text-white/50 leading-snug max-w-[260px]">
+            AI didn&apos;t return any quotable answers this run. Re-audit later to
+            see what changes.
+          </p>
+        </div>
+      )}
+
+      {/* Bottom stats — compact, smaller than before so the quote is the hero */}
       <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
         <div className="min-w-0">
-          <div className="text-[20px] font-semibold tabular-nums text-[#34c759]">{passes}</div>
-          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Top pick</div>
+          <div className="text-[18px] font-semibold tabular-nums text-[#34c759]">
+            {passes}
+          </div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
+            Top pick
+          </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[20px] font-semibold tabular-nums text-[#ff9f0a]">{warns}</div>
-          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Also seen</div>
+          <div className="text-[18px] font-semibold tabular-nums text-[#ff9f0a]">
+            {warns}
+          </div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
+            Also seen
+          </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[20px] font-semibold tabular-nums text-[#ff453a]">{fails}</div>
-          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">Missing</div>
+          <div className="text-[18px] font-semibold tabular-nums text-[#ff453a]">
+            {fails}
+          </div>
+          <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
+            Missing
+          </div>
         </div>
       </div>
     </div>
