@@ -1259,22 +1259,33 @@ function generateQueries(
   const queries: QuerySpec[] = [];
 
   // --- Discovery intent (brand-unaware) -----------------------------------
-  // The valuable signal: does the brand show up when a shopper who's never
-  // heard of them asks AI for help shopping in the brand's category? Queries
-  // use consumer-buying voice — "best X to buy", "which brand should I try"
-  // — because Chedder serves DTC consumer brands.
+  // Five distinct shopper-intent angles, each phrased to mimic real
+  // customer voice. We deliberately don't just rephrase "best X" five
+  // ways — each scenario probes a different decision-making mode
+  // (broad recs, comparison shopping, price-conscious, top-rated,
+  // category landscape). Together they give a comprehensive read on
+  // whether AI recommends the brand across the range of ways a real
+  // shopper actually asks.
   if (category) {
     queries.push({
       scenario: `When a shopper asks for the best ${category}`,
       query: `What are the best ${category} to buy right now? Give me your top brand recommendations with brief reasons.`,
     });
     queries.push({
-      scenario: `When a shopper is choosing a ${category} brand`,
-      query: `I'm looking to buy ${category}. Which brands should I consider and why?`,
+      scenario: `When a shopper compares ${category} brands`,
+      query: `How do the top ${category} brands compare? Walk me through the leaders and what makes each different.`,
     });
     queries.push({
-      scenario: `When a shopper asks which ${category} brands are most recommended`,
-      query: `Which ${category} brands are the most recommended in 2026, and what are they known for?`,
+      scenario: `When a shopper asks for the highest-rated ${category}`,
+      query: `Which ${category} brands have the best customer reviews and ratings? Which ones do real buyers recommend?`,
+    });
+    queries.push({
+      scenario: `When a shopper asks for affordable ${category}`,
+      query: `What are good affordable ${category} brands without sacrificing quality? Give me your top picks at a reasonable price.`,
+    });
+    queries.push({
+      scenario: `When a shopper asks which ${category} brand is right for them`,
+      query: `I'm trying to decide which ${category} brand is right for me. Which ones should I consider and how do they differ?`,
     });
   } else {
     // Fallback if we can't infer a category — ask AI for peer brands.
@@ -1573,7 +1584,28 @@ export async function analyzeAICitations(
     category,
     metaDescription
   );
-  const allQueries = [...baselineQueries, ...tailoredQueries];
+
+  // Priority order: when the per-audit budget is tight (cap or daily
+  // spend limit), this is the order we want to spend on. Tailored
+  // queries first (niche-specific, highest signal per query), then
+  // 1-2 broadest discovery probes ("best X", "compare brands"),
+  // then the brand-aware verification check, then the remaining
+  // discovery angles (affordable, right-for-you, etc.) as spillover.
+  // Brand-aware is critical for collision/refusal detection so we
+  // keep it inside the top-5 cap.
+  const orderedDiscovery = baselineQueries.filter((q) =>
+    /^When (a shopper|someone)/.test(q.scenario) &&
+    !q.scenario.includes("directly about")
+  );
+  const verification = baselineQueries.find((q) =>
+    q.scenario.includes("directly about")
+  );
+  const allQueries = [
+    ...tailoredQueries,
+    ...orderedDiscovery.slice(0, 2),
+    ...(verification ? [verification] : []),
+    ...orderedDiscovery.slice(2),
+  ];
 
   // Distribute the daily query budget across engines. cap.remainingQueriesToday
   // is the total daily allowance; each engine runs up to perEngine queries.

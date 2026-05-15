@@ -10,10 +10,16 @@ const COST_PER_QUERY_USD = parseFloat(
 );
 
 // Defaults. overridable via env vars
-// NOTE: MAX_AI_QUERIES_PER_AUDIT is "per engine" — with 3 engines at 5 queries each
-// that's 15 API calls per audit (~$0.22 worst-case).
+// MAX_AI_QUERIES_PER_AUDIT is the TOTAL query budget per audit across
+// all engines. Default 15 = 5 shopper-question scenarios × 3 engines.
+// Cost: 15 × $0.015 ≈ $0.225 per audit, comfortably under the daily
+// cap. Lower this to throttle individual audits; raise it to dig
+// deeper per shopper. The previous default (5) was too tight — it
+// forced only 1 scenario per audit, which gave users a "you appeared
+// in 2/2 categories" headline based on a single shopper question.
+// User feedback flagged this as not comprehensive enough.
 const MAX_QUERIES_PER_AUDIT = parseInt(
-  process.env.MAX_AI_QUERIES_PER_AUDIT || "5",
+  process.env.MAX_AI_QUERIES_PER_AUDIT || "15",
   10
 );
 const MAX_DAILY_SPEND_USD = parseFloat(
