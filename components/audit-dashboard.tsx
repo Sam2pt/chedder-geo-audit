@@ -2043,12 +2043,16 @@ function TabNav({
   showCompetitive: boolean;
   counts: { action: number; deep: number; competitors: number };
 }) {
+  // Competitive content moved into Overview — was its own tab, but
+  // the competitive story IS the Overview story for DTC. Keeping
+  // showCompetitive in the signature for backwards compat with any
+  // existing wiring; it's just no longer surfaced as a tab.
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "overview", label: "Overview" },
     { key: "action", label: "Action plan", count: counts.action },
     { key: "deep", label: "Score breakdown", count: counts.deep },
-    ...(showCompetitive ? [{ key: "competitive" as TabKey, label: "Competitive", count: counts.competitors }] : []),
   ];
+  void showCompetitive; // intentionally unused now
 
   return (
     <nav className="mt-8 sm:mt-10 sticky top-14 z-20 bg-[#fafafa]/85 backdrop-blur-xl py-2 -mx-1">
@@ -2297,20 +2301,39 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
 
 function OverviewTab({ result }: { result: AuditResult }) {
   const hasHistory = (result.history?.length || 0) >= 1;
-
-  // The competitive picture leads the Overview when AI returned a roster
-  // of brands. This is the story DTC founders actually want — "where do
-  // I sit in AI's preference order, and at what price" — so it goes
-  // before everything else.
-  const showCompetitivePicture =
-    (result.aiCompetitors?.length || 0) > 0;
+  const hasUserCompetitors = !!(
+    result.competitors && result.competitors.length > 0
+  );
+  const hasAICompetitors = (result.aiCompetitors?.length || 0) > 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-      {/* HEADLINE: how AI ranks you against the category */}
-      {showCompetitivePicture && (
+      {/* HEADLINE: how AI ranks you against the category. The
+          competitive story leads the Overview because it's what DTC
+          founders open the audit to learn. */}
+      {hasAICompetitors && (
         <div className="lg:col-span-12">
           <CompetitivePicturePanel result={result} />
+        </div>
+      )}
+
+      {/* User-defined competitor comparison (only when they ran a
+          compare audit with explicit competitor URLs) */}
+      {hasUserCompetitors && (
+        <div className="lg:col-span-12">
+          <CompetitorComparison
+            primary={result}
+            competitors={result.competitors!}
+          />
+        </div>
+      )}
+
+      {/* AI-named competitor detail panel with the "audit these too"
+          conversion CTA. Was on its own tab; promoted here so the
+          competitive view is all in one place. */}
+      {hasAICompetitors && (
+        <div className="lg:col-span-12">
+          <AICompetitors result={result} competitors={result.aiCompetitors} />
         </div>
       )}
 
@@ -2831,41 +2854,96 @@ function ActionTab({ result }: { result: AuditResult }) {
 
 /* ── Tab content: Deep Dive ──────────────────────────────────────── */
 
-function DeepDiveTab({ result }: { result: AuditResult }) {
-  return (
-    <div className="space-y-6">
-      <div className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70 mb-4">
-          Score breakdown
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-          {result.modules.map((m) => {
-            const mc = moduleColor(m.slug);
-            return <ScoreBar key={m.slug} score={m.score} label={m.name} color={mc.accent} />;
-          })}
-        </div>
-      </div>
+/**
+ * Three plain-language categories that group the 8 signal modules.
+ * User feedback: the previous flat grid of 8 cards each with its own
+ * abstract description felt confusing and wordy. Founders couldn't
+ * tell what each module was for. Each category here is phrased as
+ * the actual question a founder is asking — "can AI find me", "does
+ * AI trust me", "does AI mention me" — and the modules sit beneath
+ * the question they answer.
+ */
+const SCORE_CATEGORIES: Array<{
+  key: string;
+  title: string;
+  blurb: string;
+  slugs: string[];
+}> = [
+  {
+    key: "findable",
+    title: "Can AI find you?",
+    blurb: "The basics that determine whether AI tools can read your site at all.",
+    slugs: ["technical", "schema", "meta", "content"],
+  },
+  {
+    key: "trusted",
+    title: "Does AI trust you?",
+    blurb: "Signals AI weighs when deciding whether your brand is worth recommending.",
+    slugs: ["authority", "products", "external"],
+  },
+  {
+    key: "cited",
+    title: "Does AI actually mention you?",
+    blurb: "The bottom line: when shoppers ask AI, do you come up?",
+    slugs: ["ai-citations"],
+  },
+];
 
-      <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-[18px] font-semibold tracking-[-0.01em]">Detailed analysis</h3>
-          <span className="text-[12px] text-muted-foreground">
-            {result.modules.reduce((a, m) => a + m.findings.length, 0)} findings across {result.modules.length} categories
-          </span>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-          {result.modules.map((m) => {
-            const bench = result.benchmarks?.modules?.[m.slug];
-            return (
-              <ModuleCard
-                key={m.slug}
-                module={m}
-                benchmark={bench ? { median: bench.median, count: bench.count } : undefined}
-              />
-            );
-          })}
-        </div>
-      </div>
+function DeepDiveTab({ result }: { result: AuditResult }) {
+  const moduleBySlug = new Map(result.modules.map((m) => [m.slug, m]));
+
+  return (
+    <div className="space-y-8">
+      {SCORE_CATEGORIES.map((cat) => {
+        const mods = cat.slugs
+          .map((s) => moduleBySlug.get(s))
+          .filter((m): m is ModuleResult => !!m);
+        if (mods.length === 0) return null;
+        const avg = Math.round(
+          mods.reduce((sum, m) => sum + m.score, 0) / mods.length
+        );
+        const catColor =
+          avg >= 70 ? "#34c759" : avg >= 40 ? "#ff9f0a" : "#ff453a";
+        return (
+          <section key={cat.key}>
+            <div className="flex items-baseline justify-between flex-wrap gap-2 mb-1">
+              <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-foreground">
+                {cat.title}
+              </h3>
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[15px] font-semibold tabular-nums"
+                  style={{ color: catColor }}
+                >
+                  {avg}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  average across {mods.length} signal{mods.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            </div>
+            <p className="text-[13px] text-muted-foreground leading-snug mb-3">
+              {cat.blurb}
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+              {mods.map((m) => {
+                const bench = result.benchmarks?.modules?.[m.slug];
+                return (
+                  <ModuleCard
+                    key={m.slug}
+                    module={m}
+                    benchmark={
+                      bench
+                        ? { median: bench.median, count: bench.count }
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -2933,13 +3011,10 @@ export function AuditDashboard({
           {tab === "overview" && <OverviewTab result={result} />}
           {tab === "action" && <ActionTab result={result} />}
           {tab === "deep" && <DeepDiveTab result={result} />}
-          {tab === "competitive" && (
-            <CompetitiveTab
-              result={result}
-              hasUserCompetitors={hasUserCompetitors}
-              hasAICompetitors={hasAICompetitors}
-            />
-          )}
+          {/* "competitive" tab key kept reachable via deep links but
+              its content now lives inside Overview. If the URL still
+              points here, fall back to Overview. */}
+          {tab === "competitive" && <OverviewTab result={result} />}
         </div>
 
         {/* Meta info always accessible at bottom */}
