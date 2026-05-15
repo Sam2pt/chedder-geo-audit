@@ -18,19 +18,19 @@ import { AuditResult, Finding, ModuleResult, Recommendation } from "./types";
 
 // ── Palette ─────────────────────────────────────────────────────────
 const COLORS = {
-  ink: [29, 29, 31] as const, // #1d1d1f
+  ink: [29, 29, 31] as const, // #1f1e1d
   subtle: [107, 107, 112] as const, // #6b6b70
   faint: [160, 160, 166] as const, // #a0a0a6
   hairline: [230, 230, 233] as const, // #e6e6e9
   cream: [250, 250, 247] as const, // #fafaf7 (page background accents)
-  cheese: [255, 184, 0] as const, // #FFB800
-  cheeseDeep: [200, 135, 0] as const, // #C88700
-  pass: [52, 199, 89] as const, // #34c759
-  warn: [255, 159, 10] as const, // #ff9f0a
-  fail: [255, 69, 58] as const, // #ff453a
-  priorityHigh: [215, 0, 21] as const, // #d70015
-  priorityMed: [199, 124, 2] as const, // #c77c02
-  priorityLow: [0, 113, 227] as const, // #0071e3
+  cheese: [255, 184, 0] as const, // #d8a23e
+  cheeseDeep: [200, 135, 0] as const, // #9a6d24
+  pass: [52, 199, 89] as const, // #7a8b6b
+  warn: [255, 159, 10] as const, // #c99b66
+  fail: [255, 69, 58] as const, // #b5443b
+  priorityHigh: [215, 0, 21] as const, // #8c3128
+  priorityMed: [199, 124, 2] as const, // #8b6738
+  priorityLow: [0, 113, 227] as const, // #6f8aab
 };
 
 const PAGE = {

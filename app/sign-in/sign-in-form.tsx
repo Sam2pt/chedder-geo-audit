@@ -57,7 +57,7 @@ export function SignInForm() {
             </p>
             <a
               href={devLink}
-              className="text-[12px] font-mono text-[#0071e3] break-all hover:underline"
+              className="text-[12px] font-mono text-[#6f8aab] break-all hover:underline"
             >
               {devLink}
             </a>
@@ -81,11 +81,11 @@ export function SignInForm() {
           required
           autoFocus
           autoComplete="email"
-          className="w-full h-11 px-3 rounded-lg bg-white border border-foreground/[0.12] text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]/40 transition-colors"
+          className="w-full h-11 px-3 rounded-lg bg-white border border-foreground/[0.12] text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-[#6f8aab]/30 focus:border-[#6f8aab]/40 transition-colors"
         />
       </label>
       {error && (
-        <div className="text-[12.5px] text-[#d70015] bg-[#ff453a]/[0.06] border border-[#ff453a]/[0.15] rounded-lg px-3 py-2 leading-snug">
+        <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug">
           {error}
         </div>
       )}

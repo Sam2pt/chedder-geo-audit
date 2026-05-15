@@ -63,7 +63,7 @@ export function CodeSnippet({ code, language = "html", target }: Props) {
           onClick={onCopy}
           className={`shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-semibold transition-all ${
             copied
-              ? "bg-[#34c759]/20 text-[#34c759]"
+              ? "bg-[#7a8b6b]/20 text-[#7a8b6b]"
               : "bg-white/5 text-white/80 hover:bg-white/10"
           }`}
           aria-label="Copy code"

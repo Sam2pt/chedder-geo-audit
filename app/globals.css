@@ -49,38 +49,60 @@
 }
 
 :root {
-  --background: #fafafa;
-  --foreground: #1d1d1f;
+  /* 2pt-light palette. Warm cream + charcoal + restrained naturals.
+     Replaces the saturated Apple-style semaphore palette (bright blue,
+     iOS green/amber/red) which read as frantic. The new tokens are
+     warmer, less saturated, and lean on coral as the single accent. */
+  --background: #faf9f5;          /* warm cream, Anthropic-style */
+  --foreground: #1f1e1d;          /* warm charcoal */
   --card: #ffffff;
-  --card-foreground: #1d1d1f;
+  --card-foreground: #1f1e1d;
   --popover: #ffffff;
-  --popover-foreground: #1d1d1f;
-  --primary: #1d1d1f;
+  --popover-foreground: #1f1e1d;
+  --primary: #1f1e1d;
   --primary-foreground: #ffffff;
-  --secondary: #f5f5f7;
-  --secondary-foreground: #1d1d1f;
-  --muted: #f5f5f7;
-  --muted-foreground: #86868b;
-  --accent: #f5f5f7;
-  --accent-foreground: #1d1d1f;
-  --destructive: #ff3b30;
-  --border: #e8e8ed;
-  --input: #e8e8ed;
-  --ring: #0071e3;
-  --chart-1: #0071e3;
-  --chart-2: #34c759;
-  --chart-3: #ff9f0a;
-  --chart-4: #af52de;
-  --chart-5: #ff453a;
+  --secondary: #f3efe5;            /* slightly darker cream */
+  --secondary-foreground: #1f1e1d;
+  --muted: #f3efe5;
+  --muted-foreground: #6b675e;     /* warm gray */
+  --accent: #f0ebe0;
+  --accent-foreground: #1f1e1d;
+  --destructive: #b5443b;          /* terracotta, replaces bright red */
+  --border: #e8e2d5;               /* warm cream-border */
+  --input: #e8e2d5;
+  --ring: #d97757;                  /* coral, the signature accent */
+  --chart-1: #6f8aab;               /* slate-blue */
+  --chart-2: #7a8b6b;               /* sage */
+  --chart-3: #c99b66;               /* warm amber */
+  --chart-4: #9a7aa0;               /* muted plum */
+  --chart-5: #b5443b;               /* terracotta */
   --radius: 0.875rem;
-  --sidebar: #fafafa;
-  --sidebar-foreground: #1d1d1f;
-  --sidebar-primary: #0071e3;
+  --sidebar: #faf9f5;
+  --sidebar-foreground: #1f1e1d;
+  --sidebar-primary: #d97757;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f5f5f7;
-  --sidebar-accent-foreground: #1d1d1f;
-  --sidebar-border: #e8e8ed;
-  --sidebar-ring: #0071e3;
+  --sidebar-accent: #f0ebe0;
+  --sidebar-accent-foreground: #1f1e1d;
+  --sidebar-border: #e8e2d5;
+  --sidebar-ring: #d97757;
+
+  /* Named brand tokens — used directly by inline styles in dashboard
+     where Tailwind utilities would be unwieldy. Keep these in sync if
+     you change the chart vars above. */
+  --brand-coral: #d97757;
+  --brand-coral-dark: #b85f44;
+  --brand-sage: #7a8b6b;
+  --brand-sage-dark: #52614a;
+  --brand-amber: #c99b66;
+  --brand-amber-dark: #8b6738;
+  --brand-terracotta: #b5443b;
+  --brand-terracotta-dark: #8c3128;
+  --brand-slate: #6f8aab;
+  --brand-slate-dark: #4d6478;
+  --brand-plum: #9a7aa0;
+  --brand-plum-dark: #7a5c82;
+  --brand-gold: #d8a23e;            /* toned cheese */
+  --brand-gold-dark: #b58632;
 }
 
 @layer base {
@@ -106,9 +128,55 @@ html {
 }
 
 .hero-gradient {
-  background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 25%, #f5f5f7 50%, #e8e8ed 75%, #f5f5f7 100%);
+  /* Warm cream gradient. Slow, almost imperceptible motion. */
+  background: linear-gradient(135deg, #faf9f5 0%, #f3efe5 25%, #faf9f5 50%, #f0ebe0 75%, #faf9f5 100%);
   background-size: 400% 400%;
-  animation: gradient-shift 8s ease infinite;
+  animation: gradient-shift 14s ease infinite;
+}
+
+/* ── Anthropic-style soft motion ─────────────────────────────────── */
+/* Used for content entering the viewport. The defaults are deliberately
+   slow (500-700ms) and tiny (8-12px translate). Loud motion reads as
+   frantic — restraint reads as expensive. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-up-sm {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.anim-fade-in   { animation: fade-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-slide-up  { animation: slide-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-slide-up-sm { animation: slide-up-sm 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Stagger helpers — apply with .anim-slide-up plus one of these. */
+.delay-50  { animation-delay: 50ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* Subtle shimmer for loading skeletons. */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(31, 30, 29, 0.04) 0%,
+    rgba(31, 30, 29, 0.08) 50%,
+    rgba(31, 30, 29, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.2s ease-in-out infinite;
 }
 
 /* Score bar animation */

@@ -81,13 +81,12 @@ export function LeadGate({
       <div className="relative w-full max-w-[440px] rounded-[22px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18)] p-7 sm:p-8 space-y-5">
         {/* Cheese wheel accent */}
         <div className="flex items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.12)]">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(31,30,29,0.12)]">
             <svg viewBox="0 0 100 100" className="w-8 h-8">
-              <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.15" />
-              <circle cx="34" cy="37" r="6" fill="#C88700" />
-              <circle cx="64" cy="33" r="4" fill="#C88700" />
-              <circle cx="58" cy="62" r="8" fill="#C88700" />
-              <circle cx="32" cy="67" r="4" fill="#C88700" />
+              <circle cx="34" cy="37" r="6" fill="#1f1e1d" opacity="0.85" />
+              <circle cx="64" cy="33" r="4" fill="#1f1e1d" opacity="0.85" />
+              <circle cx="58" cy="62" r="8" fill="#1f1e1d" opacity="0.85" />
+              <circle cx="32" cy="67" r="4" fill="#1f1e1d" opacity="0.85" />
             </svg>
           </div>
         </div>
@@ -137,7 +136,7 @@ export function LeadGate({
           />
 
           {error && (
-            <div className="text-[12.5px] text-[#d70015] bg-[#ff453a]/[0.06] border border-[#ff453a]/[0.15] rounded-lg px-3 py-2 leading-snug">
+            <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug">
               {error}
             </div>
           )}
@@ -201,7 +200,7 @@ function Field({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
-        className="w-full h-10 px-3 rounded-lg bg-foreground/[0.035] border border-foreground/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:border-[#0071e3]/40 transition-colors"
+        className="w-full h-10 px-3 rounded-lg bg-foreground/[0.035] border border-foreground/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-[#6f8aab]/30 focus:border-[#6f8aab]/40 transition-colors"
       />
     </label>
   );

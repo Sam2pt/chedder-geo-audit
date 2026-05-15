@@ -25,13 +25,13 @@ interface RecentAuditEntry {
 /* ── Module color palette ────────────────────────────────────────── */
 
 const MODULE_COLORS: Record<string, { accent: string; light: string; dark: string }> = {
-  schema:    { accent: "#6366f1", light: "rgba(99,102,241,0.08)",  dark: "#4f46e5" },
-  meta:      { accent: "#0ea5e9", light: "rgba(14,165,233,0.08)",  dark: "#0284c7" },
-  content:   { accent: "#8b5cf6", light: "rgba(139,92,246,0.08)",  dark: "#7c3aed" },
-  technical: { accent: "#f59e0b", light: "rgba(245,158,11,0.08)",  dark: "#d97706" },
-  authority: { accent: "#10b981", light: "rgba(16,185,129,0.08)",  dark: "#059669" },
-  external:  { accent: "#ec4899", light: "rgba(236,72,153,0.08)",  dark: "#db2777" },
-  "ai-citations": { accent: "#14b8a6", light: "rgba(20,184,166,0.08)", dark: "#0d9488" },
+  schema:    { accent: "#6f7e94", light: "rgba(111,126,148,0.08)",  dark: "#54647a" },
+  meta:      { accent: "#6f8aab", light: "rgba(111,138,171,0.08)",  dark: "#4d6478" },
+  content:   { accent: "#9a7aa0", light: "rgba(154,122,160,0.08)",  dark: "#7a5c82" },
+  technical: { accent: "#c99b66", light: "rgba(201,155,102,0.08)",  dark: "#8b6738" },
+  authority: { accent: "#7a8b6b", light: "rgba(122,139,107,0.08)",  dark: "#52614a" },
+  external:  { accent: "#c2745f", light: "rgba(194,116,95,0.08)",  dark: "#a65b47" },
+  "ai-citations": { accent: "#7a8b6b", light: "rgba(122,139,107,0.08)", dark: "#52614a" },
 };
 
 function moduleColor(slug: string) {
@@ -41,9 +41,9 @@ function moduleColor(slug: string) {
 /* ── Helpers ──────────────────────────────────────────────────────── */
 
 function scoreColor(s: number) {
-  if (s >= 70) return { bg: "#34c759", bgLight: "rgba(52,199,89,0.08)", text: "#248a3d" };
-  if (s >= 40) return { bg: "#ff9f0a", bgLight: "rgba(255,159,10,0.08)", text: "#c77c02" };
-  return { bg: "#ff453a", bgLight: "rgba(255,69,58,0.08)", text: "#d70015" };
+  if (s >= 70) return { bg: "#7a8b6b", bgLight: "rgba(122,139,107,0.08)", text: "#52614a" };
+  if (s >= 40) return { bg: "#c99b66", bgLight: "rgba(201,155,102,0.08)", text: "#8b6738" };
+  return { bg: "#b5443b", bgLight: "rgba(181,68,59,0.08)", text: "#8c3128" };
 }
 
 /* ── Score Gauge ──────────────────────────────────────────────────── */
@@ -64,7 +64,7 @@ function ScoreGauge({
   const offset = arcLen - (score / 100) * arcLen;
 
   const isDark = variant === "dark";
-  const trackStroke = isDark ? "#ffffff" : "#1d1d1f";
+  const trackStroke = isDark ? "#ffffff" : "#1f1e1d";
   const trackOpacity = isDark ? 0.14 : 0.06;
   const numberColor = isDark ? "text-white" : "text-foreground";
   const subColor = isDark ? "text-white/60" : "text-muted-foreground";
@@ -107,21 +107,21 @@ function ScoreBar({ score, label, color }: { score: number; label: string; color
 function StatusIcon({ status }: { status: Finding["status"] }) {
   if (status === "pass")
     return (
-      <div className="w-[18px] h-[18px] rounded-full bg-[#34c759]/10 flex items-center justify-center shrink-0">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]">
+      <div className="w-[18px] h-[18px] rounded-full bg-[#7a8b6b]/10 flex items-center justify-center shrink-0">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-[#52614a]">
           <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
     );
   if (status === "warn")
     return (
-      <div className="w-[18px] h-[18px] rounded-full bg-[#ff9f0a]/10 flex items-center justify-center shrink-0">
-        <div className="w-[6px] h-[6px] rounded-full bg-[#c77c02]" />
+      <div className="w-[18px] h-[18px] rounded-full bg-[#c99b66]/10 flex items-center justify-center shrink-0">
+        <div className="w-[6px] h-[6px] rounded-full bg-[#8b6738]" />
       </div>
     );
   return (
-    <div className="w-[18px] h-[18px] rounded-full bg-[#ff453a]/10 flex items-center justify-center shrink-0">
-      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" className="text-[#d70015]">
+    <div className="w-[18px] h-[18px] rounded-full bg-[#b5443b]/10 flex items-center justify-center shrink-0">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]">
         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
       </svg>
     </div>
@@ -132,8 +132,8 @@ function StatusIcon({ status }: { status: Finding["status"] }) {
 
 function PriorityTag({ priority }: { priority: Recommendation["priority"] }) {
   const styles: Record<string, { bg: string; text: string }> = {
-    high: { bg: "bg-[#ff453a]/8", text: "text-[#d70015]" },
-    medium: { bg: "bg-[#ff9f0a]/8", text: "text-[#c77c02]" },
+    high: { bg: "bg-[#b5443b]/8", text: "text-[#8c3128]" },
+    medium: { bg: "bg-[#c99b66]/8", text: "text-[#8b6738]" },
     low: { bg: "bg-[#007aff]/8", text: "text-[#0055b3]" },
   };
   const s = styles[priority];
@@ -158,7 +158,7 @@ function ModuleCard({
   const delta = benchmark && benchmark.count >= 5 ? module.score - benchmark.median : null;
 
   return (
-    <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-hidden">
+    <div className="rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] overflow-hidden">
       {/* Color accent bar */}
       <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${mc.accent}60, ${mc.accent})` }} />
 
@@ -181,7 +181,7 @@ function ModuleCard({
             {delta !== null && (
               <span
                 className="text-[10px] font-semibold tabular-nums mt-1"
-                style={{ color: delta >= 0 ? "#248a3d" : "#ff453a" }}
+                style={{ color: delta >= 0 ? "#52614a" : "#b5443b" }}
                 title={`Median: ${benchmark!.median} · based on ${benchmark!.count} audits`}
               >
                 {delta >= 0 ? "+" : ""}{delta} vs median
@@ -199,7 +199,7 @@ function ModuleCard({
 
       {open && (
         <div className="px-5 pb-5 space-y-5">
-          <div className="h-px bg-black/[0.04]" />
+          <div className="h-px bg-foreground/[0.04]" />
 
           <div className="relative h-[5px] rounded-full bg-foreground/[0.04] overflow-visible">
             <div className="h-full rounded-full animate-bar" style={{ width: `${module.score}%`, background: `linear-gradient(90deg, ${mc.accent}70, ${mc.accent})` }} />
@@ -251,7 +251,7 @@ function ModuleCard({
 function ModuleRecItem({ rec, color }: { rec: Recommendation; color: { accent: string; light: string } }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div className="p-3.5 rounded-xl border border-black/[0.03] space-y-1.5" style={{ background: color.light }}>
+    <div className="p-3.5 rounded-xl border border-foreground/[0.05] space-y-1.5" style={{ background: color.light }}>
       <div className="flex items-center gap-2">
         <PriorityTag priority={rec.priority} />
         <span className="text-[13px] font-semibold text-foreground tracking-[-0.01em]">{rec.title}</span>
@@ -369,12 +369,12 @@ function ChatPopup({ result }: { result: AuditResult }) {
   // Icons
   const cheeseIcon = (
     <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="45" fill="#FFB800"/>
-      <circle cx="50" cy="50" r="45" fill="none" stroke="#E5A500" strokeWidth="3"/>
-      <circle cx="35" cy="35" r="4" fill="#E5A500" opacity="0.6"/>
-      <circle cx="65" cy="40" r="3" fill="#E5A500" opacity="0.6"/>
-      <circle cx="55" cy="60" r="5" fill="#E5A500" opacity="0.6"/>
-      <circle cx="35" cy="65" r="3" fill="#E5A500" opacity="0.6"/>
+      <circle cx="50" cy="50" r="45" fill="#d8a23e"/>
+      <circle cx="50" cy="50" r="45" fill="none" stroke="#b58632" strokeWidth="3"/>
+      <circle cx="35" cy="35" r="4" fill="#b58632" opacity="0.6"/>
+      <circle cx="65" cy="40" r="3" fill="#b58632" opacity="0.6"/>
+      <circle cx="55" cy="60" r="5" fill="#b58632" opacity="0.6"/>
+      <circle cx="35" cy="65" r="3" fill="#b58632" opacity="0.6"/>
     </svg>
   );
 
@@ -384,7 +384,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 h-14 px-5 rounded-full bg-[#1d1d1f] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_10px_32px_rgba(0,0,0,0.22)] transition-all active:scale-[0.97] flex items-center gap-2.5 font-semibold text-[14px] tracking-[-0.01em]"
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 h-14 px-5 rounded-full bg-[#1f1e1d] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_10px_32px_rgba(0,0,0,0.22)] transition-all active:scale-[0.97] flex items-center gap-2.5 font-semibold text-[14px] tracking-[-0.01em]"
         >
           {cheeseIcon}
           Download full report
@@ -398,11 +398,11 @@ function ChatPopup({ result }: { result: AuditResult }) {
 
       {/* Popup */}
       {open && (
-        <div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:bottom-6 sm:right-6 z-50 sm:w-[380px] rounded-3xl bg-white shadow-[0_12px_48px_rgba(0,0,0,0.16)] border border-black/[0.06] overflow-hidden flex flex-col max-h-[calc(100vh-60px)]">
+        <div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:bottom-6 sm:right-6 z-50 sm:w-[380px] rounded-3xl bg-white shadow-[0_12px_48px_rgba(0,0,0,0.16)] border border-foreground/[0.07] overflow-hidden flex flex-col max-h-[calc(100vh-60px)]">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-black/[0.04]">
+          <div className="flex items-center justify-between p-4 border-b border-foreground/[0.06]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#FFB800]/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#d8a23e]/20 flex items-center justify-center">
                 {cheeseIcon}
               </div>
               <div>
@@ -412,7 +412,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
             </div>
             <button
               onClick={() => { setOpen(false); reset(); }}
-              className="w-8 h-8 rounded-lg hover:bg-black/[0.04] transition-colors flex items-center justify-center text-muted-foreground"
+              className="w-8 h-8 rounded-lg hover:bg-foreground/[0.04] transition-colors flex items-center justify-center text-muted-foreground"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -422,11 +422,11 @@ function ChatPopup({ result }: { result: AuditResult }) {
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {/* Greeting bubble */}
             <div className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-[#FFB800]/20 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-[#d8a23e]/20 flex items-center justify-center shrink-0 mt-0.5">
                 {cheeseIcon}
               </div>
               <div className="flex-1">
-                <div className="inline-block max-w-full p-3 rounded-2xl rounded-tl-md bg-[#f5f5f7] text-[13px] leading-[1.55] text-foreground">
+                <div className="inline-block max-w-full p-3 rounded-2xl rounded-tl-md bg-[var(--secondary)] text-[13px] leading-[1.55] text-foreground">
                   {mode === "intro" && <>Want the full audit for <strong>{result.domain}</strong> as a PDF? Pop your details in and I&apos;ll email it over.</>}
                   {mode === "done" && (
                     emailDelivered ? (
@@ -452,7 +452,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
                   placeholder="Your name"
                   required
                   autoFocus
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[var(--secondary)] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
                 />
                 <input
                   type="email"
@@ -460,19 +460,19 @@ function ChatPopup({ result }: { result: AuditResult }) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Work email"
                   required
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[var(--secondary)] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
                 />
                 <input
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Company (optional)"
-                  className="w-full h-10 px-3.5 rounded-xl bg-[#f5f5f7] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
+                  className="w-full h-10 px-3.5 rounded-xl bg-[var(--secondary)] border border-transparent text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 focus:bg-white transition-all"
                 />
                 <button
                   type="submit"
                   disabled={sending || !name.trim() || !email.trim()}
-                  className="w-full h-10 rounded-xl bg-[#1d1d1f] text-white text-[13px] font-semibold hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center gap-2 mt-1"
+                  className="w-full h-10 rounded-xl bg-[#1f1e1d] text-white text-[13px] font-semibold hover:bg-[#1f1e1d]/85 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center gap-2 mt-1"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                   {sending ? "Generating..." : "Send me the PDF"}
@@ -485,7 +485,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
               <div className="pl-9">
                 <button
                   onClick={() => { setOpen(false); reset(); }}
-                  className="w-full h-10 rounded-xl bg-[#1d1d1f] text-white text-[13px] font-semibold hover:bg-[#1d1d1f]/85 active:scale-[0.99] transition-all"
+                  className="w-full h-10 rounded-xl bg-[#1f1e1d] text-white text-[13px] font-semibold hover:bg-[#1f1e1d]/85 active:scale-[0.99] transition-all"
                 >
                   Close
                 </button>
@@ -498,7 +498,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
             href="https://twopointtechnologies.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-2.5 border-t border-black/[0.04] hover:bg-black/[0.01] transition-colors"
+            className="flex items-center justify-center gap-2 py-2.5 border-t border-foreground/[0.06] hover:bg-foreground/[0.02] transition-colors"
           >
             <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-4 rounded" />
             <span className="text-[11px] text-muted-foreground/50 font-medium">
@@ -540,10 +540,10 @@ function WhereResults({ result }: { result: AuditResult }) {
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Where you show up (GREEN) */}
-      <div className="p-5 rounded-2xl bg-[#34c759]/[0.04] border border-[#34c759]/[0.15] space-y-4">
+      <div className="p-5 rounded-2xl bg-[#7a8b6b]/[0.04] border border-[#7a8b6b]/[0.15] space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#34c759]/15 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#248a3d]">
+          <div className="w-8 h-8 rounded-lg bg-[#7a8b6b]/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#52614a]">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
           </div>
@@ -563,8 +563,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               ))}
               {wikiFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Wikipedia</span>
@@ -574,8 +574,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               )}
               {redditFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Reddit</span>
@@ -588,8 +588,8 @@ function WhereResults({ result }: { result: AuditResult }) {
                 .filter((f) => f.label.toLowerCase().includes("top reddit"))
                 .map((f, i) => (
                   <div key={`rt-${i}`} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                    <div className="w-[16px] h-[16px] rounded-full bg-[#34c759]/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#248a3d]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
                     <div className="text-[13px] leading-snug min-w-0 flex-1">
                       <div className="font-semibold text-foreground">Top Reddit thread</div>
@@ -603,10 +603,10 @@ function WhereResults({ result }: { result: AuditResult }) {
       </div>
 
       {/* Where you don't (RED) */}
-      <div className="p-5 rounded-2xl bg-[#ff453a]/[0.04] border border-[#ff453a]/[0.15] space-y-4">
+      <div className="p-5 rounded-2xl bg-[#b5443b]/[0.04] border border-[#b5443b]/[0.15] space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#ff453a]/15 flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[#d70015]">
+          <div className="w-8 h-8 rounded-lg bg-[#b5443b]/15 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[#8c3128]">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </div>
@@ -623,8 +623,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               ))}
               {wikiFinding?.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#ff453a]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#b5443b]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Wikipedia</span>
@@ -634,11 +634,11 @@ function WhereResults({ result }: { result: AuditResult }) {
               )}
               {redditFinding && redditFinding.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center shrink-0 mt-0.5 ${redditFinding.status === "fail" ? "bg-[#ff453a]/20" : "bg-[#ff9f0a]/20"}`}>
+                  <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center shrink-0 mt-0.5 ${redditFinding.status === "fail" ? "bg-[#b5443b]/20" : "bg-[#c99b66]/20"}`}>
                     {redditFinding.status === "fail" ? (
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#d70015]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
                     ) : (
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#c77c02]"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8b6738]"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
                     )}
                   </div>
                   <div className="text-[13px] leading-snug">
@@ -664,9 +664,9 @@ function AIQueryItem({
 }) {
   const [open, setOpen] = useState(false);
   const colors = {
-    strong: { bg: "bg-[#34c759]/20", text: "text-[#248a3d]", quoteAccent: "#34c759" },
-    weak: { bg: "bg-[#ff9f0a]/20", text: "text-[#c77c02]", quoteAccent: "#ff9f0a" },
-    missing: { bg: "bg-[#ff453a]/20", text: "text-[#d70015]", quoteAccent: "#ff453a" },
+    strong: { bg: "bg-[#7a8b6b]/20", text: "text-[#52614a]", quoteAccent: "#7a8b6b" },
+    weak: { bg: "bg-[#c99b66]/20", text: "text-[#8b6738]", quoteAccent: "#c99b66" },
+    missing: { bg: "bg-[#b5443b]/20", text: "text-[#8c3128]", quoteAccent: "#b5443b" },
   };
   const icons = {
     strong: <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>,
@@ -712,7 +712,7 @@ function AIQueryItem({
               <HighlightedText text={finding.excerpt!} highlight={finding.highlight} />
             </p>
             {finding.sourceUrl && (
-              <div className="mt-2 pt-2 border-t border-black/[0.04] flex items-center gap-1.5">
+              <div className="mt-2 pt-2 border-t border-foreground/[0.06] flex items-center gap-1.5">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground/60">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -842,9 +842,9 @@ function AICompetitors({
   }
 
   return (
-    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#ec4899] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6f7e94] to-[#c2745f] flex items-center justify-center shrink-0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
             <circle cx="12" cy="12" r="10"/>
             <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -883,18 +883,18 @@ function AICompetitors({
           We'll audit the top {topDomains.length} and show you the openings where they're ahead, where you lead, and specific fixes that close the gap.
         </p>
         {error && (
-          <div className="text-[12.5px] text-[#d70015] bg-[#ff453a]/[0.06] border border-[#ff453a]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
+          <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
             {error}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 pt-2 border-t border-black/[0.05]">
+      <div className="grid grid-cols-1 gap-2 pt-2 border-t border-foreground/[0.07]">
         <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-1">
           The {competitors.length} brands AI names most
         </div>
         {competitors.map((c, i) => (
-          <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5f7] border border-black/[0.03]">
+          <div key={c.domain} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--secondary)] border border-foreground/[0.05]">
             <div className="w-7 h-7 rounded-lg bg-foreground/[0.06] flex items-center justify-center shrink-0">
               <span className="text-[12px] font-bold text-muted-foreground tabular-nums">{i + 1}</span>
             </div>
@@ -930,25 +930,25 @@ const HORIZON_META: Record<
     label: "Now",
     timeframe: "This week",
     blurb: "Copy-paste fixes and tag edits. No roadmap required.",
-    accent: "#34c759",
-    light: "rgba(52,199,89,0.1)",
-    ring: "rgba(52,199,89,0.28)",
+    accent: "#7a8b6b",
+    light: "rgba(122,139,107,0.1)",
+    ring: "rgba(122,139,107,0.28)",
   },
   soon: {
     label: "Next",
     timeframe: "2 to 4 weeks",
     blurb: "A small content or dev cycle. Structured pages, contact blocks, robots rules.",
-    accent: "#ff9f0a",
-    light: "rgba(255,159,10,0.1)",
-    ring: "rgba(255,159,10,0.28)",
+    accent: "#c99b66",
+    light: "rgba(201,155,102,0.1)",
+    ring: "rgba(201,155,102,0.28)",
   },
   later: {
     label: "Later",
     timeframe: "This quarter",
     blurb: "Authority signals, external mentions, AI citation wins. Compounding work.",
-    accent: "#8b5cf6",
-    light: "rgba(139,92,246,0.1)",
-    ring: "rgba(139,92,246,0.28)",
+    accent: "#9a7aa0",
+    light: "rgba(154,122,160,0.1)",
+    ring: "rgba(154,122,160,0.28)",
   },
 };
 
@@ -1112,7 +1112,7 @@ function ActionItem({
   const hasSnippet = !!item.rec.fixSnippet;
 
   return (
-    <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+    <div className="rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
       <div className="flex items-start gap-4 p-4">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -1404,22 +1404,22 @@ function LandGrabInsights({
         title="Take land"
         subtitle="Places where your competitors are already winning and you aren't yet. Biggest gaps first."
         items={take}
-        accent="#ec4899"
-        bg="rgba(236,72,153,0.06)"
+        accent="#c2745f"
+        bg="rgba(194,116,95,0.06)"
       />
       <Section
         title="Quick wins"
         subtitle="Specific fixes your competitors have in place that you don't. Ship these first."
         items={quickwin}
-        accent="#0ea5e9"
-        bg="rgba(14,165,233,0.06)"
+        accent="#6f8aab"
+        bg="rgba(111,138,171,0.06)"
       />
       <Section
         title="You lead"
         subtitle="Your strongholds. Defend these while you chase the land grabs."
         items={lead}
-        accent="#34c759"
-        bg="rgba(52,199,89,0.06)"
+        accent="#7a8b6b"
+        bg="rgba(122,139,107,0.06)"
       />
     </section>
   );
@@ -1449,7 +1449,7 @@ function CompetitorComparison({
       </div>
 
       {/* Overall score comparison */}
-      <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="p-5 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
           Overall GEO Score
         </div>
@@ -1471,7 +1471,7 @@ function CompetitorComparison({
                       </span>
                     )}
                     {isWinner && !isPrimary && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#34c759]/10 text-[#248a3d]">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7a8b6b]/10 text-[#52614a]">
                         Leader
                       </span>
                     )}
@@ -1493,7 +1493,7 @@ function CompetitorComparison({
       </div>
 
       {/* Per-module comparison */}
-      <div className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="p-5 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/70">
           Category Breakdown
         </div>
@@ -1605,8 +1605,8 @@ function RecentAuditsMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] w-[340px] max-w-[92vw] rounded-xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-black/[0.06] overflow-hidden animate-[fadeIn_160ms_ease-out]">
-          <div className="px-4 py-3 border-b border-black/[0.05] bg-foreground/[0.02]">
+        <div className="absolute right-0 top-[calc(100%+6px)] w-[340px] max-w-[92vw] rounded-xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-foreground/[0.07] overflow-hidden animate-[fadeIn_160ms_ease-out]">
+          <div className="px-4 py-3 border-b border-foreground/[0.07] bg-foreground/[0.02]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
               Your recent audits
             </div>
@@ -1691,13 +1691,12 @@ function AppChrome({
 
   const chedderLogo = (
     <div className="flex items-center gap-2">
-      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(0,0,0,0.12)]">
+      <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
         <svg viewBox="0 0 100 100" className="w-4 h-4">
-          <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.15"/>
-          <circle cx="34" cy="37" r="6" fill="#C88700"/>
-          <circle cx="64" cy="33" r="4" fill="#C88700"/>
-          <circle cx="58" cy="62" r="8" fill="#C88700"/>
-          <circle cx="32" cy="67" r="4" fill="#C88700"/>
+          <circle cx="34" cy="37" r="6" fill="#1f1e1d" opacity="0.85"/>
+          <circle cx="64" cy="33" r="4" fill="#1f1e1d" opacity="0.85"/>
+          <circle cx="58" cy="62" r="8" fill="#1f1e1d" opacity="0.85"/>
+          <circle cx="32" cy="67" r="4" fill="#1f1e1d" opacity="0.85"/>
         </svg>
       </div>
       <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">Chedder</span>
@@ -1747,11 +1746,11 @@ function AppChrome({
   const canShare = !!result.slug;
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.05]">
+    <header className="sticky top-0 z-30 bg-[var(--background)]/85 backdrop-blur-xl border-b border-foreground/[0.07]">
       <div className="w-[90%] mx-auto h-14 flex items-center justify-between gap-3">
         <div className="flex items-center gap-4 min-w-0">
           {chedderLogo}
-          <div className="hidden sm:block w-px h-5 bg-black/[0.08]" />
+          <div className="hidden sm:block w-px h-5 bg-foreground/[0.08]" />
           <div className="hidden sm:flex items-center gap-2 min-w-0">
             <span className="text-[13px] text-muted-foreground">Audit for</span>
             <span className="text-[13px] font-semibold text-foreground truncate">{result.domain}</span>
@@ -1771,7 +1770,7 @@ function AppChrome({
               onClick={onShare}
               className={`h-9 px-3 rounded-lg border text-[13px] font-semibold tracking-[-0.01em] flex items-center gap-1.5 transition-colors ${
                 shareCopied
-                  ? "bg-[#34c759]/10 border-[#34c759]/30 text-[#248a3d]"
+                  ? "bg-[#7a8b6b]/10 border-[#7a8b6b]/30 text-[#52614a]"
                   : "bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/[0.06] text-foreground"
               }`}
               title="Copy shareable URL"
@@ -1859,7 +1858,7 @@ function AuditHero({ result }: { result: AuditResult }) {
     <section className="mt-6 sm:mt-8">
       {/* Quiet audit meta: id + date, right-aligned. The old "REPORT · GEO
           AUDIT" label was technical jargon that didn't earn its space. */}
-      <div className="flex items-center justify-end gap-3 pb-3 mb-5 border-b border-black/[0.06] text-[11px] font-medium text-muted-foreground/60">
+      <div className="flex items-center justify-end gap-3 pb-3 mb-5 border-b border-foreground/[0.07] text-[11px] font-medium text-muted-foreground/60">
         <span className="tabular-nums">#{reportId}</span>
         <span className="text-muted-foreground/20">·</span>
         <span>{date}</span>
@@ -1868,7 +1867,7 @@ function AuditHero({ result }: { result: AuditResult }) {
       {/* Hero: favicon + title + score */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-10 items-start">
         <div className="flex items-start gap-4 sm:gap-5 min-w-0">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center shrink-0 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={faviconUrl}
@@ -1949,12 +1948,12 @@ function KPIStrip({ result }: { result: AuditResult }) {
   // "Top X%" phrasing feels stronger when score is good.
   const percentileTop = hasRank ? Math.max(1, 100 - percentile) : 0;
   const percentileColor = !hasRank
-    ? "#6366f1"
+    ? "#6f7e94"
     : percentileTop <= 25
-      ? "#34c759"
+      ? "#7a8b6b"
       : percentileTop <= 50
-        ? "#ff9f0a"
-        : "#ff453a";
+        ? "#c99b66"
+        : "#b5443b";
 
   const rankCard = hasRank
     ? {
@@ -1967,7 +1966,7 @@ function KPIStrip({ result }: { result: AuditResult }) {
         label: "Total Findings",
         value: String(result.modules.reduce((acc, m) => acc + m.findings.length, 0)),
         sublabel: "signals analyzed",
-        color: "#6366f1",
+        color: "#6f7e94",
       };
 
   const kpis: Array<{ label: string; value: string; sublabel: string; color: string }> = [
@@ -1975,13 +1974,13 @@ function KPIStrip({ result }: { result: AuditResult }) {
       label: "AI Mention Rate",
       value: aiTotal > 0 ? `${aiMentions}/${aiTotal}` : "·",
       sublabel: aiTotal > 0 ? "queries include you" : "no AI test run",
-      color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#34c759" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#ff9f0a" : "#ff453a",
+      color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#7a8b6b" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#c99b66" : "#b5443b",
     },
     {
       label: "High-priority Fixes",
       value: String(highPriority),
       sublabel: highPriority === 1 ? "urgent action" : "urgent actions",
-      color: highPriority === 0 ? "#34c759" : highPriority <= 2 ? "#ff9f0a" : "#ff453a",
+      color: highPriority === 0 ? "#7a8b6b" : highPriority <= 2 ? "#c99b66" : "#b5443b",
     },
     rankCard,
     {
@@ -1994,10 +1993,10 @@ function KPIStrip({ result }: { result: AuditResult }) {
       // visually disconnected from its siblings.
       color:
         aiCompetitorCount === 0
-          ? "#34c759"
+          ? "#7a8b6b"
           : aiCompetitorCount <= 2
-            ? "#ff9f0a"
-            : "#ff453a",
+            ? "#c99b66"
+            : "#b5443b",
     },
   ];
 
@@ -2006,7 +2005,7 @@ function KPIStrip({ result }: { result: AuditResult }) {
       {kpis.map((k) => (
         <div
           key={k.label}
-          className="relative p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden"
+          className="relative p-4 sm:p-5 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden"
         >
           <div
             className="absolute inset-x-0 top-0 h-[2px]"
@@ -2062,7 +2061,7 @@ function TabNav({
           read as part of the tab. User feedback: tabs needed to draw
           attention. */}
       <div
-        className="inline-flex items-center gap-0.5 p-1 rounded-2xl bg-foreground/[0.05] border border-black/[0.04] mx-1 overflow-x-auto scrollbar-none max-w-full"
+        className="inline-flex items-center gap-0.5 p-1 rounded-2xl bg-foreground/[0.05] border border-foreground/[0.06] mx-1 overflow-x-auto scrollbar-none max-w-full"
         role="tablist"
       >
         {tabs.map((t) => {
@@ -2155,8 +2154,8 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto max-w-[420px] mx-auto">
         <defs>
           <linearGradient id="radarFill" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#ec4899" stopOpacity="0.12" />
+            <stop offset="0%" stopColor="#6f7e94" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#c2745f" stopOpacity="0.12" />
           </linearGradient>
         </defs>
 
@@ -2168,7 +2167,7 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
             cy={cy}
             r={maxR * t}
             fill="none"
-            stroke="#1d1d1f"
+            stroke="#1f1e1d"
             strokeOpacity={i === rings.length - 1 ? 0.1 : 0.05}
             strokeDasharray={i === rings.length - 1 ? undefined : "2 3"}
           />
@@ -2182,13 +2181,13 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
             y1={cy}
             x2={p.ox}
             y2={p.oy}
-            stroke="#1d1d1f"
+            stroke="#1f1e1d"
             strokeOpacity="0.06"
           />
         ))}
 
         {/* data polygon */}
-        <polygon points={poly} fill="url(#radarFill)" stroke="#6366f1" strokeWidth="1.75" strokeLinejoin="round" />
+        <polygon points={poly} fill="url(#radarFill)" stroke="#6f7e94" strokeWidth="1.75" strokeLinejoin="round" />
 
         {/* score dots */}
         {points.map((p) => (
@@ -2294,10 +2293,10 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
   const channel = featured?.label.match(/(AI chats|AI search)/i)?.[0] || "";
   const featuredStatusColor =
     featured?.status === "pass"
-      ? "#34c759"
+      ? "#7a8b6b"
       : featured?.status === "warn"
-        ? "#ff9f0a"
-        : "#ff453a";
+        ? "#c99b66"
+        : "#b5443b";
 
   // Strip leading ellipsis/markdown noise from excerpts, trim length
   function cleanExcerpt(raw: string): string {
@@ -2323,7 +2322,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
       re.test(p) ? (
         <mark
           key={i}
-          className="bg-[#FFB800]/30 text-white font-semibold rounded px-0.5 py-px"
+          className="bg-[var(--brand-coral)]/35 text-white font-semibold rounded px-0.5 py-px"
           style={{ backgroundClip: "padding-box" }}
         >
           {p}
@@ -2335,14 +2334,14 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
   }
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white h-full flex flex-col">
+    <div className="p-5 sm:p-6 rounded-2xl bg-[#1f1e1d] text-white h-full flex flex-col relative overflow-hidden">
+      {/* subtle coral wash */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] via-transparent to-transparent pointer-events-none" />
       {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.15)]">
-          <svg viewBox="0 0 100 100" className="w-5 h-5">
-            <circle cx="34" cy="37" r="9" fill="#1d1d1f" />
-            <circle cx="64" cy="33" r="6" fill="#1d1d1f" />
-            <circle cx="58" cy="62" r="11" fill="#1d1d1f" />
+      <div className="relative flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-[var(--brand-coral)]/15 border border-[var(--brand-coral)]/30 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-[var(--brand-coral)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
           </svg>
         </div>
         <div>
@@ -2359,7 +2358,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
 
       {/* The featured AI quote */}
       {featured ? (
-        <div className="mt-5 flex-1 flex flex-col">
+        <div className="relative mt-5 flex-1 flex flex-col">
           {/* Question */}
           <div className="text-[11.5px] text-white/50 mb-2 flex items-center gap-2 flex-wrap">
             <span className="font-semibold uppercase tracking-[0.08em] text-white/45">
@@ -2415,7 +2414,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
           </div>
         </div>
       ) : (
-        <div className="mt-5 flex-1 flex items-center justify-center text-center">
+        <div className="relative mt-5 flex-1 flex items-center justify-center text-center">
           <p className="text-[13px] text-white/50 leading-snug max-w-[260px]">
             AI didn&apos;t return any quotable answers this run. Re-audit later to
             see what changes.
@@ -2424,9 +2423,9 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
       )}
 
       {/* Bottom stats — compact, smaller than before so the quote is the hero */}
-      <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
+      <div className="relative grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#34c759]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#7a8b6b]">
             {passes}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2434,7 +2433,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#ff9f0a]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#c99b66]">
             {warns}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2442,7 +2441,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#ff453a]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#b5443b]">
             {fails}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2513,7 +2512,7 @@ function OverviewTab({ result }: { result: AuditResult }) {
       )}
 
       {/* Radar + live AI test panel */}
-      <div className="lg:col-span-7 p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="lg:col-span-7 p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
         <div className="flex items-baseline justify-between mb-4">
           <div>
             <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Your signal shape</h3>
@@ -2645,7 +2644,7 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
   }
 
   return (
-    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
       <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
         <h3 className="text-[17px] font-semibold tracking-[-0.01em]">
           Where you sit in your category
@@ -2671,7 +2670,7 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
               key={row.domain + (row.isYou ? ":you" : "")}
               className={`relative flex items-center gap-3 p-3 rounded-xl transition-colors ${
                 row.isYou
-                  ? "bg-[#FFB800]/[0.08] border border-[#FFB800]/40"
+                  ? "bg-[#d8a23e]/[0.08] border border-[#d8a23e]/40"
                   : "bg-foreground/[0.02] border border-transparent"
               }`}
             >
@@ -2679,7 +2678,7 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
               <div
                 className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold tabular-nums ${
                   row.isYou
-                    ? "bg-[#1d1d1f] text-white"
+                    ? "bg-[#1f1e1d] text-white"
                     : "bg-foreground/[0.06] text-foreground/60"
                 }`}
               >
@@ -2700,7 +2699,7 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
                       {row.domain}
                     </span>
                     {row.isYou && (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#FFB800] flex-shrink-0">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#d8a23e] flex-shrink-0">
                         you
                       </span>
                     )}
@@ -2718,13 +2717,13 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
                     </span>
                   </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
+                <div className="h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
                       width: `${widthPct}%`,
                       background: row.isYou
-                        ? "linear-gradient(90deg, #FFB800, #E5A500)"
+                        ? "linear-gradient(90deg, #d8a23e, #b58632)"
                         : "linear-gradient(90deg, #8b8b90, #6b6b70)",
                       transition: "width 700ms cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
@@ -2768,7 +2767,7 @@ function DestinationsPanel({
     .filter((b): b is (typeof byKind)[number] => !!b && b.count > 0);
 
   return (
-    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
       <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
         <h3 className="text-[17px] font-semibold tracking-[-0.01em]">
           Where AI sends your customers
@@ -2782,7 +2781,7 @@ function DestinationsPanel({
       </p>
 
       {/* Stacked horizontal share bar */}
-      <div className="flex w-full h-3 rounded-full overflow-hidden bg-black/[0.04]">
+      <div className="flex w-full h-3 rounded-full overflow-hidden bg-foreground/[0.04]">
         {orderedBands.map((b) => (
           <div
             key={b.kind}
@@ -2818,7 +2817,7 @@ function DestinationsPanel({
 
       {/* Top destinations table */}
       {topDomains.length > 0 && (
-        <div className="mt-5 pt-4 border-t border-black/[0.05]">
+        <div className="mt-5 pt-4 border-t border-foreground/[0.07]">
           <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 mb-2">
             Top destinations AI links to
           </div>
@@ -2839,7 +2838,7 @@ function DestinationsPanel({
                     href={`https://${d.domain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-foreground/85 hover:text-[#0071e3] hover:underline truncate"
+                    className="font-mono text-foreground/85 hover:text-[#6f8aab] hover:underline truncate"
                   >
                     {d.domain}
                   </a>
@@ -2873,7 +2872,7 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
 
   const latestPrevious = history[0]; // most recent prior audit
   const delta = latestPrevious ? result.overallScore - latestPrevious.overallScore : 0;
-  const deltaColor = delta > 0 ? "#248a3d" : delta < 0 ? "#ff453a" : "#6e6e73";
+  const deltaColor = delta > 0 ? "#52614a" : delta < 0 ? "#b5443b" : "#6e6e73";
 
   // SVG sparkline
   const w = 560;
@@ -2902,7 +2901,7 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
   const moduleName = (slug: string) => result.modules.find((m) => m.slug === slug)?.name || slug;
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
       <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
         <div>
           <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Performance over time</h3>
@@ -2928,8 +2927,8 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
         <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[120px]">
           <defs>
             <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+              <stop offset="0%" stopColor="#6f7e94" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#6f7e94" stopOpacity="0" />
             </linearGradient>
           </defs>
           {/* 50-line */}
@@ -2943,15 +2942,15 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
             strokeDasharray="3,3"
           />
           <path d={areaPath} fill="url(#histArea)" />
-          <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={linePath} fill="none" stroke="#6f7e94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           {pts.map((p, i) => (
             <g key={i}>
               <circle
                 cx={p.x}
                 cy={p.y}
                 r={p.isCurrent ? 5 : 3.5}
-                fill={p.isCurrent ? "#6366f1" : "#fff"}
-                stroke="#6366f1"
+                fill={p.isCurrent ? "#6f7e94" : "#fff"}
+                stroke="#6f7e94"
                 strokeWidth={p.isCurrent ? 2 : 2}
               />
               <title>
@@ -2966,10 +2965,10 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
       {latestPrevious && biggestGain && biggestLoss && (biggestGain.delta !== 0 || biggestLoss.delta !== 0) && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {biggestGain.delta > 0 && (
-            <div className="p-3 rounded-xl bg-[#34c759]/[0.06] border border-[#34c759]/20">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#248a3d]">Biggest gain</div>
+            <div className="p-3 rounded-xl bg-[#7a8b6b]/[0.06] border border-[#7a8b6b]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52614a]">Biggest gain</div>
               <div className="mt-1 text-[14px] font-semibold leading-snug">
-                <span className="tabular-nums text-[#248a3d] mr-1.5">
+                <span className="tabular-nums text-[#52614a] mr-1.5">
                   +{biggestGain.delta}
                 </span>
                 <span className="text-foreground/80 font-medium">
@@ -2979,10 +2978,10 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
             </div>
           )}
           {biggestLoss.delta < 0 && (
-            <div className="p-3 rounded-xl bg-[#ff453a]/[0.06] border border-[#ff453a]/20">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#ff453a]">Regression</div>
+            <div className="p-3 rounded-xl bg-[#b5443b]/[0.06] border border-[#b5443b]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b5443b]">Regression</div>
               <div className="mt-1 text-[14px] font-semibold leading-snug">
-                <span className="tabular-nums text-[#ff453a] mr-1.5">
+                <span className="tabular-nums text-[#b5443b] mr-1.5">
                   {biggestLoss.delta}
                 </span>
                 <span className="text-foreground/80 font-medium">
@@ -3058,7 +3057,7 @@ function DeepDiveTab({ result }: { result: AuditResult }) {
           mods.reduce((sum, m) => sum + m.score, 0) / mods.length
         );
         const catColor =
-          avg >= 70 ? "#34c759" : avg >= 40 ? "#ff9f0a" : "#ff453a";
+          avg >= 70 ? "#7a8b6b" : avg >= 40 ? "#c99b66" : "#b5443b";
         return (
           <section key={cat.key}>
             <div className="flex items-baseline justify-between flex-wrap gap-2 mb-1">
@@ -3182,7 +3181,7 @@ export function AuditDashboard({
       <ChatPopup result={result} />
 
       {/* Footer */}
-      <footer className="text-center pb-10 pt-6 border-t border-black/[0.04]">
+      <footer className="text-center pb-10 pt-6 border-t border-foreground/[0.06]">
         <a
           href="https://twopointtechnologies.com"
           target="_blank"
@@ -3207,7 +3206,7 @@ function MetaInfo({ result }: { result: AuditResult }) {
     <section>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-3 py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors border-t border-black/[0.04]"
+        className="w-full flex items-center justify-between gap-3 py-3 text-[13px] text-muted-foreground hover:text-foreground transition-colors border-t border-foreground/[0.06]"
       >
         <span className="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-left min-w-0">
           <span className="font-medium">Audit details &amp; methodology</span>

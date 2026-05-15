@@ -14,9 +14,9 @@ export const size = {
 export const contentType = "image/png";
 
 function scoreColor(s: number) {
-  if (s >= 70) return { bg: "#34c759", text: "#248a3d", light: "#d4f4dd" };
-  if (s >= 40) return { bg: "#ff9f0a", text: "#c77c02", light: "#fff0d6" };
-  return { bg: "#ff453a", text: "#d70015", light: "#ffd9d6" };
+  if (s >= 70) return { bg: "#7a8b6b", text: "#52614a", light: "#d4f4dd" };
+  if (s >= 40) return { bg: "#c99b66", text: "#8b6738", light: "#fff0d6" };
+  return { bg: "#b5443b", text: "#8c3128", light: "#ffd9d6" };
 }
 
 function getGrade(score: number): string {
@@ -70,8 +70,8 @@ export default async function OpengraphImage({
               width: 52,
               height: 52,
               borderRadius: 26,
-              background: "#FFB800",
-              border: "3px solid #E5A500",
+              background: "#d8a23e",
+              border: "3px solid #b58632",
               marginRight: 14,
             }}
           />
@@ -80,7 +80,7 @@ export default async function OpengraphImage({
               display: "flex",
               fontSize: 32,
               fontWeight: 700,
-              color: "#1d1d1f",
+              color: "#1f1e1d",
             }}
           >
             Chedder
@@ -129,7 +129,7 @@ export default async function OpengraphImage({
                 display: "flex",
                 fontSize: 72,
                 fontWeight: 700,
-                color: "#1d1d1f",
+                color: "#1f1e1d",
                 lineHeight: 1.05,
               }}
             >
@@ -213,7 +213,7 @@ export default async function OpengraphImage({
           <div style={{ display: "flex" }}>
             Where does your brand show up when customers ask AI?
           </div>
-          <div style={{ display: "flex", fontWeight: 600, color: "#1d1d1f" }}>
+          <div style={{ display: "flex", fontWeight: 600, color: "#1f1e1d" }}>
             chedder.2pt.ai
           </div>
         </div>

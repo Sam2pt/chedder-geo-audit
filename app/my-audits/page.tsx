@@ -74,12 +74,12 @@ export default async function MyAuditsPage() {
             {audits.map((a) => {
               const accent =
                 a.overallScore >= 80
-                  ? "#34c759"
+                  ? "#7a8b6b"
                   : a.overallScore >= 60
-                    ? "#5ac8fa"
+                    ? "#6f8aab"
                     : a.overallScore >= 40
-                      ? "#ff9f0a"
-                      : "#ff453a";
+                      ? "#c99b66"
+                      : "#b5443b";
               return (
                 <Link
                   key={a.slug}
@@ -96,7 +96,7 @@ export default async function MyAuditsPage() {
                     {a.overallScore}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[16px] font-semibold tracking-[-0.01em] text-foreground truncate group-hover:text-[#0071e3] transition-colors">
+                    <div className="text-[16px] font-semibold tracking-[-0.01em] text-foreground truncate group-hover:text-[#6f8aab] transition-colors">
                       {a.domain}
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">

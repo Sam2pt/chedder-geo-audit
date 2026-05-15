@@ -295,11 +295,12 @@ export default function Home() {
 
   return (
     <main className="flex-1 relative overflow-hidden">
-      {/* Background blobs */}
+      {/* Background — single soft warm wash. Old version had three
+          colored blobs that read as busy on the new cream palette.
+          Single, near-invisible coral wash sets the tone without
+          competing with content. */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[#0071e3]/[0.04] blur-[100px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#34c759]/[0.04] blur-[100px]" />
-        <div className="absolute top-[10%] right-[-20%] w-[40%] h-[40%] rounded-full bg-[#af52de]/[0.03] blur-[100px]" />
+        <div className="absolute top-[-30%] left-1/2 -translate-x-1/2 w-[80%] h-[60%] rounded-full bg-[var(--brand-coral)]/[0.05] blur-[120px]" />
       </div>
 
       {/* Top nav with sign-in / my-audits affordance */}
@@ -307,18 +308,18 @@ export default function Home() {
 
       {/* ───── HERO ───── */}
       <section className="min-h-[90vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-12 sm:py-20">
-      <div className="w-full max-w-[620px] text-center space-y-10">
+      <div className="w-full max-w-[640px] text-center space-y-10">
         {/* Brand */}
-        <div className="space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.04] border border-foreground/[0.06] text-[13px] text-muted-foreground font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#34c759] animate-pulse" />
+        <div className="space-y-6">
+          <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 backdrop-blur-sm border border-foreground/[0.07] text-[12.5px] text-muted-foreground font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          <h1 className="text-[44px] sm:text-[62px] font-semibold tracking-[-0.035em] leading-[1.02] text-foreground">
+          <h1 className="anim-slide-up text-[46px] sm:text-[64px] font-semibold tracking-[-0.038em] leading-[1.02] text-foreground">
             When shoppers ask AI,<br/>
-            <span className="bg-gradient-to-r from-[#0071e3] via-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">does your brand come up?</span>
+            <span className="italic font-normal text-[var(--brand-coral-dark)]" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>does your brand come up?</span>
           </h1>
-          <p className="text-[18px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[520px] mx-auto tracking-[-0.01em]">
+          <p className="anim-slide-up delay-100 text-[17px] sm:text-[19px] leading-[1.55] text-muted-foreground font-normal max-w-[540px] mx-auto tracking-[-0.005em]">
             ChatGPT and Perplexity now decide which DTC brand shoppers buy. Chedder tests if AI recommends <em>you</em>, where it sends them when it does, and exactly what to fix when it doesn&apos;t.
           </p>
         </div>
@@ -326,10 +327,11 @@ export default function Home() {
         {/* Input. On mobile the Analyze button stacks below the field
             so it never looks like a floating pill inside the search bar
             at narrow widths. From sm: up, button slots inside the bar. */}
-        <form onSubmit={handleAudit} className="space-y-4">
+        <form onSubmit={handleAudit} className="anim-slide-up delay-200 space-y-4">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#0071e3]/20 via-[#34c759]/20 to-[#af52de]/20 rounded-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
-            <div className="relative flex items-center rounded-2xl bg-white border border-black/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)] transition-shadow focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.04)]">
+            {/* Single coral halo on focus — replaces the tri-color rainbow. */}
+            <div className="absolute -inset-0.5 bg-[var(--brand-coral)]/15 rounded-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-md" />
+            <div className="relative flex items-center rounded-2xl bg-white border border-foreground/[0.08] shadow-[0_1px_3px_rgba(31,30,29,0.04),0_4px_16px_rgba(31,30,29,0.03)] transition-all duration-300 focus-within:border-[var(--brand-coral)]/40 focus-within:shadow-[0_2px_10px_rgba(217,119,87,0.08),0_10px_32px_rgba(31,30,29,0.05)]">
               <div className="pl-5 text-muted-foreground/50">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -349,7 +351,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading || !url.trim()}
-                  className="h-10 px-6 rounded-xl bg-[#1d1d1f] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.96] disabled:opacity-30 disabled:pointer-events-none"
+                  className="h-10 px-6 rounded-xl bg-[#1f1e1d] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.96] disabled:opacity-30 disabled:pointer-events-none"
                 >
                   Analyze
                 </button>
@@ -359,7 +361,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading || !url.trim()}
-              className="sm:hidden mt-2.5 w-full h-12 rounded-2xl bg-[#1d1d1f] text-white text-[15px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.99] disabled:opacity-30 disabled:pointer-events-none"
+              className="sm:hidden mt-2.5 w-full h-12 rounded-2xl bg-[#1f1e1d] text-white text-[15px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.99] disabled:opacity-30 disabled:pointer-events-none"
             >
               Analyze
             </button>
@@ -402,7 +404,7 @@ export default function Home() {
                     value={c}
                     onChange={(e) => updateCompetitor(i, e.target.value)}
                     placeholder={`Competitor ${i + 1} URL...`}
-                    className="flex-1 h-11 px-4 rounded-xl bg-white border border-black/[0.08] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
+                    className="flex-1 h-11 px-4 rounded-xl bg-white border border-foreground/[0.09] text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/20 transition-all"
                     disabled={loading}
                   />
                   <button
@@ -430,22 +432,22 @@ export default function Home() {
           )}
 
           {error && (
-            <p className="text-[14px] text-[#ff3b30] font-medium">{error}</p>
+            <p className="text-[14px] text-[#b5443b] font-medium">{error}</p>
           )}
         </form>
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
           <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
             Built for DTC
           </div>
           <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
             First audit free
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
             Real shopper questions tested
           </div>
         </div>
@@ -465,10 +467,10 @@ export default function Home() {
       </section>
 
       {/* ───── WHY THIS MATTERS ───── */}
-      <section id="why" className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
+      <section id="why" className="px-6 py-16 sm:py-28 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-16">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0071e3]">The Shift</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Shift</div>
             <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
               Search is becoming conversation.<br/>
               Your brand needs a seat at that table.
@@ -480,34 +482,35 @@ export default function Home() {
 
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
-              { stat: "47%", label: "of Google searches now show AI Overviews", color: "#0071e3" },
-              { stat: "1 in 4", label: "DTC shoppers start product research with ChatGPT", color: "#8b5cf6" },
-              { stat: "0", label: "clicks needed for AI to pick a brand for them", color: "#ec4899" },
+              { stat: "47%", label: "of Google searches now show AI Overviews" },
+              { stat: "1 in 4", label: "DTC shoppers start product research with ChatGPT" },
+              { stat: "0", label: "clicks needed for AI to pick a brand for them" },
             ].map((s, i) => (
-              <div key={i} className="p-4 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="text-[26px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-none" style={{ color: s.color }}>
+              <div key={i} className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+                <div className="text-[30px] sm:text-[50px] font-normal tracking-[-0.035em] leading-none text-foreground" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
                   {s.stat}
                 </div>
-                <p className="text-[11.5px] sm:text-[14px] text-muted-foreground leading-[1.4] sm:leading-[1.5] mt-2 sm:mt-3">{s.label}</p>
+                <p className="text-[11.5px] sm:text-[13.5px] text-muted-foreground leading-[1.45] sm:leading-[1.55] mt-3 sm:mt-4">{s.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d30] text-white space-y-4">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/60">The problem</p>
-            <p className="text-[22px] sm:text-[26px] font-medium leading-[1.4] tracking-[-0.02em]">
+          <div className="anim-slide-up p-8 sm:p-12 rounded-3xl bg-[#1f1e1d] text-white space-y-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] to-transparent pointer-events-none" />
+            <p className="relative text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral)]">The problem</p>
+            <p className="relative text-[22px] sm:text-[28px] font-normal leading-[1.45] tracking-[-0.02em]" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
               If ChatGPT, Perplexity, or Google AI doesn&apos;t mention you when a customer asks,
-              <span className="text-white/50"> you&apos;ve lost the sale before you knew it happened.</span>
+              <span className="text-white/55"> you&apos;ve lost the sale before you knew it happened.</span>
             </p>
           </div>
         </div>
       </section>
 
       {/* ───── WHAT CHEDDER DOES ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#8b5cf6]">The Audit</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Audit</div>
             <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
               7 signals. One clear score.<br/>
               A real action plan.
@@ -520,51 +523,42 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               {
-                color: "#14b8a6",
                 title: "Real AI search tests",
                 desc: "We ask ChatGPT, Perplexity, and Brave Search real customer questions about your category and check whether your brand comes up, with exact verbatim excerpts.",
                 badge: "Killer feature",
               },
               {
-                color: "#ec4899",
                 title: "External brand signals",
                 desc: "Wikipedia, Reddit, and web presence. The sources AI models cross-reference when they answer.",
               },
               {
-                color: "#6366f1",
                 title: "Structured data audit",
                 desc: "Schema.org, JSON-LD, FAQ markup. The data that AI parses directly from your pages.",
               },
               {
-                color: "#f59e0b",
                 title: "AI crawler access",
                 desc: "GPTBot, ClaudeBot, Google-Extended. Are your pages even reachable by the bots that train these models?",
               },
               {
-                color: "#0ea5e9",
                 title: "Meta & content quality",
                 desc: "Title tags, descriptions, FAQs, headings, lists. The formats AI prefers to cite verbatim.",
               },
               {
-                color: "#10b981",
                 title: "Trust & authority signals",
                 desc: "E-E-A-T factors: authorship, contact info, social proof, legal pages. These are why AI trusts you as a source.",
               },
             ].map((f, i) => (
-              <div key={i} className="p-5 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-shadow">
-                <div className="flex items-start gap-3">
-                  <div className="w-1 self-stretch rounded-full mt-0.5" style={{ background: f.color }} />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{f.title}</h3>
-                      {f.badge && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: `${f.color}15`, color: f.color }}>
-                          {f.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-muted-foreground leading-[1.55]">{f.desc}</p>
+              <div key={i} className="anim-slide-up-sm p-5 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 40}ms` }}>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-[15.5px] font-semibold tracking-[-0.012em] text-foreground">{f.title}</h3>
+                    {f.badge && (
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)]">
+                        {f.badge}
+                      </span>
+                    )}
                   </div>
+                  <p className="text-[13px] text-muted-foreground leading-[1.6]">{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -573,10 +567,10 @@ export default function Home() {
       </section>
 
       {/* ───── HOW IT WORKS ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#34c759]">How It Works</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">How It Works</div>
             <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
               From URL to action plan in under a minute.
             </h2>
@@ -588,8 +582,8 @@ export default function Home() {
               { num: "2", title: "Chedder audits everything", desc: "Crawls your pages, runs real questions through ChatGPT, Perplexity, and Brave Search, and checks Wikipedia and Reddit, scoring every signal." },
               { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
             ].map((step, i) => (
-              <div key={i} className="relative p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#8b5cf6] text-white flex items-center justify-center text-[18px] font-bold mb-4">
+              <div key={i} className="relative p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                <div className="w-10 h-10 rounded-full bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)] flex items-center justify-center text-[15px] font-semibold mb-4 border border-[var(--brand-coral)]/20" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
                   {step.num}
                 </div>
                 <h3 className="text-[17px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
@@ -601,10 +595,10 @@ export default function Home() {
       </section>
 
       {/* ───── SOCIAL PROOF ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Built for DTC</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Built for DTC</div>
             <h2 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.03em] leading-[1.1]">
               For the brands shoppers ask AI about.
             </h2>
@@ -630,7 +624,7 @@ export default function Home() {
             ].map((category) => (
               <div
                 key={category}
-                className="px-3.5 py-1.5 rounded-full bg-white border border-black/[0.08] text-[13px] font-medium text-foreground/70"
+                className="px-3.5 py-1.5 rounded-full bg-white border border-foreground/[0.09] text-[13px] font-medium text-foreground/70"
               >
                 {category}
               </div>
@@ -642,47 +636,45 @@ export default function Home() {
               {
                 stat: "60",
                 label: "Typical first-audit score for DTC brands. Even ones with nine-figure ad budgets.",
-                color: "#ff9f0a",
                 prefix: "<",
               },
               {
                 stat: "1 in 2",
                 label: "DTC brands we audit are blocking GPTBot or ClaudeBot by accident.",
-                color: "#0071e3",
               },
               {
                 stat: "40",
                 label: "Signals scored per audit, including marketplace shadow analysis.",
-                color: "#34c759",
                 suffix: "+",
               },
             ].map((s, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+                className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div
-                  className="text-[24px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-none flex items-baseline gap-[1px] sm:gap-1"
-                  style={{ color: s.color }}
+                  className="text-[28px] sm:text-[48px] font-normal tracking-[-0.035em] leading-none flex items-baseline gap-[1px] sm:gap-1 text-foreground"
+                  style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}
                 >
                   {s.prefix}
                   {s.stat}
                   {s.suffix}
                 </div>
-                <p className="text-[11.5px] sm:text-[14px] text-muted-foreground leading-[1.4] sm:leading-[1.55] mt-2 sm:mt-3">
+                <p className="text-[11.5px] sm:text-[13.5px] text-muted-foreground leading-[1.45] sm:leading-[1.6] mt-3 sm:mt-4">
                   {s.label}
                 </p>
               </div>
             ))}
           </div>
 
-          <figure className="max-w-[720px] mx-auto p-8 sm:p-10 rounded-3xl bg-white border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
+          <figure className="max-w-[720px] mx-auto p-8 sm:p-10 rounded-3xl bg-white border border-foreground/[0.07] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
             <svg
               width="32"
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              className="text-[#FFB800]"
+              className="text-[#d8a23e]"
             >
               <path
                 d="M7 7h4v10H3V11c0-2.2 1.8-4 4-4zm10 0h4v10h-8V11c0-2.2 1.8-4 4-4z"
@@ -705,11 +697,11 @@ export default function Home() {
       </section>
 
       {/* ───── AGENCY CTA ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
+      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto">
-          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-[#6366f1]/[0.08] via-[#ec4899]/[0.06] to-[#14b8a6]/[0.08] border border-black/[0.06] space-y-6">
+          <div className="p-8 sm:p-12 rounded-3xl bg-[var(--brand-coral)]/[0.04] border border-[var(--brand-coral)]/[0.15] space-y-6">
             <div className="space-y-3">
-              <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#8b5cf6]">Need help fixing it?</div>
+              <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Need help fixing it?</div>
               <h2 className="text-[30px] sm:text-[38px] font-semibold tracking-[-0.03em] leading-[1.15] max-w-[680px]">
                 The audit is free. The implementation is where our GEO agency comes in.
               </h2>
@@ -722,7 +714,7 @@ export default function Home() {
                 href="https://twopointtechnologies.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-11 px-5 rounded-xl bg-[#1d1d1f] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#1d1d1f]/85 active:scale-[0.97]"
+                className="h-11 px-5 rounded-xl bg-[#1f1e1d] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.97]"
               >
                 Talk to our team
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -730,7 +722,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="h-11 px-5 rounded-xl bg-white border border-black/[0.08] text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-black/[0.02] active:scale-[0.97]"
+                className="h-11 px-5 rounded-xl bg-white border border-foreground/[0.09] text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-foreground/[0.03] active:scale-[0.97]"
               >
                 Run a free audit first
               </button>
@@ -740,7 +732,7 @@ export default function Home() {
       </section>
 
       {/* ───── FOOTER ───── */}
-      <footer className="px-6 py-10 border-t border-black/[0.04]">
+      <footer className="px-6 py-10 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <a
             href="https://twopointtechnologies.com"
@@ -788,11 +780,11 @@ function TopNav() {
   return (
     <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between">
       <a href="/" className="inline-flex items-center gap-2 group">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center">
+        <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
           <svg viewBox="0 0 100 100" className="w-4 h-4">
-            <circle cx="34" cy="37" r="8" fill="#C88700" />
-            <circle cx="64" cy="33" r="6" fill="#C88700" />
-            <circle cx="58" cy="62" r="10" fill="#C88700" />
+            <circle cx="34" cy="37" r="8" fill="#1f1e1d" opacity="0.85" />
+            <circle cx="64" cy="33" r="6" fill="#1f1e1d" opacity="0.85" />
+            <circle cx="58" cy="62" r="10" fill="#1f1e1d" opacity="0.85" />
           </svg>
         </div>
         <span className="text-[14px] font-semibold tracking-[-0.01em] text-foreground/80 group-hover:text-foreground transition-colors">Chedder</span>
@@ -811,7 +803,7 @@ function TopNav() {
         ) : (
           <a
             href="/sign-in"
-            className="h-9 px-3.5 rounded-lg bg-white border border-black/[0.08] text-[13px] font-medium text-foreground/80 hover:text-foreground hover:bg-black/[0.02] transition-colors inline-flex items-center"
+            className="h-9 px-3.5 rounded-lg bg-white border border-foreground/[0.09] text-[13px] font-medium text-foreground/80 hover:text-foreground hover:bg-foreground/[0.03] transition-colors inline-flex items-center"
           >
             Sign in
           </a>
@@ -822,10 +814,10 @@ function TopNav() {
 }
 
 function scoreAccent(score: number) {
-  if (score >= 80) return "#34c759";
-  if (score >= 60) return "#5ac8fa";
-  if (score >= 40) return "#ff9f0a";
-  return "#ff453a";
+  if (score >= 80) return "#7a8b6b";
+  if (score >= 60) return "#6f8aab";
+  if (score >= 40) return "#c99b66";
+  return "#b5443b";
 }
 
 // Rotating fun quips shown under the stage text while the audit runs.
@@ -938,22 +930,22 @@ function CheeseWheelLoader({
               now 76px every 5s — same visual identity, less attention) */}
           <div className="relative w-[76px] h-[76px]">
             <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "5s" }}>
-              <circle cx="50" cy="50" r="45" fill="#FFB800" />
-              <line x1="50" y1="50" x2="50" y2="5" stroke="#E5A500" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="88.9" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="50" y2="95" stroke="#E5A500" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="11.1" y2="72.5" stroke="#E5A500" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="11.1" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
-              <circle cx="35" cy="30" r="5" fill="#E5A500" opacity="0.6" />
-              <circle cx="65" cy="35" r="3.5" fill="#E5A500" opacity="0.6" />
-              <circle cx="55" cy="65" r="6" fill="#E5A500" opacity="0.6" />
-              <circle cx="30" cy="60" r="4" fill="#E5A500" opacity="0.6" />
-              <circle cx="70" cy="70" r="3" fill="#E5A500" opacity="0.6" />
-              <circle cx="42" cy="48" r="2.5" fill="#E5A500" opacity="0.6" />
-              <circle cx="75" cy="50" r="4.5" fill="#E5A500" opacity="0.6" />
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5A500" strokeWidth="3" />
-              <circle cx="50" cy="50" r="3" fill="#E5A500" />
+              <circle cx="50" cy="50" r="45" fill="#d8a23e" />
+              <line x1="50" y1="50" x2="50" y2="5" stroke="#b58632" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#b58632" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="88.9" y2="72.5" stroke="#b58632" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="50" y2="95" stroke="#b58632" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="11.1" y2="72.5" stroke="#b58632" strokeWidth="1.5" />
+              <line x1="50" y1="50" x2="11.1" y2="27.5" stroke="#b58632" strokeWidth="1.5" />
+              <circle cx="35" cy="30" r="5" fill="#b58632" opacity="0.6" />
+              <circle cx="65" cy="35" r="3.5" fill="#b58632" opacity="0.6" />
+              <circle cx="55" cy="65" r="6" fill="#b58632" opacity="0.6" />
+              <circle cx="30" cy="60" r="4" fill="#b58632" opacity="0.6" />
+              <circle cx="70" cy="70" r="3" fill="#b58632" opacity="0.6" />
+              <circle cx="42" cy="48" r="2.5" fill="#b58632" opacity="0.6" />
+              <circle cx="75" cy="50" r="4.5" fill="#b58632" opacity="0.6" />
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#b58632" strokeWidth="3" />
+              <circle cx="50" cy="50" r="3" fill="#b58632" />
             </svg>
           </div>
 
@@ -969,16 +961,19 @@ function CheeseWheelLoader({
 
         {/* Main indicator: time-based progress bar with elapsed/remaining */}
         <div className="space-y-2">
-          <div className="h-2.5 rounded-full bg-foreground/[0.06] overflow-hidden">
+          <div className="h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#FFB800] via-[#0071e3] to-[#8b5cf6]"
+              className="h-full rounded-full bg-[var(--brand-coral)] relative overflow-hidden"
               style={{
                 width: `${pct}%`,
-                transition: "width 700ms cubic-bezier(0.22, 1, 0.36, 1)",
+                transition: "width 800ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
-            />
+            >
+              {/* subtle inner highlight sheen */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            </div>
           </div>
-          <div className="flex items-center justify-between text-[11.5px] text-muted-foreground/80 tabular-nums">
+          <div className="flex items-center justify-between text-[11.5px] text-muted-foreground/80 tabular-nums tracking-[-0.005em]">
             <span>{Math.round(pct)}%</span>
             <span>{remainingLabel}</span>
           </div>
@@ -987,7 +982,7 @@ function CheeseWheelLoader({
         {/* Live module feed — quieter than before: no card chrome, just a
             slim list with a divider line above. Still useful because it
             shows real scores landing as analyzers complete. */}
-        <div className="border-t border-black/[0.06] pt-3">
+        <div className="border-t border-foreground/[0.07] pt-3">
           <ul className="space-y-2">
             {progress.length === 0 && (
               <li className="text-[12.5px] text-muted-foreground/60 italic text-center py-2">
@@ -995,7 +990,7 @@ function CheeseWheelLoader({
               </li>
             )}
             {progress.map((p) => {
-              const accent = p.score !== undefined ? scoreAccent(p.score) : "#6366f1";
+              const accent = p.score !== undefined ? scoreAccent(p.score) : "#6f7e94";
               return (
                 <li key={p.key} className="flex items-center justify-between gap-3 px-1">
                   <div className="flex items-center gap-2 min-w-0">

@@ -136,7 +136,7 @@ export async function notifyNewLead(lead: {
     ? `https://chedder.2pt.ai/a/${lead.sourceAuditSlug}`
     : null;
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1d1d1f;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1f1e1d;">
       <h2 style="margin: 0 0 16px; font-size: 18px;">🧀 New Chedder lead</h2>
       <table cellpadding="6" style="border-collapse: collapse;">
         <tr><td style="color:#666;">Name</td><td><strong>${escapeHtml(lead.name)}</strong></td></tr>
@@ -198,7 +198,7 @@ export async function notifyContactSubmission(input: {
     : null;
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1d1d1f;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1f1e1d;">
       <h2 style="margin: 0 0 16px; font-size: 18px;">🧀 New Chedder contact · ${escapeHtml(sourceLabel)}</h2>
       <table cellpadding="6" style="border-collapse: collapse;">
         <tr><td style="color:#666;">Name</td><td><strong>${escapeHtml(input.name)}</strong></td></tr>
@@ -253,8 +253,8 @@ export async function sendAuditPdf(input: {
   const greeting = input.name.trim().split(/\s+/)[0] || "there";
   const viewOnline = `https://chedder.2pt.ai/?url=${encodeURIComponent(input.domain)}`;
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1d1d1f; max-width: 520px; margin: 0 auto; padding: 24px;">
-      <div style="display: inline-block; background: linear-gradient(135deg, #FFB800, #E5A500); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1f1e1d; max-width: 520px; margin: 0 auto; padding: 24px;">
+      <div style="display: inline-block; background: linear-gradient(135deg, #d8a23e, #b58632); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
       <h2 style="margin: 0 0 12px; font-size: 22px; letter-spacing: -0.02em;">Your Chedder audit for ${escapeHtml(input.domain)}</h2>
       <p style="color: #5a5a60; margin: 0 0 20px;">
         Hey ${escapeHtml(greeting)}, here's the full PDF. Your score is <strong>${input.overallScore}/100</strong> (grade ${escapeHtml(input.grade)}).
@@ -262,7 +262,7 @@ export async function sendAuditPdf(input: {
       <p style="color: #5a5a60; margin: 0 0 24px;">
         The attached PDF has your action plan. If any of it would be faster with help, just reply to this email and we'll take a look.
       </p>
-      <a href="${viewOnline}" style="display: inline-block; background: #1d1d1f; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;">Re-run the audit</a>
+      <a href="${viewOnline}" style="display: inline-block; background: #1f1e1d; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;">Re-run the audit</a>
       <p style="color: #8b8b90; font-size: 12px; margin: 32px 0 0;">Sent from Chedder · chedder.2pt.ai</p>
     </div>
   `;
@@ -309,13 +309,13 @@ export async function sendMagicLink(input: {
     Math.round((input.expiresAt - Date.now()) / 60000)
   );
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1d1d1f; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <div style="display: inline-block; background: linear-gradient(135deg, #FFB800, #E5A500); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #1f1e1d; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <div style="display: inline-block; background: linear-gradient(135deg, #d8a23e, #b58632); width: 48px; height: 48px; border-radius: 12px; margin-bottom: 20px;"></div>
       <h2 style="margin: 0 0 12px; font-size: 22px; letter-spacing: -0.02em;">Sign in to Chedder</h2>
       <p style="color: #5a5a60; margin: 0 0 24px;">Click the button below to log in. This link expires in ${minutes} minutes and can only be used once.</p>
-      <a href="${input.link}" style="display: inline-block; background: #1d1d1f; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 14px;">Sign in to Chedder</a>
+      <a href="${input.link}" style="display: inline-block; background: #1f1e1d; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 14px;">Sign in to Chedder</a>
       <p style="color: #8b8b90; font-size: 12px; margin: 32px 0 0;">Didn't request this? You can ignore this email. Nobody gets signed in without clicking the button.</p>
-      <p style="color: #8b8b90; font-size: 12px; margin: 8px 0 0;">Or paste this link: <a href="${input.link}" style="color:#0071e3;">${escapeHtml(input.link)}</a></p>
+      <p style="color: #8b8b90; font-size: 12px; margin: 8px 0 0;">Or paste this link: <a href="${input.link}" style="color:#6f8aab;">${escapeHtml(input.link)}</a></p>
     </div>
   `;
   const text = `Sign in to Chedder\n\nClick the link below to log in (expires in ${minutes} minutes, one-time use):\n\n${input.link}\n\nDidn't request this? Ignore this email.`;

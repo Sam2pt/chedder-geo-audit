@@ -75,7 +75,7 @@ export default function TermsPage() {
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">Our data use</h2>
 
           <p>
-            What we collect and how we use it is covered in the <Link href="/privacy" className="text-[#0071e3] hover:underline">Privacy Policy</Link>. By using Chedder you agree to those terms as well.
+            What we collect and how we use it is covered in the <Link href="/privacy" className="text-[#6f8aab] hover:underline">Privacy Policy</Link>. By using Chedder you agree to those terms as well.
           </p>
 
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">Changes</h2>

@@ -31,13 +31,13 @@ export default async function SignInPage({ searchParams }: Props) {
             ← Back to Chedder
           </Link>
           <div className="flex justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFB800] to-[#E5A500] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.12)]">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d8a23e] to-[#b58632] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.12)]">
               <svg viewBox="0 0 100 100" className="w-8 h-8">
                 <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.15" />
-                <circle cx="34" cy="37" r="6" fill="#C88700" />
-                <circle cx="64" cy="33" r="4" fill="#C88700" />
-                <circle cx="58" cy="62" r="8" fill="#C88700" />
-                <circle cx="32" cy="67" r="4" fill="#C88700" />
+                <circle cx="34" cy="37" r="6" fill="#9a6d24" />
+                <circle cx="64" cy="33" r="4" fill="#9a6d24" />
+                <circle cx="58" cy="62" r="8" fill="#9a6d24" />
+                <circle cx="32" cy="67" r="4" fill="#9a6d24" />
               </svg>
             </div>
           </div>
@@ -51,7 +51,7 @@ export default async function SignInPage({ searchParams }: Props) {
         </div>
 
         {error === "expired" && (
-          <div className="rounded-xl bg-[#ff453a]/[0.08] border border-[#ff453a]/[0.2] px-4 py-3 text-[13px] text-[#d70015] leading-snug">
+          <div className="rounded-xl bg-[#b5443b]/[0.08] border border-[#b5443b]/[0.2] px-4 py-3 text-[13px] text-[#8c3128] leading-snug">
             That sign-in link already expired or was used. Pop your email in below and we&apos;ll send a fresh one.
           </div>
         )}

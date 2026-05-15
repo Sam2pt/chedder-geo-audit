@@ -274,7 +274,7 @@ export default async function AdminPage({ searchParams }: Props) {
                         {l.sourceAuditSlug ? (
                           <Link
                             href={`/a/${l.sourceAuditSlug}`}
-                            className="hover:underline text-[#0071e3]"
+                            className="hover:underline text-[#6f8aab]"
                           >
                             {l.sourceAuditSlug}
                           </Link>
@@ -330,7 +330,7 @@ export default async function AdminPage({ searchParams }: Props) {
                       <Td mono>
                         <Link
                           href={`/a/${a.slug}`}
-                          className="hover:underline text-[#0071e3]"
+                          className="hover:underline text-[#6f8aab]"
                         >
                           {a.slug}
                         </Link>
@@ -420,35 +420,35 @@ function FunnelSection({ funnel }: { funnel: FunnelStats }) {
       sub: "Unique visitors",
       value: funnel.sessions,
       ofPrev: null as number | null,
-      accent: "#0071e3",
+      accent: "#6f8aab",
     },
     {
       label: "Audits started",
       sub: "Hit Analyze",
       value: funnel.auditsStarted,
       ofPrev: funnel.sessions,
-      accent: "#8b5cf6",
+      accent: "#9a7aa0",
     },
     {
       label: "Audits completed",
       sub: "Saw a result",
       value: funnel.auditsCompleted,
       ofPrev: funnel.auditsStarted,
-      accent: "#ec4899",
+      accent: "#c2745f",
     },
     {
       label: "Lead signups",
       sub: "Crossed the soft gate",
       value: funnel.leadSignups,
       ofPrev: funnel.auditsCompleted,
-      accent: "#34c759",
+      accent: "#7a8b6b",
     },
     {
       label: "PDF requests",
       sub: "Total downloads/emails",
       value: funnel.pdfRequested,
       ofPrev: null,
-      accent: "#FFB800",
+      accent: "#d8a23e",
     },
   ];
   const maxBar = Math.max(funnel.sessions, 1);
@@ -538,20 +538,20 @@ function DailySection({
           </p>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-          <LegendDot color="#0071e3" label="Sessions" />
-          <LegendDot color="#8b5cf6" label="Audits" />
-          <LegendDot color="#ec4899" label="Completed" />
-          <LegendDot color="#34c759" label="Signups" />
+          <LegendDot color="#6f8aab" label="Sessions" />
+          <LegendDot color="#9a7aa0" label="Audits" />
+          <LegendDot color="#c2745f" label="Completed" />
+          <LegendDot color="#7a8b6b" label="Signups" />
         </div>
       </div>
       <div className="rounded-2xl border border-black/[0.06] bg-white p-4 overflow-x-auto">
         <div className="flex items-end gap-1.5 h-[140px] min-w-[280px]">
           {daily.map((d) => {
             const cols: Array<{ v: number; color: string; label: string }> = [
-              { v: d.sessions, color: "#0071e3", label: "Sessions" },
-              { v: d.auditsStarted, color: "#8b5cf6", label: "Audits started" },
-              { v: d.auditsCompleted, color: "#ec4899", label: "Audits completed" },
-              { v: d.leadSignups, color: "#34c759", label: "Signups" },
+              { v: d.sessions, color: "#6f8aab", label: "Sessions" },
+              { v: d.auditsStarted, color: "#9a7aa0", label: "Audits started" },
+              { v: d.auditsCompleted, color: "#c2745f", label: "Audits completed" },
+              { v: d.leadSignups, color: "#7a8b6b", label: "Signups" },
             ];
             return (
               <div

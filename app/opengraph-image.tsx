@@ -36,16 +36,16 @@ export default async function OpengraphImage() {
               width: 68,
               height: 68,
               borderRadius: 18,
-              background: "linear-gradient(135deg, #FFB800, #E5A500)",
+              background: "linear-gradient(135deg, #d8a23e, #b58632)",
             }}
           >
             {/* Simplified cheese wedge */}
             <svg width="40" height="40" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="42" fill="#fff" fillOpacity="0.18" />
-              <circle cx="34" cy="37" r="6" fill="#C88700" />
-              <circle cx="64" cy="33" r="4" fill="#C88700" />
-              <circle cx="58" cy="62" r="8" fill="#C88700" />
-              <circle cx="32" cy="67" r="4" fill="#C88700" />
+              <circle cx="34" cy="37" r="6" fill="#9a6d24" />
+              <circle cx="64" cy="33" r="4" fill="#9a6d24" />
+              <circle cx="58" cy="62" r="8" fill="#9a6d24" />
+              <circle cx="32" cy="67" r="4" fill="#9a6d24" />
             </svg>
           </div>
           <div
@@ -53,7 +53,7 @@ export default async function OpengraphImage() {
               fontSize: 32,
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "#1d1d1f",
+              color: "#1f1e1d",
               display: "flex",
             }}
           >
@@ -93,14 +93,14 @@ export default async function OpengraphImage() {
               fontWeight: 700,
               letterSpacing: "-0.035em",
               lineHeight: 1.02,
-              color: "#1d1d1f",
+              color: "#1f1e1d",
             }}
           >
             <div style={{ display: "flex" }}>When shoppers ask AI,</div>
             <div
               style={{
                 display: "flex",
-                background: "linear-gradient(90deg, #0071e3, #8b5cf6, #ec4899)",
+                background: "linear-gradient(90deg, #6f8aab, #9a7aa0, #c2745f)",
                 backgroundClip: "text",
                 color: "transparent",
               }}
@@ -166,7 +166,7 @@ function Check() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path
         d="M20 6L9 17l-5-5"
-        stroke="#34c759"
+        stroke="#7a8b6b"
         strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -43,7 +43,7 @@ export default function IntroducingChedderPost() {
         <Body />
 
         <footer className="mt-16 pt-8 border-t border-black/[0.06] space-y-4">
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-[#FFB800]/10 via-[#0071e3]/5 to-[#8b5cf6]/10 border border-black/[0.06]">
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-[#d8a23e]/10 via-[#6f8aab]/5 to-[#9a7aa0]/10 border border-black/[0.06]">
             <p className="text-[15px] font-semibold text-foreground mb-2">
               Run a free audit
             </p>
@@ -77,7 +77,7 @@ export default function IntroducingChedderPost() {
               href="https://twopointtechnologies.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#0071e3] hover:underline"
+              className="text-[#6f8aab] hover:underline"
             >
               Two Point Technologies
             </a>
@@ -219,7 +219,7 @@ function Body() {
           href="https://twopointtechnologies.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#0071e3] hover:underline"
+          className="text-[#6f8aab] hover:underline"
         >
           Two Point Technologies
         </a>

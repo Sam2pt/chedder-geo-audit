@@ -64,7 +64,7 @@ export default function BlogIndex() {
                   <span>·</span>
                   <span>{p.readTime} read</span>
                 </div>
-                <h2 className="text-[22px] font-semibold tracking-[-0.015em] text-foreground leading-snug group-hover:text-[#0071e3] transition-colors">
+                <h2 className="text-[22px] font-semibold tracking-[-0.015em] text-foreground leading-snug group-hover:text-[#6f8aab] transition-colors">
                   {p.title}
                 </h2>
                 <p className="text-[14.5px] text-muted-foreground leading-[1.6] mt-2">
