@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { LeadGate } from "@/components/lead-gate";
@@ -853,6 +853,25 @@ const LOADING_QUIPS = [
   "If AI can't read you, it can't recommend you. We're checking that now.",
 ];
 
+/**
+ * Audit loading screen. Designed around the principle that the user's
+ * eye should rest on ONE indicator — the progress bar — and everything
+ * else (cheese wheel, stage text, quip, module feed) should sit quietly
+ * around it.
+ *
+ * Progress is the max of:
+ *   • time-based estimate against an expected 45s audit, slowed past 90%
+ *     so we don't claim "done" before the server actually finishes
+ *   • module-based actual: each of the 7 modules that comes back pushes
+ *     the bar forward (so fast brands feel fast)
+ *
+ * On a typical brand the bar reaches ~95% around 40s; the last 5% sits
+ * tight until the audit redirects. The user said it best: the main job
+ * is to show passing time and how long is left.
+ */
+const EXPECTED_AUDIT_MS = 45_000;
+const TOTAL_MODULES = 7;
+
 function CheeseWheelLoader({
   url,
   stage,
@@ -862,25 +881,57 @@ function CheeseWheelLoader({
   stage: string;
   progress: Array<{ key: string; label: string; status: "pending" | "done"; score?: number }>;
 }) {
+  const startedAt = useRef(Date.now());
+  const [elapsed, setElapsed] = useState(0);
   const [quipIdx, setQuipIdx] = useState(() =>
     Math.floor(Math.random() * LOADING_QUIPS.length)
   );
+
+  // Tick every 250ms — smooth enough for the bar, cheap enough for state
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsed(Date.now() - startedAt.current);
+    }, 250);
+    return () => clearInterval(id);
+  }, []);
+
+  // Slower quip rotation (was 3.5s, now 8s) — user feedback
   useEffect(() => {
     const id = setInterval(
       () => setQuipIdx((i) => (i + 1) % LOADING_QUIPS.length),
-      3500
+      8000
     );
     return () => clearInterval(id);
   }, []);
   const quip = LOADING_QUIPS[quipIdx];
 
+  // Time-based progress, slowing dramatically past 90% so we never hit
+  // 100% before the server says we're done
+  const rawTimePct = (elapsed / EXPECTED_AUDIT_MS) * 100;
+  const timePct =
+    rawTimePct < 90 ? rawTimePct : 90 + Math.min(8, (rawTimePct - 90) * 0.15);
+
+  // Module-based progress: each completed module is worth ~13% of the bar
+  const modulePct = Math.min(95, (progress.length / TOTAL_MODULES) * 95);
+
+  // Take whichever is further along. Cap at 99 — only the final
+  // "result is ready" event should push us to 100%.
+  const pct = Math.min(99, Math.max(timePct, modulePct));
+
+  const remainingMs = Math.max(0, EXPECTED_AUDIT_MS - elapsed);
+  const remainingLabel =
+    remainingMs > 1000
+      ? `About ${Math.ceil(remainingMs / 1000)}s remaining`
+      : "Almost there…";
+
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
-      <div className="max-w-[520px] w-full space-y-8">
-        <div className="flex flex-col items-center text-center space-y-5">
-          {/* Cheese wheel */}
-          <div className="relative w-[120px] h-[120px]">
-            <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "3s" }}>
+      <div className="max-w-[520px] w-full space-y-7">
+        <div className="flex flex-col items-center text-center space-y-4">
+          {/* Smaller, calmer cheese wheel (was 120px spinning every 3s,
+              now 76px every 5s — same visual identity, less attention) */}
+          <div className="relative w-[76px] h-[76px]">
+            <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "5s" }}>
               <circle cx="50" cy="50" r="45" fill="#FFB800" />
               <line x1="50" y1="50" x2="50" y2="5" stroke="#E5A500" strokeWidth="1.5" />
               <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#E5A500" strokeWidth="1.5" />
@@ -900,50 +951,56 @@ function CheeseWheelLoader({
             </svg>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">
               Analyzing {url.replace(/^https?:\/\//, "")}
             </h2>
-            <p className="text-[14px] text-muted-foreground min-h-[20px]">
+            <p className="text-[13.5px] text-muted-foreground min-h-[18px]">
               {stage}
-            </p>
-            {/* Cycling human quip. Key makes React remount so the fade
-                animation replays each time the quip changes. */}
-            <p
-              key={quipIdx}
-              className="text-[12.5px] text-muted-foreground/70 italic max-w-[440px] mx-auto leading-snug animate-[fadeIn_600ms_ease-out]"
-            >
-              {quip}
             </p>
           </div>
         </div>
 
-        {/* Live module feed */}
-        <div className="rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-black/[0.05] bg-foreground/[0.02]">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-              Live analysis
-            </div>
+        {/* Main indicator: time-based progress bar with elapsed/remaining */}
+        <div className="space-y-2">
+          <div className="h-2.5 rounded-full bg-foreground/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#FFB800] via-[#0071e3] to-[#8b5cf6]"
+              style={{
+                width: `${pct}%`,
+                transition: "width 700ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            />
           </div>
-          <ul className="divide-y divide-black/[0.04]">
+          <div className="flex items-center justify-between text-[11.5px] text-muted-foreground/80 tabular-nums">
+            <span>{Math.round(pct)}%</span>
+            <span>{remainingLabel}</span>
+          </div>
+        </div>
+
+        {/* Live module feed — quieter than before: no card chrome, just a
+            slim list with a divider line above. Still useful because it
+            shows real scores landing as analyzers complete. */}
+        <div className="border-t border-black/[0.06] pt-3">
+          <ul className="space-y-2">
             {progress.length === 0 && (
-              <li className="px-4 py-3 text-[13px] text-muted-foreground/60 italic">
-                Aging to perfection…
+              <li className="text-[12.5px] text-muted-foreground/60 italic text-center py-2">
+                Warming up the analyzers…
               </li>
             )}
             {progress.map((p) => {
               const accent = p.score !== undefined ? scoreAccent(p.score) : "#6366f1";
               return (
-                <li key={p.key} className="px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <li key={p.key} className="flex items-center justify-between gap-3 px-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
-                    <span className="text-[13.5px] font-medium text-foreground truncate">{p.label}</span>
+                    <span className="text-[13px] text-foreground/85 truncate">{p.label}</span>
                   </div>
                   {p.score !== undefined && (
                     <span
-                      className="text-[12px] font-bold tabular-nums px-1.5 py-0.5 rounded-md"
+                      className="text-[11.5px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md"
                       style={{ background: `${accent}15`, color: accent }}
                     >
                       {p.score}
@@ -954,6 +1011,15 @@ function CheeseWheelLoader({
             })}
           </ul>
         </div>
+
+        {/* Quip — slow rotation, smaller and dimmer so it reads as
+            ambient context rather than the main message. */}
+        <p
+          key={quipIdx}
+          className="text-[12px] text-muted-foreground/60 italic text-center max-w-[440px] mx-auto leading-snug animate-[fadeIn_900ms_ease-out]"
+        >
+          {quip}
+        </p>
       </div>
     </main>
   );
