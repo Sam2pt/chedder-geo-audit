@@ -14,34 +14,37 @@ export const metadata: Metadata = {
   // dev-style output even in production builds.
   metadataBase: new URL("https://chedder.2pt.ai"),
   title: {
-    default: "Chedder · AI Search Visibility",
+    default: "Chedder · The Complete GEO Audit for DTC Brands",
     template: "%s · Chedder",
   },
   description:
-    "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations. Free audit in under a minute.",
+    "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Chedder runs the complete GEO audit — score, action plan, and where AI sends customers when it mentions you.",
   keywords: [
+    "GEO audit",
+    "DTC GEO",
     "AI search visibility",
     "generative engine optimization",
-    "GEO",
-    "ChatGPT SEO",
-    "Perplexity",
-    "brand audit",
-    "CPG marketing",
+    "DTC SEO",
+    "Shopify SEO",
+    "ChatGPT optimization",
+    "Perplexity optimization",
+    "DTC brand audit",
+    "AI brand mentions",
   ],
   authors: [{ name: "Two Point Technologies", url: "https://twopointtechnologies.com" }],
   openGraph: {
     type: "website",
     siteName: "Chedder",
-    title: "Chedder · AI Search Visibility",
+    title: "Chedder · The Complete GEO Audit for DTC Brands",
     description:
-      "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
+      "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
     url: "https://chedder.2pt.ai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chedder · AI Search Visibility",
+    title: "Chedder · The Complete GEO Audit for DTC Brands",
     description:
-      "See how your brand shows up when customers ask ChatGPT, Perplexity, and Brave Search for recommendations.",
+      "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
   },
   // Favicon comes from app/icon.tsx (auto-detected by Next.js).
   // OG image comes from app/opengraph-image.tsx (auto-detected).

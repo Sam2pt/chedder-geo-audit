@@ -97,7 +97,7 @@ export function LeadGate({
             Want another slice?
           </h2>
           <p className="text-[14px] text-muted-foreground leading-snug">
-            Tell us a bit about yourself and we'll unlock unlimited audits, plus save your results so you can come back to them.
+            Tell us a bit about your brand and we&apos;ll unlock unlimited audits, plus save your results so you can come back to them.
           </p>
         </div>
 

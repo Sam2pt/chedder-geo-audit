@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 // iMessage, etc.). Rendered at build time and cached at the edge.
 
 export const runtime = "nodejs";
-export const alt = "Chedder · AI Search Visibility for consumer brands";
+export const alt = "Chedder · The complete GEO audit for DTC brands";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -72,7 +72,7 @@ export default async function OpengraphImage() {
               marginLeft: 4,
             }}
           >
-            Generative Engine Optimization
+            The complete GEO audit for DTC brands
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default async function OpengraphImage() {
               color: "#1d1d1f",
             }}
           >
-            <div style={{ display: "flex" }}>When AI answers,</div>
+            <div style={{ display: "flex" }}>When shoppers ask AI,</div>
             <div
               style={{
                 display: "flex",
@@ -105,7 +105,7 @@ export default async function OpengraphImage() {
                 color: "transparent",
               }}
             >
-              is your brand mentioned?
+              does your DTC brand come up?
             </div>
           </div>
           <div
@@ -117,8 +117,7 @@ export default async function OpengraphImage() {
               maxWidth: 900,
             }}
           >
-            Audit how your brand shows up in ChatGPT, Perplexity, and Brave
-            Search. Free. Under a minute.
+            The complete GEO audit for DTC brands. Free, in under a minute.
           </div>
         </div>
 
@@ -135,11 +134,11 @@ export default async function OpengraphImage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Check />
-            Real AI queries tested
+            Real shopper questions tested
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Check />
-            7 signals scored
+            Marketplace shadow analysis
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Check />

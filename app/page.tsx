@@ -312,14 +312,14 @@ export default function Home() {
         <div className="space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.04] border border-foreground/[0.06] text-[13px] text-muted-foreground font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-[#34c759] animate-pulse" />
-            Chedder · Generative Engine Optimization
+            The complete GEO audit for DTC brands
           </div>
           <h1 className="text-[44px] sm:text-[62px] font-semibold tracking-[-0.035em] leading-[1.02] text-foreground">
-            When AI answers,<br/>
-            <span className="bg-gradient-to-r from-[#0071e3] via-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">is your brand mentioned?</span>
+            When shoppers ask AI,<br/>
+            <span className="bg-gradient-to-r from-[#0071e3] via-[#8b5cf6] to-[#ec4899] bg-clip-text text-transparent">does your brand come up?</span>
           </h1>
           <p className="text-[18px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[520px] mx-auto tracking-[-0.01em]">
-            ChatGPT, Perplexity, and Google AI are rewriting how people find brands. Chedder tests whether AI recommends <em>you</em>, and tells you exactly how to fix it.
+            ChatGPT and Perplexity now decide which DTC brand shoppers buy. Chedder tests if AI recommends <em>you</em>, where it sends them when it does, and exactly what to fix when it doesn&apos;t.
           </p>
         </div>
 
@@ -340,7 +340,7 @@ export default function Home() {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Enter any website..."
+                placeholder="Your DTC brand's website..."
                 className="flex-1 min-w-0 h-[56px] px-3 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none tracking-[-0.01em]"
                 disabled={loading}
               />
@@ -438,15 +438,15 @@ export default function Home() {
         <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
-            First audit free
+            Built for DTC
           </div>
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
-            Results in under a minute
+            First audit free
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#34c759]"><path d="M20 6L9 17l-5-5"/></svg>
-            Real AI queries tested
+            Real shopper questions tested
           </div>
         </div>
 
@@ -481,8 +481,8 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[
               { stat: "47%", label: "of Google searches now show AI Overviews", color: "#0071e3" },
-              { stat: "1 in 4", label: "buyers start product research with ChatGPT", color: "#8b5cf6" },
-              { stat: "0", label: "clicks needed for AI to answer", color: "#ec4899" },
+              { stat: "1 in 4", label: "DTC shoppers start product research with ChatGPT", color: "#8b5cf6" },
+              { stat: "0", label: "clicks needed for AI to pick a brand for them", color: "#ec4899" },
             ].map((s, i) => (
               <div key={i} className="p-4 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                 <div className="text-[26px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-none" style={{ color: s.color }}>
@@ -604,12 +604,12 @@ export default function Home() {
       <section className="px-6 py-14 sm:py-24 border-t border-black/[0.04]">
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
-            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Built for CPG</div>
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#ec4899]">Built for DTC</div>
             <h2 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.03em] leading-[1.1]">
-              The categories shoppers ask AI about.
+              For the brands shoppers ask AI about.
             </h2>
             <p className="text-[16px] text-muted-foreground max-w-[580px] mx-auto leading-[1.6]">
-              Chedder is tuned for direct-to-consumer and traditional retail. If people ask ChatGPT which one to buy, Chedder works:
+              Chedder is tuned for direct-to-consumer. Not B2B SaaS, not enterprise tools, not agencies. Just the brands shoppers actually buy. Categories we&apos;re good at:
             </p>
           </div>
 
@@ -641,18 +641,18 @@ export default function Home() {
             {[
               {
                 stat: "60",
-                label: "Typical first-audit score. Even for brands with nine-figure ad budgets.",
+                label: "Typical first-audit score for DTC brands. Even ones with nine-figure ad budgets.",
                 color: "#ff9f0a",
                 prefix: "<",
               },
               {
                 stat: "1 in 2",
-                label: "Brands we audit are blocking an AI crawler without meaning to.",
+                label: "DTC brands we audit are blocking GPTBot or ClaudeBot by accident.",
                 color: "#0071e3",
               },
               {
                 stat: "40",
-                label: "Individual signals scored per audit, grouped into 7 modules.",
+                label: "Signals scored per audit, including marketplace shadow analysis.",
                 color: "#34c759",
                 suffix: "+",
               },
@@ -714,7 +714,7 @@ export default function Home() {
                 The audit is free. The implementation is where our GEO agency comes in.
               </h2>
               <p className="text-[16px] text-muted-foreground leading-[1.6] max-w-[620px]">
-                Two Point Technologies builds AI visibility strategies for brands that want to dominate in the ChatGPT/Perplexity/Google AI era. We take your audit and turn it into a 90-day plan, then execute it.
+                Two Point Technologies builds AI visibility strategies for DTC brands that want to own their category in the ChatGPT/Perplexity era. We take your Chedder audit and turn it into a 90-day plan, then execute it.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 items-center">
@@ -829,24 +829,28 @@ function scoreAccent(score: number) {
 }
 
 // Rotating fun quips shown under the stage text while the audit runs.
-// Mix of cheese puns and legitimate "did you know" stats so the wait feels
-// like someone's chatting with you, not a progress bar. Keep lines short
+// All DTC-flavored so the wait reinforces "this is built for me" rather
+// than reading like generic SEO trivia. Mix of stats, cheese puns, and
+// real observations from dogfooding ~200 DTC audits. Keep lines short
 // enough to read in about 3 seconds.
 const LOADING_QUIPS = [
-  "Did you know. About 1 in 4 shoppers now start product research with ChatGPT.",
+  "Did you know. About 1 in 4 DTC shoppers now start product research with ChatGPT.",
   "The top three AI picks get most of the clicks. The top pick gets most of those.",
+  "Half the DTC brands we audit are blocking GPTBot by accident. We're checking yours now.",
+  "AI reads your reviews before your hero image. Make sure they're there.",
+  "Your product page schema is doing more work than your TikTok.",
   "Fun cheese fact. Aging improves both flavor and AI visibility.",
   "AI tools love FAQs. Even more than a good cracker.",
-  "Good visibility compounds. Every honest mention adds up.",
-  "Brands get cited for being specific, not clever.",
-  "Most CPG brands score below 60 on their first audit. Solid room to grow.",
-  "Reddit is the secret sauce. AI weighs organic opinions heavily.",
+  "Most DTC brands score below 60 on their first audit. Solid room to grow.",
+  "Reddit is the secret sauce. AI weighs organic shopper opinions heavily.",
   "Wikipedia is gold. Even a short stub helps you show up.",
   "Curds up. Great AI visibility is built, not rushed.",
+  "Brands get cited for being specific, not clever.",
+  "If AI sends shoppers to Amazon instead of your site, you keep the order but lose the customer.",
+  "Founder story pages are GEO content. AI loves a 'why we built this.'",
   "Structured data is the wrapping paper AI unwraps first.",
   "Over 40 signals checked in every audit. Almost there.",
   "If AI can't read you, it can't recommend you. We're checking that now.",
-  "Great answers beat great ads in the AI era. We're grading your answers.",
 ];
 
 function CheeseWheelLoader({
