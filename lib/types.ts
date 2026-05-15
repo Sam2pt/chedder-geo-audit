@@ -38,6 +38,10 @@ export interface AICompetitor {
   domain: string;
   mentions: number; // how many of our queries surfaced this domain
   queries: string[]; // sample queries where it appeared
+  /** Distinct prices AI quoted alongside this competitor in its answers
+   *  (e.g. ["$1,299", "$1,099"]). Populated by the price extractor in
+   *  ai-citations. May be empty if AI didn't reference any prices. */
+  prices?: string[];
 }
 
 /**
@@ -108,6 +112,10 @@ export interface AuditResult {
   timestamp: string;
   competitors?: AuditResult[];
   aiCompetitors?: AICompetitor[];
+  /** Distinct prices AI quoted for the audited brand across all probe
+   *  queries (e.g. ["$1,299", "$1,395"]). Empty when AI didn't quote a
+   *  price for the brand. Powers the competitive-picture panel. */
+  brandPrices?: string[];
   /** Where AI sends people when it cites this brand. Populated when at
    *  least one AI engine ran and returned citation URLs. */
   destinations?: DestinationAnalysis;

@@ -182,6 +182,7 @@ export async function auditSingleUrl(
   let aiCompetitors: AICompetitor[] | undefined;
   let inferredCategory: string | null = null;
   let aiCitations: string[] = [];
+  let brandPrices: string[] | undefined;
   if (aiCitationsPromise) {
     const aiCitationsResult = await aiCitationsPromise;
     if (aiCitationsResult) {
@@ -191,6 +192,9 @@ export async function auditSingleUrl(
       }
       inferredCategory = aiCitationsResult.category;
       aiCitations = aiCitationsResult.citations || [];
+      if (aiCitationsResult.ownPrices && aiCitationsResult.ownPrices.length > 0) {
+        brandPrices = aiCitationsResult.ownPrices;
+      }
     }
   }
 
@@ -229,6 +233,7 @@ export async function auditSingleUrl(
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
+    brandPrices,
     destinations,
   };
 }

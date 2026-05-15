@@ -2048,7 +2048,7 @@ function TabNav({
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "overview", label: "Overview" },
     { key: "action", label: "Action plan", count: counts.action },
-    { key: "deep", label: "Deep dive", count: counts.deep },
+    { key: "deep", label: "Score breakdown", count: counts.deep },
     ...(showCompetitive ? [{ key: "competitive" as TabKey, label: "Competitive", count: counts.competitors }] : []),
   ];
 
@@ -2102,14 +2102,18 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
   // Short radar-chart labels. The full module names ("The labels AI
   // reads first", "What the web whispers about you") don't fit the
   // radial layout. Hand-tuned per slug so the axis reads naturally.
+  // Plain-language radar axis labels. A DTC founder shouldn't see
+  // "Schema" or "Meta" — those are technical terms the audit uses
+  // internally but never surfaces in the UI. Each axis gets a friendly
+  // 2-3 word version of what the underlying module measures.
   const radarLabel: Record<string, string> = {
-    schema: "Schema",
-    meta: "Meta",
+    schema: "Page tags",
+    meta: "Page summary",
     content: "Content",
     technical: "AI access",
     authority: "Trust",
-    external: "Web mentions",
-    "ai-citations": "AI visibility",
+    external: "Web presence",
+    "ai-citations": "AI mentions",
     products: "Products",
   };
 
@@ -2287,8 +2291,22 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
 function OverviewTab({ result }: { result: AuditResult }) {
   const hasHistory = (result.history?.length || 0) >= 1;
 
+  // The competitive picture leads the Overview when AI returned a roster
+  // of brands. This is the story DTC founders actually want — "where do
+  // I sit in AI's preference order, and at what price" — so it goes
+  // before everything else.
+  const showCompetitivePicture =
+    (result.aiCompetitors?.length || 0) > 0;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+      {/* HEADLINE: how AI ranks you against the category */}
+      {showCompetitivePicture && (
+        <div className="lg:col-span-12">
+          <CompetitivePicturePanel result={result} />
+        </div>
+      )}
+
       {/* Where show up / don't — full width */}
       <div className="lg:col-span-12">
         <WhereResults result={result} />
@@ -2313,8 +2331,8 @@ function OverviewTab({ result }: { result: AuditResult }) {
       <div className="lg:col-span-7 p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
         <div className="flex items-baseline justify-between mb-4">
           <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Category profile</h3>
-            <p className="text-[12px] text-muted-foreground">How you score across the {result.modules.length} GEO signals</p>
+            <h3 className="text-[17px] font-semibold tracking-[-0.01em]">Your signal shape</h3>
+            <p className="text-[12px] text-muted-foreground">How AI sees your brand across {result.modules.length} different signals</p>
           </div>
         </div>
         <RadarChart modules={result.modules} />
@@ -2338,6 +2356,203 @@ function OverviewTab({ result }: { result: AuditResult }) {
  * the breakdown, generated server-side based on whichever kind
  * dominates. Below: a stacked horizontal bar and a top-domains list.
  */
+/**
+ * Competitive picture — the headline panel of the audit Overview.
+ *
+ * Surfaces "where you sit vs the brands AI recommends in your category"
+ * as a single, immediately-readable view. Mention rate per brand,
+ * AI-quoted prices when we have them, your row highlighted.
+ *
+ * Designed for a DTC founder who has 30 seconds. The answer to
+ * "am I winning the AI category" should be visible without reading.
+ */
+function CompetitivePicturePanel({ result }: { result: AuditResult }) {
+  // Build the roster: you + every competitor AI named, ranked by how
+  // many distinct AI engines mentioned them. The audited brand counts
+  // its own AI-mention score (the ai-citations module).
+  const aiModule = result.modules.find((m) => m.slug === "ai-citations");
+  const aiCompetitors = result.aiCompetitors || [];
+  const brandPrices = result.brandPrices || [];
+
+  // Estimate audited brand's "mentions" from the ai-citations module.
+  // The module score is 0-100; we map to a 0-N pseudo-mention scale so
+  // the bar comparison reads sensibly against competitor mention counts.
+  // Not exact, but close enough for the visual ranking.
+  const maxCompetitorMentions = Math.max(
+    1,
+    ...aiCompetitors.map((c) => c.mentions)
+  );
+  const yourScore = aiModule?.score ?? 0;
+  // Heuristic: a brand with 80+ AI visibility ≈ as visible as the most-
+  // mentioned competitor; a brand with 0 is invisible. Linear scale.
+  const yourPseudoMentions = Math.max(
+    0,
+    Math.round((yourScore / 80) * maxCompetitorMentions)
+  );
+
+  type Row = {
+    isYou: boolean;
+    domain: string;
+    mentions: number;
+    prices: string[];
+    sampleQuery?: string;
+  };
+
+  const rows: Row[] = [
+    {
+      isYou: true,
+      domain: result.domain,
+      mentions: yourPseudoMentions,
+      prices: brandPrices,
+    },
+    ...aiCompetitors.map((c) => ({
+      isYou: false,
+      domain: c.domain,
+      mentions: c.mentions,
+      prices: c.prices || [],
+      sampleQuery: c.queries[0],
+    })),
+  ];
+  rows.sort((a, b) => b.mentions - a.mentions);
+
+  const yourRank = rows.findIndex((r) => r.isYou) + 1;
+  const maxMentions = Math.max(1, ...rows.map((r) => r.mentions));
+
+  // Build the headline sentence — the single most important thing the
+  // founder needs to read. Adapts to where they actually sit.
+  let headline: string;
+  if (yourRank === 1) {
+    headline = `You're the #1 brand AI mentions in this category. ${
+      rows.length - 1
+    } competitors trail you.`;
+  } else if (yourPseudoMentions === 0) {
+    headline = `AI doesn't mention you at all. It recommends ${
+      rows.length - 1
+    } other brand${rows.length - 1 === 1 ? "" : "s"} in your category instead.`;
+  } else {
+    const ahead = rows.slice(0, yourRank - 1).map((r) => r.domain);
+    headline = `AI ranks you #${yourRank} of ${rows.length} brands in your category. ${
+      ahead.length === 1 ? ahead[0] : `${ahead.slice(0, 2).join(", ")}${ahead.length > 2 ? ` and ${ahead.length - 2} other${ahead.length - 2 === 1 ? "" : "s"}` : ""}`
+    } come up first.`;
+  }
+
+  // Price range summary across all brands, when we have any prices
+  const allPrices: number[] = [];
+  for (const r of rows) {
+    for (const p of r.prices) {
+      const n = parseFloat(p.replace(/[^\d.]/g, ""));
+      if (!Number.isNaN(n)) allPrices.push(n);
+    }
+  }
+  let priceSummary: string | null = null;
+  if (allPrices.length >= 2) {
+    const min = Math.min(...allPrices);
+    const max = Math.max(...allPrices);
+    const symbol = (rows.find((r) => r.prices.length > 0)?.prices[0] || "$").charAt(0);
+    priceSummary = `AI quotes prices in this category from ${symbol}${formatPrice(min)} to ${symbol}${formatPrice(max)}.`;
+  }
+
+  return (
+    <section className="p-5 sm:p-6 rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div className="flex items-baseline justify-between mb-1 flex-wrap gap-2">
+        <h3 className="text-[17px] font-semibold tracking-[-0.01em]">
+          Where you sit in your category
+        </h3>
+        <span className="text-[11.5px] text-muted-foreground tabular-nums">
+          AI named {rows.length - 1} competitor{rows.length - 1 === 1 ? "" : "s"} alongside you
+        </span>
+      </div>
+      <p className="text-[13.5px] text-foreground/85 leading-[1.55] mb-1">
+        {headline}
+      </p>
+      {priceSummary && (
+        <p className="text-[12.5px] text-muted-foreground leading-[1.5] mb-4">
+          {priceSummary}
+        </p>
+      )}
+
+      <div className="mt-3 space-y-2">
+        {rows.map((row) => {
+          const widthPct = Math.max(2, (row.mentions / maxMentions) * 100);
+          return (
+            <div
+              key={row.domain + (row.isYou ? ":you" : "")}
+              className={`relative flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                row.isYou
+                  ? "bg-[#FFB800]/[0.08] border border-[#FFB800]/40"
+                  : "bg-foreground/[0.02] border border-transparent"
+              }`}
+            >
+              {/* Rank number */}
+              <div
+                className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold tabular-nums ${
+                  row.isYou
+                    ? "bg-[#1d1d1f] text-white"
+                    : "bg-foreground/[0.06] text-foreground/60"
+                }`}
+              >
+                {rows.indexOf(row) + 1}
+              </div>
+
+              {/* Brand + bar */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-3 mb-1.5">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span
+                      className={`font-mono truncate ${
+                        row.isYou
+                          ? "text-[14px] font-semibold text-foreground"
+                          : "text-[13px] text-foreground/85"
+                      }`}
+                    >
+                      {row.domain}
+                    </span>
+                    {row.isYou && (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#FFB800] flex-shrink-0">
+                        you
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {row.prices.length > 0 && (
+                      <span className="text-[12px] text-foreground/75 tabular-nums">
+                        {row.prices.slice(0, 2).join(" · ")}
+                      </span>
+                    )}
+                    <span className="text-[11.5px] text-muted-foreground tabular-nums">
+                      {row.mentions === 0
+                        ? "not mentioned"
+                        : `${row.mentions} mention${row.mentions === 1 ? "" : "s"}`}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${widthPct}%`,
+                      background: row.isYou
+                        ? "linear-gradient(90deg, #FFB800, #E5A500)"
+                        : "linear-gradient(90deg, #8b8b90, #6b6b70)",
+                      transition: "width 700ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function formatPrice(n: number): string {
+  if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (n % 1 === 0) return String(n);
+  return n.toFixed(2);
+}
+
 function DestinationsPanel({
   destinations,
 }: {

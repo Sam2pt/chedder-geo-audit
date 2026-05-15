@@ -367,11 +367,15 @@ async function runAudit(
   let aiCompetitors: AICompetitor[] | undefined;
   let inferredCategory: string | null = null;
   let aiCitations: string[] = [];
+  let brandPrices: string[] | undefined;
   if (aiResult) {
     emitModule(aiResult.module);
     if (aiResult.competitors.length > 0) aiCompetitors = aiResult.competitors;
     inferredCategory = aiResult.category;
     aiCitations = aiResult.citations || [];
+    if (aiResult.ownPrices && aiResult.ownPrices.length > 0) {
+      brandPrices = aiResult.ownPrices;
+    }
   }
 
   // ── Quality check ───────────────────────────────────────────────
@@ -480,6 +484,7 @@ async function runAudit(
     pagesAudited,
     timestamp: new Date().toISOString(),
     aiCompetitors,
+    brandPrices,
     destinations,
     slug,
     deviceId: identity.deviceId,
