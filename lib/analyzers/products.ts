@@ -81,12 +81,24 @@ function extractProducts(
     };
     collect(data);
 
+    // schema.org Product family. Modern DTC sites often use ProductGroup
+    // (a parent with variants — Casper, Allbirds, etc.) rather than the
+    // bare Product type. They share the same offers + aggregateRating
+    // shape so we treat them identically.
+    const PRODUCT_TYPES = new Set([
+      "Product",
+      "ProductGroup",
+      "ProductModel",
+      "IndividualProduct",
+      "SomeProducts",
+    ]);
+
     for (const node of nodes) {
       const obj = node as Record<string, unknown>;
       const type = obj["@type"];
       const isProduct =
-        type === "Product" ||
-        (Array.isArray(type) && type.includes("Product"));
+        (typeof type === "string" && PRODUCT_TYPES.has(type)) ||
+        (Array.isArray(type) && type.some((t) => typeof t === "string" && PRODUCT_TYPES.has(t)));
       if (!isProduct) continue;
 
       // Offers can be a single Offer or an AggregateOffer or an array
