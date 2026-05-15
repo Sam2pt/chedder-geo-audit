@@ -1815,14 +1815,9 @@ function AppChrome({
             </svg>
             <span className="hidden sm:inline">New audit</span>
           </button>
-          <a
-            href="https://twopointtechnologies.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-2 group pl-2"
-          >
-            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
-          </a>
+          {/* TPT lockup intentionally lives in the footer only — keeping
+              it out of the top nav so the Chedder mark is the sole
+              brand anchor at the top of the page. */}
         </div>
       </div>
     </header>
@@ -1862,18 +1857,12 @@ function AuditHero({ result }: { result: AuditResult }) {
 
   return (
     <section className="mt-6 sm:mt-8">
-      {/* Document meta strip */}
-      <div className="flex items-center justify-between gap-3 pb-3 mb-5 border-b border-black/[0.06]">
-        <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
-          <span>Report</span>
-          <span className="text-muted-foreground/30">·</span>
-          <span>GEO Audit</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground/60">
-          <span className="tabular-nums">#{reportId}</span>
-          <span className="text-muted-foreground/20">·</span>
-          <span>{date}</span>
-        </div>
+      {/* Quiet audit meta: id + date, right-aligned. The old "REPORT · GEO
+          AUDIT" label was technical jargon that didn't earn its space. */}
+      <div className="flex items-center justify-end gap-3 pb-3 mb-5 border-b border-black/[0.06] text-[11px] font-medium text-muted-foreground/60">
+        <span className="tabular-nums">#{reportId}</span>
+        <span className="text-muted-foreground/20">·</span>
+        <span>{date}</span>
       </div>
 
       {/* Hero: favicon + title + score */}
@@ -1999,7 +1988,16 @@ function KPIStrip({ result }: { result: AuditResult }) {
       label: "AI Competitors",
       value: String(aiCompetitorCount),
       sublabel: aiCompetitorCount === 1 ? "brand cited instead" : "brands cited instead",
-      color: "#ec4899",
+      // Status-aware color matches the rest of the KPI row: 0 = green
+      // (nobody named instead), 1-2 = amber (light competition), 3+ =
+      // red (loud category). The previous hardcoded pink read as
+      // visually disconnected from its siblings.
+      color:
+        aiCompetitorCount === 0
+          ? "#34c759"
+          : aiCompetitorCount <= 2
+            ? "#ff9f0a"
+            : "#ff453a",
     },
   ];
 
@@ -2053,32 +2051,41 @@ function TabNav({
   ];
 
   return (
-    <nav className="mt-8 sm:mt-10 border-b border-black/[0.06] sticky top-14 z-20 bg-[#fafafa]/90 backdrop-blur-xl">
-      <div className="flex items-stretch gap-1 overflow-x-auto scrollbar-none -mx-1 px-1">
+    <nav className="mt-8 sm:mt-10 sticky top-14 z-20 bg-[#fafafa]/85 backdrop-blur-xl py-2 -mx-1">
+      {/* Pill-style segmented control. Stronger visual weight than the
+          underline tabs we had before — active state is a filled white
+          pill with a soft shadow, count badges become real pills that
+          read as part of the tab. User feedback: tabs needed to draw
+          attention. */}
+      <div
+        className="inline-flex items-center gap-0.5 p-1 rounded-2xl bg-foreground/[0.05] border border-black/[0.04] mx-1 overflow-x-auto scrollbar-none max-w-full"
+        role="tablist"
+      >
         {tabs.map((t) => {
           const isActive = t.key === active;
           return (
             <button
               key={t.key}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onChange(t.key)}
-              className={`relative px-4 h-11 flex items-center gap-2 text-[14px] font-medium tracking-[-0.01em] whitespace-nowrap transition-colors ${
-                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              className={`relative px-3.5 sm:px-4 h-9 flex items-center gap-2 text-[13.5px] font-semibold tracking-[-0.01em] whitespace-nowrap rounded-xl transition-all duration-150 ${
+                isActive
+                  ? "bg-white text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.05),0_2px_8px_rgba(0,0,0,0.04)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03]"
               }`}
             >
               {t.label}
               {t.count !== undefined && t.count > 0 && (
                 <span
-                  className={`text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md ${
+                  className={`text-[10.5px] font-bold tabular-nums px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${
                     isActive
-                      ? "bg-foreground/[0.08] text-foreground"
-                      : "bg-foreground/[0.04] text-muted-foreground"
+                      ? "bg-foreground text-white"
+                      : "bg-foreground/[0.08] text-muted-foreground"
                   }`}
                 >
                   {t.count}
                 </span>
-              )}
-              {isActive && (
-                <span className="absolute inset-x-3 -bottom-px h-[2px] bg-foreground rounded-full" />
               )}
             </button>
           );
