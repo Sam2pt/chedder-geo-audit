@@ -858,14 +858,17 @@ function AICompetitors({
         </div>
       </div>
 
-      {/* CTA sits above the list so the "take land" action is the first
-          thing a user sees after the heading. Under-list placement made
-          it feel like an afterthought once scrolling through competitors. */}
+      {/* CTA sits above the list so the action is the first thing a
+          user sees after the heading. Under-list placement made it
+          feel like an afterthought once scrolling through competitors.
+          Copy reads as a friendly "let's see what they're doing" peek
+          rather than the old military "take land" framing — DTC
+          marketers don't think in war metaphors. */}
       <div>
         <button
           onClick={runLandGrabCompare}
           disabled={running}
-          className="w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] disabled:opacity-60 disabled:cursor-wait hover:bg-foreground/90 transition-colors flex items-center justify-center gap-2"
+          className="group w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] disabled:opacity-60 disabled:cursor-wait hover:bg-foreground/90 transition-colors flex items-center justify-center gap-2"
         >
           {running ? (
             <>
@@ -873,14 +876,19 @@ function AICompetitors({
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
                 <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
               </svg>
-              Auditing competitors, this takes about a minute…
+              Sneaking a look at their playbook…
             </>
           ) : (
-            <>See where you can take land from them</>
+            <>
+              Steal their playbook
+              <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </>
           )}
         </button>
         <p className="text-[11.5px] text-muted-foreground/80 text-center mt-2 leading-snug">
-          We'll audit the top {topDomains.length} and show you the openings where they're ahead, where you lead, and specific fixes that close the gap.
+          We&apos;ll audit the top {topDomains.length} and show you exactly what they&apos;re doing that you aren&apos;t, where you already lead, and the specific moves that close the gap.
         </p>
         {error && (
           <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
