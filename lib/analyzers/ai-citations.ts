@@ -2193,9 +2193,19 @@ function extractPricesByBrand(
                     ? "A$"
                     : symbolRaw) + pricedAtAmount;
 
-      // Skip prices that look like years ($2023) or absurdly small/large
+      // Filter to plausible product prices. Real DTC product prices
+      // are rarely under $10. Anything lower is almost always a false
+      // positive ("$1 trillion industry", "$5 off coupon", footnote
+      // references like "$1"). Also drop year-shaped numbers and
+      // anything implausibly large.
       const numeric = parseFloat(pricedAtAmount.replace(/,/g, ""));
-      if (Number.isNaN(numeric) || numeric < 1 || numeric > 1_000_000) continue;
+      if (Number.isNaN(numeric)) continue;
+      if (numeric < 10) continue;
+      if (numeric > 100_000) continue;
+      // Reject 4-digit numbers that look like years (1990-2099 range)
+      if (numeric >= 1990 && numeric <= 2099 && !pricedAtAmount.includes(",") && !pricedAtAmount.includes(".")) {
+        continue;
+      }
 
       // Find nearest brand mention before this price within 140 chars
       let best: { domain: string; dist: number } | null = null;
