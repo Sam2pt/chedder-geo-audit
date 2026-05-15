@@ -2100,12 +2100,13 @@ function extractPricesByBrand(
     }
   }
 
-  // Price regex. Captures common currencies + comma-separated digits +
-  // optional decimal. Avoids partial matches inside numbers (lookbehind
-  // / lookahead on word chars). Recognizes "$1,299", "£499", "€89.99".
-  // Skips bare numbers without currency to avoid false positives.
+  // Price regex. Captures common currencies + (optionally) comma-thousand
+  // separators + optional decimal. Two number-shape alternatives:
+  //   1) 1-3 digits then 1+ comma-thousand groups (e.g. "1,299")
+  //   2) bare digit runs (e.g. "1099", "999", "49.99")
+  // Word-boundary lookbehind/lookahead so we don't match inside SKUs.
   const PRICE_RE =
-    /(?<![A-Za-z0-9])(\$|US\$|USD\s|£|GBP\s|€|EUR\s|¥|JPY\s|A\$|CA\$|C\$)\s?([\d]{1,3}(?:,\d{3})*(?:\.\d{1,2})?)(?![A-Za-z0-9])/g;
+    /(?<![A-Za-z0-9])(\$|US\$|USD\s|£|GBP\s|€|EUR\s|¥|JPY\s|A\$|CA\$|C\$)\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)(?![A-Za-z0-9])/g;
 
   // Build a single regex that matches any known brand name. Case-
   // insensitive, word-boundaried. Brands with spaces work because we
