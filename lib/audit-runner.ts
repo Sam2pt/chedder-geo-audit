@@ -9,6 +9,7 @@ import { analyzeAuthority } from "./analyzers/authority";
 import { analyzeExternal, extractBrandName } from "./analyzers/external";
 import { analyzeAICitations } from "./analyzers/ai-citations";
 import { analyzeDestinations } from "./analyzers/destinations";
+import { analyzeProducts } from "./analyzers/products";
 import { generateCategoryRecommendationsLLM } from "./analyzers/tailored-recs";
 import { discoverInternalLinks } from "./crawler";
 import {
@@ -167,6 +168,12 @@ export async function auditSingleUrl(
     analyzeTechnical($home, technicalCtx),
     analyzeAuthority($home, normalizedUrl),
   ];
+
+  // DTC-specific: how AI sees the brand's products (price, stock,
+  // reviews, etc.). Returns null when no product pages are in the
+  // crawl (B2B sites etc.) so we don't score non-DTC brands down.
+  const productsResult = analyzeProducts(allPages, pagesAudited);
+  if (productsResult) modules.push(productsResult);
   if (externalPromise) {
     const externalResult = await externalPromise;
     modules.push(externalResult);

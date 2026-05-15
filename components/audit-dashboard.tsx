@@ -2110,6 +2110,7 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
     authority: "Trust",
     external: "Web mentions",
     "ai-citations": "AI visibility",
+    products: "Products",
   };
 
   const points = modules.map((m, i) => {

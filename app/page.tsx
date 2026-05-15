@@ -870,7 +870,13 @@ const LOADING_QUIPS = [
  * is to show passing time and how long is left.
  */
 const EXPECTED_AUDIT_MS = 45_000;
-const TOTAL_MODULES = 7;
+// Most DTC brands trigger all 8 modules (schema, meta, content,
+// technical, authority, products, external, ai-citations). Non-DTC
+// sites without product pages skip the products module — the loader's
+// module-progress override just sees 7 modules instead of 8, which
+// makes the bar fill slightly faster. Either way the worst-case time
+// bound is governed by EXPECTED_AUDIT_MS, not module count.
+const TOTAL_MODULES = 8;
 
 function CheeseWheelLoader({
   url,

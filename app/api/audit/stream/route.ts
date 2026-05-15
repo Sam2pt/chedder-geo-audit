@@ -8,6 +8,7 @@ import { analyzeAuthority } from "@/lib/analyzers/authority";
 import { analyzeExternal, extractBrandName } from "@/lib/analyzers/external";
 import { analyzeAICitations } from "@/lib/analyzers/ai-citations";
 import { analyzeDestinations } from "@/lib/analyzers/destinations";
+import { analyzeProducts } from "@/lib/analyzers/products";
 import { reviewAuditQuality } from "@/lib/analyzers/quality-review";
 import { generateCategoryRecommendationsLLM } from "@/lib/analyzers/tailored-recs";
 import { discoverInternalLinks } from "@/lib/crawler";
@@ -329,6 +330,12 @@ async function runAudit(
 
   emit({ type: "stage", name: "authority", detail: "Looking for trust signals…" });
   emitModule(analyzeAuthority($home, normalizedUrl));
+
+  // DTC-specific product audit. Returns null for sites without
+  // product pages (B2B SaaS etc.) so we skip emitting in that case.
+  emit({ type: "stage", name: "products", detail: "Reading your product pages the way AI does…" });
+  const productsResult = analyzeProducts(allPages, pagesAudited);
+  if (productsResult) emitModule(productsResult);
 
   // External + AI run in parallel (slow — Wikipedia/Reddit/Perplexity).
   // The combined wait can hit 25-40s of silence which crosses Netlify's
