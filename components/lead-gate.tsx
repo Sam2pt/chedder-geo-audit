@@ -136,7 +136,7 @@ export function LeadGate({
           />
 
           {error && (
-            <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug">
+            <div className="text-[12.5px] text-[#9e342a] bg-[#c44a3a]/[0.06] border border-[#c44a3a]/[0.15] rounded-lg px-3 py-2 leading-snug">
               {error}
             </div>
           )}

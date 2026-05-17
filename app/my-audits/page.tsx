@@ -74,12 +74,12 @@ export default async function MyAuditsPage() {
             {audits.map((a) => {
               const accent =
                 a.overallScore >= 80
-                  ? "#7a8b6b"
+                  ? "#3d8b5e"
                   : a.overallScore >= 60
                     ? "#6f8aab"
                     : a.overallScore >= 40
-                      ? "#c99b66"
-                      : "#b5443b";
+                      ? "#d89c3a"
+                      : "#c44a3a";
               return (
                 <Link
                   key={a.slug}

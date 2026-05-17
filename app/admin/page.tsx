@@ -441,7 +441,7 @@ function FunnelSection({ funnel }: { funnel: FunnelStats }) {
       sub: "Crossed the soft gate",
       value: funnel.leadSignups,
       ofPrev: funnel.auditsCompleted,
-      accent: "#7a8b6b",
+      accent: "#3d8b5e",
     },
     {
       label: "PDF requests",
@@ -541,7 +541,7 @@ function DailySection({
           <LegendDot color="#6f8aab" label="Sessions" />
           <LegendDot color="#9a7aa0" label="Audits" />
           <LegendDot color="#c2745f" label="Completed" />
-          <LegendDot color="#7a8b6b" label="Signups" />
+          <LegendDot color="#3d8b5e" label="Signups" />
         </div>
       </div>
       <div className="rounded-2xl border border-black/[0.06] bg-white p-4 overflow-x-auto">
@@ -551,7 +551,7 @@ function DailySection({
               { v: d.sessions, color: "#6f8aab", label: "Sessions" },
               { v: d.auditsStarted, color: "#9a7aa0", label: "Audits started" },
               { v: d.auditsCompleted, color: "#c2745f", label: "Audits completed" },
-              { v: d.leadSignups, color: "#7a8b6b", label: "Signups" },
+              { v: d.leadSignups, color: "#3d8b5e", label: "Signups" },
             ];
             return (
               <div

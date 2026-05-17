@@ -28,10 +28,10 @@ const MODULE_COLORS: Record<string, { accent: string; light: string; dark: strin
   schema:    { accent: "#6f7e94", light: "rgba(111,126,148,0.08)",  dark: "#54647a" },
   meta:      { accent: "#6f8aab", light: "rgba(111,138,171,0.08)",  dark: "#4d6478" },
   content:   { accent: "#9a7aa0", light: "rgba(154,122,160,0.08)",  dark: "#7a5c82" },
-  technical: { accent: "#c99b66", light: "rgba(201,155,102,0.08)",  dark: "#8b6738" },
-  authority: { accent: "#7a8b6b", light: "rgba(122,139,107,0.08)",  dark: "#52614a" },
+  technical: { accent: "#d89c3a", light: "rgba(216,156,58,0.08)",  dark: "#9a6b1f" },
+  authority: { accent: "#3d8b5e", light: "rgba(61,139,94,0.08)",  dark: "#266c44" },
   external:  { accent: "#c2745f", light: "rgba(194,116,95,0.08)",  dark: "#a65b47" },
-  "ai-citations": { accent: "#7a8b6b", light: "rgba(122,139,107,0.08)", dark: "#52614a" },
+  "ai-citations": { accent: "#3d8b5e", light: "rgba(61,139,94,0.08)", dark: "#266c44" },
 };
 
 function moduleColor(slug: string) {
@@ -41,9 +41,9 @@ function moduleColor(slug: string) {
 /* ── Helpers ──────────────────────────────────────────────────────── */
 
 function scoreColor(s: number) {
-  if (s >= 70) return { bg: "#7a8b6b", bgLight: "rgba(122,139,107,0.08)", text: "#52614a" };
-  if (s >= 40) return { bg: "#c99b66", bgLight: "rgba(201,155,102,0.08)", text: "#8b6738" };
-  return { bg: "#b5443b", bgLight: "rgba(181,68,59,0.08)", text: "#8c3128" };
+  if (s >= 70) return { bg: "#3d8b5e", bgLight: "rgba(61,139,94,0.08)", text: "#266c44" };
+  if (s >= 40) return { bg: "#d89c3a", bgLight: "rgba(216,156,58,0.08)", text: "#9a6b1f" };
+  return { bg: "#c44a3a", bgLight: "rgba(196,74,58,0.08)", text: "#9e342a" };
 }
 
 /* ── Score Gauge ──────────────────────────────────────────────────── */
@@ -107,21 +107,21 @@ function ScoreBar({ score, label, color }: { score: number; label: string; color
 function StatusIcon({ status }: { status: Finding["status"] }) {
   if (status === "pass")
     return (
-      <div className="w-[18px] h-[18px] rounded-full bg-[#7a8b6b]/10 flex items-center justify-center shrink-0">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-[#52614a]">
+      <div className="w-[18px] h-[18px] rounded-full bg-[#3d8b5e]/10 flex items-center justify-center shrink-0">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-[#266c44]">
           <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
     );
   if (status === "warn")
     return (
-      <div className="w-[18px] h-[18px] rounded-full bg-[#c99b66]/10 flex items-center justify-center shrink-0">
-        <div className="w-[6px] h-[6px] rounded-full bg-[#8b6738]" />
+      <div className="w-[18px] h-[18px] rounded-full bg-[#d89c3a]/10 flex items-center justify-center shrink-0">
+        <div className="w-[6px] h-[6px] rounded-full bg-[#9a6b1f]" />
       </div>
     );
   return (
-    <div className="w-[18px] h-[18px] rounded-full bg-[#b5443b]/10 flex items-center justify-center shrink-0">
-      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]">
+    <div className="w-[18px] h-[18px] rounded-full bg-[#c44a3a]/10 flex items-center justify-center shrink-0">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" className="text-[#9e342a]">
         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
       </svg>
     </div>
@@ -132,8 +132,8 @@ function StatusIcon({ status }: { status: Finding["status"] }) {
 
 function PriorityTag({ priority }: { priority: Recommendation["priority"] }) {
   const styles: Record<string, { bg: string; text: string }> = {
-    high: { bg: "bg-[#b5443b]/8", text: "text-[#8c3128]" },
-    medium: { bg: "bg-[#c99b66]/8", text: "text-[#8b6738]" },
+    high: { bg: "bg-[#c44a3a]/8", text: "text-[#9e342a]" },
+    medium: { bg: "bg-[#d89c3a]/8", text: "text-[#9a6b1f]" },
     low: { bg: "bg-[#007aff]/8", text: "text-[#0055b3]" },
   };
   const s = styles[priority];
@@ -181,7 +181,7 @@ function ModuleCard({
             {delta !== null && (
               <span
                 className="text-[10px] font-semibold tabular-nums mt-1"
-                style={{ color: delta >= 0 ? "#52614a" : "#b5443b" }}
+                style={{ color: delta >= 0 ? "#266c44" : "#c44a3a" }}
                 title={`Median: ${benchmark!.median} · based on ${benchmark!.count} audits`}
               >
                 {delta >= 0 ? "+" : ""}{delta} vs median
@@ -540,10 +540,10 @@ function WhereResults({ result }: { result: AuditResult }) {
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Where you show up (GREEN) */}
-      <div className="p-5 rounded-2xl bg-[#7a8b6b]/[0.04] border border-[#7a8b6b]/[0.15] space-y-4">
+      <div className="p-5 rounded-2xl bg-[#3d8b5e]/[0.04] border border-[#3d8b5e]/[0.15] space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#7a8b6b]/15 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#52614a]">
+          <div className="w-8 h-8 rounded-lg bg-[#3d8b5e]/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#266c44]">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
           </div>
@@ -563,8 +563,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               ))}
               {wikiFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#3d8b5e]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#266c44]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Wikipedia</span>
@@ -574,8 +574,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               )}
               {redditFinding?.status === "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#3d8b5e]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#266c44]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Reddit</span>
@@ -588,8 +588,8 @@ function WhereResults({ result }: { result: AuditResult }) {
                 .filter((f) => f.label.toLowerCase().includes("top reddit"))
                 .map((f, i) => (
                   <div key={`rt-${i}`} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                    <div className="w-[16px] h-[16px] rounded-full bg-[#7a8b6b]/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#52614a]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <div className="w-[16px] h-[16px] rounded-full bg-[#3d8b5e]/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#266c44]"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     </div>
                     <div className="text-[13px] leading-snug min-w-0 flex-1">
                       <div className="font-semibold text-foreground">Top Reddit thread</div>
@@ -603,10 +603,10 @@ function WhereResults({ result }: { result: AuditResult }) {
       </div>
 
       {/* Where you don't (RED) */}
-      <div className="p-5 rounded-2xl bg-[#b5443b]/[0.04] border border-[#b5443b]/[0.15] space-y-4">
+      <div className="p-5 rounded-2xl bg-[#c44a3a]/[0.04] border border-[#c44a3a]/[0.15] space-y-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#b5443b]/15 flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[#8c3128]">
+          <div className="w-8 h-8 rounded-lg bg-[#c44a3a]/15 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-[#9e342a]">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </div>
@@ -623,8 +623,8 @@ function WhereResults({ result }: { result: AuditResult }) {
               ))}
               {wikiFinding?.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className="w-[16px] h-[16px] rounded-full bg-[#b5443b]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                  <div className="w-[16px] h-[16px] rounded-full bg-[#c44a3a]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#9e342a]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
                   </div>
                   <div className="text-[13px] leading-snug">
                     <span className="font-semibold">Wikipedia</span>
@@ -634,11 +634,11 @@ function WhereResults({ result }: { result: AuditResult }) {
               )}
               {redditFinding && redditFinding.status !== "pass" && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white/60">
-                  <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center shrink-0 mt-0.5 ${redditFinding.status === "fail" ? "bg-[#b5443b]/20" : "bg-[#c99b66]/20"}`}>
+                  <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center shrink-0 mt-0.5 ${redditFinding.status === "fail" ? "bg-[#c44a3a]/20" : "bg-[#d89c3a]/20"}`}>
                     {redditFinding.status === "fail" ? (
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8c3128]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#9e342a]"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
                     ) : (
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#8b6738]"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" className="text-[#9a6b1f]"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
                     )}
                   </div>
                   <div className="text-[13px] leading-snug">
@@ -664,9 +664,9 @@ function AIQueryItem({
 }) {
   const [open, setOpen] = useState(false);
   const colors = {
-    strong: { bg: "bg-[#7a8b6b]/20", text: "text-[#52614a]", quoteAccent: "#7a8b6b" },
-    weak: { bg: "bg-[#c99b66]/20", text: "text-[#8b6738]", quoteAccent: "#c99b66" },
-    missing: { bg: "bg-[#b5443b]/20", text: "text-[#8c3128]", quoteAccent: "#b5443b" },
+    strong: { bg: "bg-[#3d8b5e]/20", text: "text-[#266c44]", quoteAccent: "#3d8b5e" },
+    weak: { bg: "bg-[#d89c3a]/20", text: "text-[#9a6b1f]", quoteAccent: "#d89c3a" },
+    missing: { bg: "bg-[#c44a3a]/20", text: "text-[#9e342a]", quoteAccent: "#c44a3a" },
   };
   const icons = {
     strong: <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>,
@@ -891,7 +891,7 @@ function AICompetitors({
           We&apos;ll audit the top {topDomains.length} and show you exactly what they&apos;re doing that you aren&apos;t, where you already lead, and the specific moves that close the gap.
         </p>
         {error && (
-          <div className="text-[12.5px] text-[#8c3128] bg-[#b5443b]/[0.06] border border-[#b5443b]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
+          <div className="text-[12.5px] text-[#9e342a] bg-[#c44a3a]/[0.06] border border-[#c44a3a]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
             {error}
           </div>
         )}
@@ -938,17 +938,17 @@ const HORIZON_META: Record<
     label: "Now",
     timeframe: "This week",
     blurb: "Copy-paste fixes and tag edits. No roadmap required.",
-    accent: "#7a8b6b",
-    light: "rgba(122,139,107,0.1)",
-    ring: "rgba(122,139,107,0.28)",
+    accent: "#3d8b5e",
+    light: "rgba(61,139,94,0.1)",
+    ring: "rgba(61,139,94,0.28)",
   },
   soon: {
     label: "Next",
     timeframe: "2 to 4 weeks",
     blurb: "A small content or dev cycle. Structured pages, contact blocks, robots rules.",
-    accent: "#c99b66",
-    light: "rgba(201,155,102,0.1)",
-    ring: "rgba(201,155,102,0.28)",
+    accent: "#d89c3a",
+    light: "rgba(216,156,58,0.1)",
+    ring: "rgba(216,156,58,0.28)",
   },
   later: {
     label: "Later",
@@ -1426,8 +1426,8 @@ function LandGrabInsights({
         title="You lead"
         subtitle="Your strongholds. Defend these while you chase the land grabs."
         items={lead}
-        accent="#7a8b6b"
-        bg="rgba(122,139,107,0.06)"
+        accent="#3d8b5e"
+        bg="rgba(61,139,94,0.06)"
       />
     </section>
   );
@@ -1479,7 +1479,7 @@ function CompetitorComparison({
                       </span>
                     )}
                     {isWinner && !isPrimary && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7a8b6b]/10 text-[#52614a]">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#3d8b5e]/10 text-[#266c44]">
                         Leader
                       </span>
                     )}
@@ -1778,7 +1778,7 @@ function AppChrome({
               onClick={onShare}
               className={`h-9 px-3 rounded-lg border text-[13px] font-semibold tracking-[-0.01em] flex items-center gap-1.5 transition-colors ${
                 shareCopied
-                  ? "bg-[#7a8b6b]/10 border-[#7a8b6b]/30 text-[#52614a]"
+                  ? "bg-[#3d8b5e]/10 border-[#3d8b5e]/30 text-[#266c44]"
                   : "bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/[0.06] text-foreground"
               }`}
               title="Copy shareable URL"
@@ -1958,10 +1958,10 @@ function KPIStrip({ result }: { result: AuditResult }) {
   const percentileColor = !hasRank
     ? "#6f7e94"
     : percentileTop <= 25
-      ? "#7a8b6b"
+      ? "#3d8b5e"
       : percentileTop <= 50
-        ? "#c99b66"
-        : "#b5443b";
+        ? "#d89c3a"
+        : "#c44a3a";
 
   const rankCard = hasRank
     ? {
@@ -1982,13 +1982,13 @@ function KPIStrip({ result }: { result: AuditResult }) {
       label: "AI Mention Rate",
       value: aiTotal > 0 ? `${aiMentions}/${aiTotal}` : "·",
       sublabel: aiTotal > 0 ? "queries include you" : "no AI test run",
-      color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#7a8b6b" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#c99b66" : "#b5443b",
+      color: aiTotal > 0 && aiMentions / aiTotal >= 0.6 ? "#3d8b5e" : aiTotal > 0 && aiMentions / aiTotal >= 0.3 ? "#d89c3a" : "#c44a3a",
     },
     {
       label: "High-priority Fixes",
       value: String(highPriority),
       sublabel: highPriority === 1 ? "urgent action" : "urgent actions",
-      color: highPriority === 0 ? "#7a8b6b" : highPriority <= 2 ? "#c99b66" : "#b5443b",
+      color: highPriority === 0 ? "#3d8b5e" : highPriority <= 2 ? "#d89c3a" : "#c44a3a",
     },
     rankCard,
     {
@@ -2001,10 +2001,10 @@ function KPIStrip({ result }: { result: AuditResult }) {
       // visually disconnected from its siblings.
       color:
         aiCompetitorCount === 0
-          ? "#7a8b6b"
+          ? "#3d8b5e"
           : aiCompetitorCount <= 2
-            ? "#c99b66"
-            : "#b5443b",
+            ? "#d89c3a"
+            : "#c44a3a",
     },
   ];
 
@@ -2301,10 +2301,10 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
   const channel = featured?.label.match(/(AI chats|AI search)/i)?.[0] || "";
   const featuredStatusColor =
     featured?.status === "pass"
-      ? "#7a8b6b"
+      ? "#3d8b5e"
       : featured?.status === "warn"
-        ? "#c99b66"
-        : "#b5443b";
+        ? "#d89c3a"
+        : "#c44a3a";
 
   // Strip leading ellipsis/markdown noise from excerpts, trim length
   function cleanExcerpt(raw: string): string {
@@ -2433,7 +2433,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
       {/* Bottom stats — compact, smaller than before so the quote is the hero */}
       <div className="relative grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.08]">
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#7a8b6b]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#3d8b5e]">
             {passes}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2441,7 +2441,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#c99b66]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#d89c3a]">
             {warns}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2449,7 +2449,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
           </div>
         </div>
         <div className="min-w-0">
-          <div className="text-[18px] font-semibold tabular-nums text-[#b5443b]">
+          <div className="text-[18px] font-semibold tabular-nums text-[#c44a3a]">
             {fails}
           </div>
           <div className="text-[9.5px] sm:text-[10px] text-white/40 font-medium uppercase tracking-[0.05em] mt-0.5">
@@ -2880,7 +2880,7 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
 
   const latestPrevious = history[0]; // most recent prior audit
   const delta = latestPrevious ? result.overallScore - latestPrevious.overallScore : 0;
-  const deltaColor = delta > 0 ? "#52614a" : delta < 0 ? "#b5443b" : "#6e6e73";
+  const deltaColor = delta > 0 ? "#266c44" : delta < 0 ? "#c44a3a" : "#6e6e73";
 
   // SVG sparkline
   const w = 560;
@@ -2973,10 +2973,10 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
       {latestPrevious && biggestGain && biggestLoss && (biggestGain.delta !== 0 || biggestLoss.delta !== 0) && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {biggestGain.delta > 0 && (
-            <div className="p-3 rounded-xl bg-[#7a8b6b]/[0.06] border border-[#7a8b6b]/20">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#52614a]">Biggest gain</div>
+            <div className="p-3 rounded-xl bg-[#3d8b5e]/[0.06] border border-[#3d8b5e]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#266c44]">Biggest gain</div>
               <div className="mt-1 text-[14px] font-semibold leading-snug">
-                <span className="tabular-nums text-[#52614a] mr-1.5">
+                <span className="tabular-nums text-[#266c44] mr-1.5">
                   +{biggestGain.delta}
                 </span>
                 <span className="text-foreground/80 font-medium">
@@ -2986,10 +2986,10 @@ function HistoryTimeline({ result }: { result: AuditResult }) {
             </div>
           )}
           {biggestLoss.delta < 0 && (
-            <div className="p-3 rounded-xl bg-[#b5443b]/[0.06] border border-[#b5443b]/20">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b5443b]">Regression</div>
+            <div className="p-3 rounded-xl bg-[#c44a3a]/[0.06] border border-[#c44a3a]/20">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#c44a3a]">Regression</div>
               <div className="mt-1 text-[14px] font-semibold leading-snug">
-                <span className="tabular-nums text-[#b5443b] mr-1.5">
+                <span className="tabular-nums text-[#c44a3a] mr-1.5">
                   {biggestLoss.delta}
                 </span>
                 <span className="text-foreground/80 font-medium">
@@ -3065,7 +3065,7 @@ function DeepDiveTab({ result }: { result: AuditResult }) {
           mods.reduce((sum, m) => sum + m.score, 0) / mods.length
         );
         const catColor =
-          avg >= 70 ? "#7a8b6b" : avg >= 40 ? "#c99b66" : "#b5443b";
+          avg >= 70 ? "#3d8b5e" : avg >= 40 ? "#d89c3a" : "#c44a3a";
         return (
           <section key={cat.key}>
             <div className="flex items-baseline justify-between flex-wrap gap-2 mb-1">

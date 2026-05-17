@@ -166,7 +166,7 @@ function Check() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path
         d="M20 6L9 17l-5-5"
-        stroke="#7a8b6b"
+        stroke="#3d8b5e"
         strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"

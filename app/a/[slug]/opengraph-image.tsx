@@ -14,9 +14,9 @@ export const size = {
 export const contentType = "image/png";
 
 function scoreColor(s: number) {
-  if (s >= 70) return { bg: "#7a8b6b", text: "#52614a", light: "#d4f4dd" };
-  if (s >= 40) return { bg: "#c99b66", text: "#8b6738", light: "#fff0d6" };
-  return { bg: "#b5443b", text: "#8c3128", light: "#ffd9d6" };
+  if (s >= 70) return { bg: "#3d8b5e", text: "#266c44", light: "#d4f4dd" };
+  if (s >= 40) return { bg: "#d89c3a", text: "#9a6b1f", light: "#fff0d6" };
+  return { bg: "#c44a3a", text: "#9e342a", light: "#ffd9d6" };
 }
 
 function getGrade(score: number): string {

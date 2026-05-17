@@ -403,11 +403,11 @@ export function destinationKindLabel(kind: DestinationKind): string {
 export function destinationKindColor(kind: DestinationKind): string {
   switch (kind) {
     case "own":
-      return "#7a8b6b"; // green — you own this
+      return "#3d8b5e"; // green — you own this
     case "marketplace":
-      return "#c99b66"; // amber — at-risk, fixable
+      return "#d89c3a"; // amber — at-risk, fixable
     case "competitor":
-      return "#b5443b"; // red — losing
+      return "#c44a3a"; // red — losing
     case "publisher":
       return "#6f8aab"; // blue — neutral signal
     case "community":
@@ -415,7 +415,7 @@ export function destinationKindColor(kind: DestinationKind): string {
     case "review":
       return "#c2745f"; // pink
     case "knowledge":
-      return "#7a8b6b"; // teal
+      return "#3d8b5e"; // teal
     case "other":
       return "#8b8b90"; // grey
   }

@@ -315,9 +315,9 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          <h1 className="anim-slide-up text-[46px] sm:text-[64px] font-semibold tracking-[-0.038em] leading-[1.02] text-foreground">
+          <h1 className="anim-slide-up text-[48px] sm:text-[72px] font-semibold tracking-[-0.045em] leading-[1.0] text-foreground">
             When shoppers ask AI,<br/>
-            <span className="italic font-normal text-[var(--brand-coral-dark)]" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>does your brand come up?</span>
+            <span className="text-foreground/40">does </span><span className="text-[var(--brand-coral-dark)]">your brand</span><span className="text-foreground/40"> come up?</span>
           </h1>
           <p className="anim-slide-up delay-100 text-[17px] sm:text-[19px] leading-[1.55] text-muted-foreground font-normal max-w-[540px] mx-auto tracking-[-0.005em]">
             ChatGPT and Perplexity now decide which DTC brand shoppers buy. Chedder tests if AI recommends <em>you</em>, where it sends them when it does, and exactly what to fix when it doesn&apos;t.
@@ -432,22 +432,22 @@ export default function Home() {
           )}
 
           {error && (
-            <p className="text-[14px] text-[#b5443b] font-medium">{error}</p>
+            <p className="text-[14px] text-[#c44a3a] font-medium">{error}</p>
           )}
         </form>
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
           <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#3d8b5e]"><path d="M20 6L9 17l-5-5"/></svg>
             Built for DTC
           </div>
           <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#3d8b5e]"><path d="M20 6L9 17l-5-5"/></svg>
             First audit free
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#7a8b6b]"><path d="M20 6L9 17l-5-5"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#3d8b5e]"><path d="M20 6L9 17l-5-5"/></svg>
             Real shopper questions tested
           </div>
         </div>
@@ -471,7 +471,7 @@ export default function Home() {
         <div className="max-w-[900px] mx-auto space-y-16">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Shift</div>
-            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
               Search is becoming conversation.<br/>
               Your brand needs a seat at that table.
             </h2>
@@ -487,7 +487,7 @@ export default function Home() {
               { stat: "0", label: "clicks needed for AI to pick a brand for them" },
             ].map((s, i) => (
               <div key={i} className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300" style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="text-[30px] sm:text-[50px] font-normal tracking-[-0.035em] leading-none text-foreground" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
+                <div className="text-[32px] sm:text-[52px] font-semibold tracking-[-0.045em] leading-none text-foreground tabular-nums">
                   {s.stat}
                 </div>
                 <p className="text-[11.5px] sm:text-[13.5px] text-muted-foreground leading-[1.45] sm:leading-[1.55] mt-3 sm:mt-4">{s.label}</p>
@@ -498,9 +498,9 @@ export default function Home() {
           <div className="anim-slide-up p-8 sm:p-12 rounded-3xl bg-[#1f1e1d] text-white space-y-4 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] to-transparent pointer-events-none" />
             <p className="relative text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral)]">The problem</p>
-            <p className="relative text-[22px] sm:text-[28px] font-normal leading-[1.45] tracking-[-0.02em]" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
+            <p className="relative text-[22px] sm:text-[30px] font-semibold leading-[1.25] tracking-[-0.025em]">
               If ChatGPT, Perplexity, or Google AI doesn&apos;t mention you when a customer asks,
-              <span className="text-white/55"> you&apos;ve lost the sale before you knew it happened.</span>
+              <span className="text-white/45 font-medium"> you&apos;ve lost the sale before you knew it happened.</span>
             </p>
           </div>
         </div>
@@ -511,7 +511,7 @@ export default function Home() {
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Audit</div>
-            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
               7 signals. One clear score.<br/>
               A real action plan.
             </h2>
@@ -571,7 +571,7 @@ export default function Home() {
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">How It Works</div>
-            <h2 className="text-[36px] sm:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">
+            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
               From URL to action plan in under a minute.
             </h2>
           </div>
@@ -583,7 +583,7 @@ export default function Home() {
               { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
             ].map((step, i) => (
               <div key={i} className="relative p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="w-10 h-10 rounded-full bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)] flex items-center justify-center text-[15px] font-semibold mb-4 border border-[var(--brand-coral)]/20" style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}>
+                <div className="w-9 h-9 rounded-lg bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)] flex items-center justify-center text-[14px] font-semibold mb-4 border border-[var(--brand-coral)]/20 tabular-nums tracking-[-0.01em]">
                   {step.num}
                 </div>
                 <h3 className="text-[17px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
@@ -599,7 +599,7 @@ export default function Home() {
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Built for DTC</div>
-            <h2 className="text-[32px] sm:text-[40px] font-semibold tracking-[-0.03em] leading-[1.1]">
+            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.04em] leading-[1.05]">
               For the brands shoppers ask AI about.
             </h2>
             <p className="text-[16px] text-muted-foreground max-w-[580px] mx-auto leading-[1.6]">
@@ -653,10 +653,7 @@ export default function Home() {
                 className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div
-                  className="text-[28px] sm:text-[48px] font-normal tracking-[-0.035em] leading-none flex items-baseline gap-[1px] sm:gap-1 text-foreground"
-                  style={{ fontFamily: "'Iowan Old Style', 'Charter', 'Georgia', serif" }}
-                >
+                <div className="text-[30px] sm:text-[50px] font-semibold tracking-[-0.045em] leading-none flex items-baseline gap-[1px] sm:gap-1 text-foreground tabular-nums">
                   {s.prefix}
                   {s.stat}
                   {s.suffix}
@@ -702,7 +699,7 @@ export default function Home() {
           <div className="p-8 sm:p-12 rounded-3xl bg-[var(--brand-coral)]/[0.04] border border-[var(--brand-coral)]/[0.15] space-y-6">
             <div className="space-y-3">
               <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Need help fixing it?</div>
-              <h2 className="text-[30px] sm:text-[38px] font-semibold tracking-[-0.03em] leading-[1.15] max-w-[680px]">
+              <h2 className="text-[30px] sm:text-[42px] font-semibold tracking-[-0.04em] leading-[1.1] max-w-[680px]">
                 The audit is free. The implementation is where our GEO agency comes in.
               </h2>
               <p className="text-[16px] text-muted-foreground leading-[1.6] max-w-[620px]">
@@ -814,10 +811,10 @@ function TopNav() {
 }
 
 function scoreAccent(score: number) {
-  if (score >= 80) return "#7a8b6b";
+  if (score >= 80) return "#3d8b5e";
   if (score >= 60) return "#6f8aab";
-  if (score >= 40) return "#c99b66";
-  return "#b5443b";
+  if (score >= 40) return "#d89c3a";
+  return "#c44a3a";
 }
 
 // Rotating fun quips shown under the stage text while the audit runs.

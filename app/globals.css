@@ -67,15 +67,15 @@
   --muted-foreground: #6b675e;     /* warm gray */
   --accent: #f0ebe0;
   --accent-foreground: #1f1e1d;
-  --destructive: #b5443b;          /* terracotta, replaces bright red */
+  --destructive: #c44a3a;          /* terracotta, replaces bright red */
   --border: #e8e2d5;               /* warm cream-border */
   --input: #e8e2d5;
   --ring: #d97757;                  /* coral, the signature accent */
   --chart-1: #6f8aab;               /* slate-blue */
-  --chart-2: #7a8b6b;               /* sage */
-  --chart-3: #c99b66;               /* warm amber */
+  --chart-2: #3d8b5e;               /* sage */
+  --chart-3: #d89c3a;               /* warm amber */
   --chart-4: #9a7aa0;               /* muted plum */
-  --chart-5: #b5443b;               /* terracotta */
+  --chart-5: #c44a3a;               /* terracotta */
   --radius: 0.875rem;
   --sidebar: #faf9f5;
   --sidebar-foreground: #1f1e1d;
@@ -91,12 +91,16 @@
      you change the chart vars above. */
   --brand-coral: #d97757;
   --brand-coral-dark: #b85f44;
-  --brand-sage: #7a8b6b;
-  --brand-sage-dark: #52614a;
-  --brand-amber: #c99b66;
-  --brand-amber-dark: #8b6738;
-  --brand-terracotta: #b5443b;
-  --brand-terracotta-dark: #8c3128;
+  /* Status colors. Clearer green/amber/red than the previous muted
+     naturals — green should read as green, not olive — but still
+     restrained: lower saturation than iOS, no neon. Each pair is
+     bg-strength + accessible-on-cream text. */
+  --brand-sage: #3d8b5e;        /* clear green, restrained */
+  --brand-sage-dark: #266c44;
+  --brand-amber: #d89c3a;       /* clear amber, less brown */
+  --brand-amber-dark: #9a6b1f;
+  --brand-terracotta: #c44a3a;  /* clear red, less brown */
+  --brand-terracotta-dark: #9e342a;
   --brand-slate: #6f8aab;
   --brand-slate-dark: #4d6478;
   --brand-plum: #9a7aa0;

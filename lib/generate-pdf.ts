@@ -25,11 +25,11 @@ const COLORS = {
   cream: [250, 250, 247] as const, // #fafaf7 (page background accents)
   cheese: [255, 184, 0] as const, // #d8a23e
   cheeseDeep: [200, 135, 0] as const, // #9a6d24
-  pass: [52, 199, 89] as const, // #7a8b6b
-  warn: [255, 159, 10] as const, // #c99b66
-  fail: [255, 69, 58] as const, // #b5443b
-  priorityHigh: [215, 0, 21] as const, // #8c3128
-  priorityMed: [199, 124, 2] as const, // #8b6738
+  pass: [52, 199, 89] as const, // #3d8b5e
+  warn: [255, 159, 10] as const, // #d89c3a
+  fail: [255, 69, 58] as const, // #c44a3a
+  priorityHigh: [215, 0, 21] as const, // #9e342a
+  priorityMed: [199, 124, 2] as const, // #9a6b1f
   priorityLow: [0, 113, 227] as const, // #6f8aab
 };
 

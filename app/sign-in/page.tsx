@@ -51,7 +51,7 @@ export default async function SignInPage({ searchParams }: Props) {
         </div>
 
         {error === "expired" && (
-          <div className="rounded-xl bg-[#b5443b]/[0.08] border border-[#b5443b]/[0.2] px-4 py-3 text-[13px] text-[#8c3128] leading-snug">
+          <div className="rounded-xl bg-[#c44a3a]/[0.08] border border-[#c44a3a]/[0.2] px-4 py-3 text-[13px] text-[#9e342a] leading-snug">
             That sign-in link already expired or was used. Pop your email in below and we&apos;ll send a fresh one.
           </div>
         )}
