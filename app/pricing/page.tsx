@@ -1,10 +1,14 @@
 import { Metadata } from "next";
-import Link from "next/link";
+import { isBillingConfigured } from "@/lib/stripe";
+import { PricingCTAs } from "./pricing-ctas";
 
 /**
- * Pricing page — single Pro tier, no trial. Stripe Checkout will hook
- * into the primary CTA once we wire it; for now the CTA mailtos / opens
- * an interest signal so we capture demand pre-launch.
+ * Pricing page — single Pro tier, no trial.
+ *
+ * When billing env vars are configured, the Pro CTAs POST to
+ * /api/billing/checkout and redirect to Stripe Checkout. Until then the
+ * CTAs become a "Notify me when Pro is live" mailto so we capture
+ * demand pre-launch.
  *
  * Kept deliberately minimal: hero + 2-column compare + FAQ. No fluff.
  */
@@ -32,6 +36,8 @@ const FREE_PERKS = [
 ];
 
 export default function PricingPage() {
+  const billingLive = isBillingConfigured();
+
   return (
     <main className="min-h-screen px-6 py-16 sm:py-24 max-w-[1040px] mx-auto">
       <header className="text-center space-y-4 mb-14">
@@ -74,12 +80,12 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          <Link
+          <a
             href="/"
             className="mt-6 h-11 rounded-xl bg-foreground/[0.05] hover:bg-foreground/[0.09] text-foreground font-semibold text-[14px] tracking-[-0.01em] transition-colors text-center leading-[44px]"
           >
             Run your free audit
-          </Link>
+          </a>
         </div>
 
         {/* Pro tier */}
@@ -110,15 +116,7 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          {/* Stripe Checkout slot — will become a POST to /api/billing/checkout
-              once Stripe keys are configured. For now this is a "notify me"
-              form pointed at the leads endpoint so we capture demand. */}
-          <a
-            href="mailto:sam@twopointtechnologies.com?subject=Chedder%20Pro%20interest&body=Hi%20Sam%2C%20I%27m%20interested%20in%20Chedder%20Pro.%20Please%20let%20me%20know%20when%20it%27s%20live."
-            className="relative mt-6 h-11 rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] text-white font-semibold text-[14px] tracking-[-0.01em] transition-colors text-center leading-[44px]"
-          >
-            Notify me when Pro is live
-          </a>
+          <PricingCTAs billingLive={billingLive} />
         </div>
       </section>
 

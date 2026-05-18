@@ -233,6 +233,53 @@ export async function applyBillingUpdate(
   return updated;
 }
 
+/**
+ * Lookup a User by their Stripe customer ID. Used by the webhook when
+ * Stripe sends us an event keyed on customer (e.g. subscription
+ * updates) — we maintain a reverse index `customer:<id>` → email so we
+ * don't have to scan every user.
+ */
+export async function getUserByStripeCustomerId(
+  customerId: string
+): Promise<User | null> {
+  if (!customerId) return null;
+  try {
+    const store = getUsersStore();
+    const email = await store.get(`customer:${customerId}`, { type: "text" });
+    if (typeof email !== "string" || !email) return null;
+    return await getUser(email);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist the Stripe customer ID on a user AND write the reverse index
+ * so getUserByStripeCustomerId() works. Idempotent — safe to call on
+ * every checkout.session.completed event.
+ */
+export async function linkStripeCustomer(
+  email: string,
+  customerId: string
+): Promise<void> {
+  if (!customerId) return;
+  const user = await getOrMigrateUser(email);
+  if (!user) return;
+  try {
+    const store = getUsersStore();
+    // Write the reverse index FIRST so a partial failure leaves us in a
+    // safe state (no orphan user record pointing at a stale customer).
+    await store.set(`customer:${customerId}`, normalizeEmail(email));
+    await writeUser({
+      ...user,
+      stripeCustomerId: customerId,
+      updatedAt: nowIso(),
+    });
+  } catch (e) {
+    console.error("[users] linkStripeCustomer failed:", e);
+  }
+}
+
 /* ── Plan helpers ───────────────────────────────────────────────────
  *
  * Pure functions that take a User (or null for anonymous) and answer

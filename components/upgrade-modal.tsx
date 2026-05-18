@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { track } from "@/lib/track";
 
 /**
@@ -129,16 +129,7 @@ export function UpgradeModal({
         </ul>
 
         <div className="pt-2 space-y-2">
-          {/* Until Stripe is wired this routes to a coming-soon page that
-              captures interest. Once Checkout is live this becomes a
-              direct redirect to the Checkout session. */}
-          <a
-            href="/pricing"
-            onClick={() => track("upgrade.modal.cta", { reason })}
-            className="block w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] hover:bg-foreground/90 transition-colors text-center leading-[44px]"
-          >
-            See Pro pricing
-          </a>
+          <UpgradeCta reason={reason} />
           <button
             type="button"
             onClick={onClose}
@@ -149,5 +140,55 @@ export function UpgradeModal({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Primary CTA inside the upgrade modal. Tries to start Stripe Checkout
+ * directly. If billing isn't configured yet, the endpoint responds 503
+ * and we fall through to the /pricing page (which has the mailto
+ * fallback). If the user isn't signed in, we bounce through /sign-in
+ * first with a next= so they land back at /pricing.
+ */
+function UpgradeCta({ reason }: { reason: UpgradeReason }) {
+  const [loading, setLoading] = useState(false);
+
+  async function go() {
+    if (loading) return;
+    setLoading(true);
+    track("upgrade.modal.cta", { reason });
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Modal defaults to monthly — yearly toggle lives on /pricing.
+        body: JSON.stringify({ interval: "monthly" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.url) {
+        window.location.href = data.url as string;
+        return;
+      }
+      if (res.status === 401) {
+        window.location.href = "/sign-in?next=/pricing";
+        return;
+      }
+      // Billing not configured, or already Pro, or anything else —
+      // fall back to the pricing page which handles each case cleanly.
+      window.location.href = "/pricing";
+    } catch {
+      window.location.href = "/pricing";
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={go}
+      disabled={loading}
+      className="block w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] disabled:opacity-60 hover:bg-foreground/90 transition-colors text-center"
+    >
+      {loading ? "Opening Stripe…" : "Upgrade to Pro"}
+    </button>
   );
 }
