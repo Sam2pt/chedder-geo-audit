@@ -111,17 +111,14 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      // Use existing customer if we already have one; otherwise Stripe
-      // creates a new Customer and the webhook will link it back.
+      // Use existing customer if we already have one; otherwise prefill
+      // their email so Checkout shows it pre-filled. In subscription
+      // mode Stripe ALWAYS auto-creates a Customer when one isn't
+      // passed — the `customer_creation` flag we previously set is
+      // payment-mode only and Stripe rejects it for subscriptions.
       ...(user.stripeCustomerId
         ? { customer: user.stripeCustomerId }
-        : {
-            customer_email: user.email,
-            // Persist email-on-customer so the webhook can fall back to
-            // lookup-by-email when the reverse index hasn't been
-            // populated yet (e.g. race against checkout.session.completed).
-            customer_creation: "always",
-          }),
+        : { customer_email: user.email }),
       // Stamp the user's email into client_reference_id so we can
       // resolve the customer even when the webhook arrives before we've
       // had a chance to write the reverse index. Belt + suspenders.
