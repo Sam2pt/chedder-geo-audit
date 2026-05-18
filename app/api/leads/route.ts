@@ -7,6 +7,7 @@ import {
   createSession,
   sessionCookieOptions,
 } from "@/lib/auth";
+import { upsertUserFromSignup } from "@/lib/users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,17 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  // Mirror the lead into the User store so plan/billing/audit-count
+  // tracking works from this point forward. Fire-and-forget so a slow
+  // blob write doesn't block the auth response. Idempotent — repeat
+  // signups for the same email just update name/role/company.
+  void upsertUserFromSignup({
+    email: result.lead.email,
+    name: result.lead.name,
+    role: result.lead.role,
+    company: result.lead.company,
+  });
 
   // Server-side lead.signup event — always fires on a successful save,
   // so our event log captures signups even if the client-side

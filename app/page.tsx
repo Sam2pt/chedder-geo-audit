@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { LeadGate } from "@/components/lead-gate";
+import { UpgradeModal } from "@/components/upgrade-modal";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
 export default function Home() {
@@ -47,6 +48,9 @@ export default function Home() {
   // name + role + company + email. Tracked in localStorage (easily
   // bypassed, which is fine — this is a soft gate, not a paywall).
   const [showLeadGate, setShowLeadGate] = useState(false);
+  // Pro-gate modal — opens when a signed-in free user tries to run a
+  // second+ audit and the server returns 402 upgrade_required.
+  const [showUpgrade, setShowUpgrade] = useState(false);
   // Keep the submit event alive so we can resume the audit after the
   // user completes the gate (or dismisses it).
   const [pendingAuditKickoff, setPendingAuditKickoff] = useState<
@@ -129,6 +133,12 @@ export default function Home() {
         });
         const data = await res.json();
         if (!res.ok) {
+          // 402 = upgrade required from /api/audit. Open Pro modal.
+          if (res.status === 402 || data?.code === "upgrade_required") {
+            track("audit.gated", { url: targetUrl, plan: data?.plan ?? "unknown" });
+            setShowUpgrade(true);
+            return;
+          }
           setError(data.error || "Something went wrong");
           track("audit.failed", { url: targetUrl, reason: data.error ?? "http" });
           return;
@@ -167,6 +177,14 @@ export default function Home() {
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
+        // 402 = upgrade required. Show the Pro modal instead of the
+        // generic error banner so the moment is converting, not failing.
+        if (res.status === 402 || data?.code === "upgrade_required") {
+          track("audit.gated", { url: targetUrl, plan: data?.plan ?? "unknown" });
+          setShowUpgrade(true);
+          setLoading(false);
+          return;
+        }
         setError(data.error || "Something went wrong");
         setLoading(false);
         return;
@@ -265,12 +283,23 @@ export default function Home() {
     />
   ) : null;
 
+  // Pro-gate modal, mounted alongside the lead-gate so it overlays
+  // whatever screen the user is on when the 402 hits.
+  const upgrade = (
+    <UpgradeModal
+      open={showUpgrade}
+      reason="audit_limit"
+      onClose={() => setShowUpgrade(false)}
+    />
+  );
+
   // Full-screen loading with cheese wheel
   if (loading) {
     return (
       <>
         <CheeseWheelLoader url={url} stage={currentStage} progress={progress} />
         {gate}
+        {upgrade}
       </>
     );
   }
@@ -289,6 +318,7 @@ export default function Home() {
           }}
         />
         {gate}
+        {upgrade}
       </>
     );
   }
@@ -767,6 +797,7 @@ export default function Home() {
         </div>
       </footer>
       {gate}
+        {upgrade}
     </main>
   );
 }

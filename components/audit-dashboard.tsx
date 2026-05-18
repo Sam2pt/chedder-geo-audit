@@ -4,7 +4,42 @@ import { useState, useEffect, useRef } from "react";
 import { AuditResult, ModuleResult, Finding, Recommendation, DestinationAnalysis } from "@/lib/types";
 import { generateAuditPDF } from "@/lib/generate-pdf";
 import { CodeSnippet } from "@/components/code-snippet";
+import { UpgradeModal, type UpgradeReason } from "@/components/upgrade-modal";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
+
+/**
+ * Lightweight client-side plan lookup. Cached for the page lifetime so
+ * sibling components don't each fetch /api/auth/me. Returns null while
+ * loading, then the plan summary or { email: null } for anonymous.
+ */
+interface MeSummary {
+  email: string | null;
+  plan?: "free" | "pro";
+  auditsUsed?: number;
+  auditsRemaining?: number | null;
+}
+let _meCache: Promise<MeSummary> | null = null;
+function fetchMe(): Promise<MeSummary> {
+  if (!_meCache) {
+    _meCache = fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { email: null }))
+      .catch(() => ({ email: null }));
+  }
+  return _meCache;
+}
+function useMe(): MeSummary | null {
+  const [me, setMe] = useState<MeSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchMe().then((d) => {
+      if (!cancelled) setMe(d);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return me;
+}
 import {
   destinationKindLabel,
   destinationKindColor,
@@ -775,6 +810,12 @@ function AICompetitors({
 }) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const me = useMe();
+  // Compare-against-competitors is Pro-only. Free + anonymous users see
+  // the padlock and the upgrade modal on click. We treat anonymous as
+  // free for UX purposes (they'd hit the wall after signup anyway).
+  const isPro = me?.plan === "pro";
 
   if (!competitors || competitors.length === 0) return null;
 
@@ -782,6 +823,13 @@ function AICompetitors({
   const topDomains = competitors.slice(0, 3).map((c) => `https://${c.domain}`);
 
   async function runLandGrabCompare() {
+    // Free/anonymous: open the upgrade modal instead of running the
+    // compare. Defense in depth — the server also rejects.
+    if (!isPro) {
+      track("compare.gated", { source: "ai-competitors" }, { slug: result.slug });
+      setUpgradeOpen(true);
+      return;
+    }
     if (running) return;
     setRunning(true);
     setError(null);
@@ -889,15 +937,32 @@ function AICompetitors({
             </>
           ) : (
             <>
+              {/* Padlock for free users. We render it before the label
+                  so it reads as 'this is locked: <feature>' at a glance. */}
+              {!isPro && (
+                <svg className="w-3.5 h-3.5 text-background/85" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              )}
               Steal their playbook
-              <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              {isPro && (
+                <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              )}
+              {!isPro && (
+                <span className="text-[10px] font-bold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-[var(--brand-coral)] text-white ml-1">
+                  Pro
+                </span>
+              )}
             </>
           )}
         </button>
         <p className="text-[11.5px] text-muted-foreground/80 text-center mt-2 leading-snug">
-          We&apos;ll audit the top {topDomains.length} and show you exactly what they&apos;re doing that you aren&apos;t, where you already lead, and the specific moves that close the gap.
+          {isPro
+            ? `We'll audit the top ${topDomains.length} and show you exactly what they're doing that you aren't, where you already lead, and the specific moves that close the gap.`
+            : `Pro audits each of these ${topDomains.length} side-by-side and tells you exactly where to attack. Upgrade to unlock.`}
         </p>
         {error && (
           <div className="text-[12.5px] text-[#9e342a] bg-[#c44a3a]/[0.06] border border-[#c44a3a]/[0.15] rounded-lg px-3 py-2 leading-snug mt-2">
@@ -924,6 +989,11 @@ function AICompetitors({
           </div>
         ))}
       </div>
+      <UpgradeModal
+        open={upgradeOpen}
+        reason="competitors"
+        onClose={() => setUpgradeOpen(false)}
+      />
     </section>
   );
 }

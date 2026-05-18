@@ -30,6 +30,14 @@ import {
   getClientIp,
   rateLimitMessage,
 } from "@/lib/rate-limit";
+import { getCurrentUser } from "@/lib/auth";
+import {
+  getOrMigrateUser,
+  canRunNewAudit,
+  canCompareCompetitors,
+  incrementAuditsUsed,
+  newAuditBlockReason,
+} from "@/lib/users";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -160,6 +168,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Plan gate. Anonymous users still get their first audit free (the
+  // signin happens in the lead-gate AFTER this endpoint returns). Signed
+  // in users get checked against their plan + auditsUsed counter. Free
+  // users who've burned their slot get 402 + upgrade hint; client can
+  // surface this as the Pro modal.
+  const sessionEmail = await getCurrentUser();
+  const signedInUser = sessionEmail ? await getOrMigrateUser(sessionEmail) : null;
+  if (signedInUser && !canRunNewAudit(signedInUser)) {
+    return new Response(
+      JSON.stringify({
+        error: newAuditBlockReason(signedInUser),
+        code: "upgrade_required",
+        plan: signedInUser.plan,
+      }),
+      {
+        status: 402,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   const identity = {
@@ -167,7 +196,14 @@ export async function POST(req: NextRequest) {
     leadEmail: typeof leadEmail === "string" ? leadEmail : undefined,
   };
 
-  const validCompetitors = Array.isArray(competitors)
+  // Competitor compare is a Pro feature. We accept the field for
+  // anonymous users (so their first audit can include competitors and
+  // they get pulled into the lead-gate immediately after), but reject
+  // submissions from signed-in free users. The UI also padlocks the
+  // toggle — this is defense in depth.
+  const allowCompetitors =
+    !signedInUser || canCompareCompetitors(signedInUser);
+  const validCompetitors = allowCompetitors && Array.isArray(competitors)
     ? competitors
         .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
         .slice(0, 3)
@@ -199,6 +235,13 @@ export async function POST(req: NextRequest) {
 
       try {
         await runAudit(url, emit, identity, competitorPromise);
+        // Audit completed successfully — burn one slot for signed-in
+        // free users. Pro users are tracked too (for analytics) but the
+        // counter doesn't gate them. Fire-and-forget so the SSE
+        // connection closes cleanly even if the blob write is slow.
+        if (sessionEmail) {
+          void incrementAuditsUsed(sessionEmail);
+        }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Unknown error";
         emit({ type: "error", message });

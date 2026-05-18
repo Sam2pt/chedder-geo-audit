@@ -12,6 +12,14 @@ import {
   getClientIp,
   rateLimitMessage,
 } from "@/lib/rate-limit";
+import { getCurrentUser } from "@/lib/auth";
+import {
+  getOrMigrateUser,
+  canRunNewAudit,
+  canCompareCompetitors,
+  incrementAuditsUsed,
+  newAuditBlockReason,
+} from "@/lib/users";
 
 // Compare audits fan out to multiple sites in parallel (primary + up to 3
 // competitors). Bump the function timeout accordingly.
@@ -58,12 +66,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Plan gate — signed-in free users who've burned their free audit
+    // get 402. Anonymous users still get their first audit free (the
+    // lead-gate fires after and turns them into a signed-in free user).
+    const sessionEmail = await getCurrentUser();
+    const signedInUser = sessionEmail ? await getOrMigrateUser(sessionEmail) : null;
+    if (signedInUser && !canRunNewAudit(signedInUser)) {
+      return NextResponse.json(
+        {
+          error: newAuditBlockReason(signedInUser),
+          code: "upgrade_required",
+          plan: signedInUser.plan,
+        },
+        { status: 402 }
+      );
+    }
+
     // Fan out primary and competitor audits concurrently so the whole
     // compare finishes in roughly max(audit time), not sum. The primary
     // runs the full set of modules including AI + external. Competitors
     // skip AI + external since we only need their on-site signals for
-    // the side by side.
-    const validCompetitors = Array.isArray(competitors)
+    // the side by side. Competitor compare is Pro-only — strip the list
+    // for signed-in free users (UI also padlocks the toggle).
+    const allowCompetitors =
+      !signedInUser || canCompareCompetitors(signedInUser);
+    const validCompetitors = allowCompetitors && Array.isArray(competitors)
       ? competitors
           .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
           .slice(0, 3)
@@ -111,6 +138,12 @@ export async function POST(req: NextRequest) {
 
     // Save (updates benchmarks + appends history) — don't block the response on failure
     await saveAudit(enriched).catch(() => {});
+
+    // Burn one audit slot for signed-in users. Pro users get incremented
+    // for analytics but the counter doesn't gate them.
+    if (sessionEmail) {
+      void incrementAuditsUsed(sessionEmail);
+    }
 
     return NextResponse.json(enriched);
   } catch (e: unknown) {
