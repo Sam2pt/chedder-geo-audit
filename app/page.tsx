@@ -952,26 +952,29 @@ function CheeseWheelLoader({
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
       <div className="max-w-[520px] w-full space-y-7">
         <div className="flex flex-col items-center text-center space-y-4">
-          {/* Smaller, calmer cheese wheel (was 120px spinning every 3s,
-              now 76px every 5s — same visual identity, less attention) */}
+          {/* The brand C-mark, spinning. Same shape as the logo so the
+              loader IS the brand identity — clean and confident, not
+              the chunky 7-hole spinner of before. Indigo ambient halo
+              behind to tie into the futuristic palette. */}
           <div className="relative w-[76px] h-[76px]">
-            <svg viewBox="0 0 100 100" className="w-full h-full animate-spin" style={{ animationDuration: "5s" }}>
-              <circle cx="50" cy="50" r="45" fill="#d8a23e" />
-              <line x1="50" y1="50" x2="50" y2="5" stroke="#b58632" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="88.9" y2="27.5" stroke="#b58632" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="88.9" y2="72.5" stroke="#b58632" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="50" y2="95" stroke="#b58632" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="11.1" y2="72.5" stroke="#b58632" strokeWidth="1.5" />
-              <line x1="50" y1="50" x2="11.1" y2="27.5" stroke="#b58632" strokeWidth="1.5" />
-              <circle cx="35" cy="30" r="5" fill="#b58632" opacity="0.6" />
-              <circle cx="65" cy="35" r="3.5" fill="#b58632" opacity="0.6" />
-              <circle cx="55" cy="65" r="6" fill="#b58632" opacity="0.6" />
-              <circle cx="30" cy="60" r="4" fill="#b58632" opacity="0.6" />
-              <circle cx="70" cy="70" r="3" fill="#b58632" opacity="0.6" />
-              <circle cx="42" cy="48" r="2.5" fill="#b58632" opacity="0.6" />
-              <circle cx="75" cy="50" r="4.5" fill="#b58632" opacity="0.6" />
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#b58632" strokeWidth="3" />
-              <circle cx="50" cy="50" r="3" fill="#b58632" />
+            <div className="absolute inset-0 rounded-full bg-[var(--brand-coral)]/15 blur-[18px]" />
+            <svg viewBox="0 0 100 100" className="relative w-full h-full animate-spin" style={{ animationDuration: "4.5s" }}>
+              <defs>
+                <linearGradient id="cheddLoader" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f0c46e" />
+                  <stop offset="55%" stopColor="#e0a740" />
+                  <stop offset="100%" stopColor="#a87a25" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z"
+                fill="url(#cheddLoader)"
+                stroke="#0f172a"
+                strokeOpacity="0.1"
+                strokeWidth="1.4"
+              />
+              <circle cx="32" cy="48" r="4.5" fill="#0f172a" opacity="0.22" />
+              <circle cx="45" cy="68" r="3" fill="#0f172a" opacity="0.22" />
             </svg>
           </div>
 

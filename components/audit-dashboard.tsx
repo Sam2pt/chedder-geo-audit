@@ -24,14 +24,19 @@ interface RecentAuditEntry {
 
 /* ── Module color palette ────────────────────────────────────────── */
 
+// Module accent palette — leans on the cool futuristic tokens.
+// ai-citations gets the signature indigo because it's the centerpiece
+// module (the actual AI test). external gets cyan as a fresh, distinct
+// cool accent for "signals from other places" (Wikipedia, Reddit).
+// Status-coded ones (technical=amber, authority=green) stay directive.
 const MODULE_COLORS: Record<string, { accent: string; light: string; dark: string }> = {
   schema:    { accent: "#6f7e94", light: "rgba(111,126,148,0.08)",  dark: "#54647a" },
   meta:      { accent: "#6f8aab", light: "rgba(111,138,171,0.08)",  dark: "#4d6478" },
-  content:   { accent: "#9a7aa0", light: "rgba(154,122,160,0.08)",  dark: "#7a5c82" },
+  content:   { accent: "#8b7aab", light: "rgba(139,122,171,0.08)",  dark: "#6b5c8b" },
   technical: { accent: "#d89c3a", light: "rgba(216,156,58,0.08)",  dark: "#9a6b1f" },
   authority: { accent: "#3d8b5e", light: "rgba(61,139,94,0.08)",  dark: "#266c44" },
-  external:  { accent: "#c2745f", light: "rgba(194,116,95,0.08)",  dark: "#a65b47" },
-  "ai-citations": { accent: "#3d8b5e", light: "rgba(61,139,94,0.08)", dark: "#266c44" },
+  external:  { accent: "#06b6d4", light: "rgba(6,182,212,0.08)",  dark: "#0891b2" },
+  "ai-citations": { accent: "#4f46e5", light: "rgba(79,70,229,0.08)", dark: "#4338ca" },
 };
 
 function moduleColor(slug: string) {
@@ -366,15 +371,19 @@ function ChatPopup({ result }: { result: AuditResult }) {
     setCompany("");
   }
 
-  // Icons
+  // Icons — refined C-mark cheese wheel matches the brand logo
   const cheeseIcon = (
     <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
-      <circle cx="50" cy="50" r="45" fill="#d8a23e"/>
-      <circle cx="50" cy="50" r="45" fill="none" stroke="#b58632" strokeWidth="3"/>
-      <circle cx="35" cy="35" r="4" fill="#b58632" opacity="0.6"/>
-      <circle cx="65" cy="40" r="3" fill="#b58632" opacity="0.6"/>
-      <circle cx="55" cy="60" r="5" fill="#b58632" opacity="0.6"/>
-      <circle cx="35" cy="65" r="3" fill="#b58632" opacity="0.6"/>
+      <defs>
+        <linearGradient id="cheddPdf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f0c46e"/>
+          <stop offset="55%" stopColor="#e0a740"/>
+          <stop offset="100%" stopColor="#a87a25"/>
+        </linearGradient>
+      </defs>
+      <path d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z" fill="url(#cheddPdf)" stroke="#0f172a" strokeOpacity="0.1" strokeWidth="1.2"/>
+      <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.22"/>
+      <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.22"/>
     </svg>
   );
 
@@ -844,7 +853,7 @@ function AICompetitors({
   return (
     <section className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6f7e94] to-[#c2745f] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand-coral)] to-[var(--brand-accent-2)] flex items-center justify-center shrink-0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
             <circle cx="12" cy="12" r="10"/>
             <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -1403,28 +1412,28 @@ function LandGrabInsights({
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Where you can take land</h2>
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Their playbook, side by side</h2>
         <p className="text-[13px] text-muted-foreground mt-1 leading-snug">
-          A side by side read of every signal, sorted by the openings that matter most.
+          A read of every signal, sorted by what they&apos;re doing that you aren&apos;t.
         </p>
       </div>
       <Section
-        title="Take land"
-        subtitle="Places where your competitors are already winning and you aren't yet. Biggest gaps first."
+        title="Where they're winning"
+        subtitle="Signals your competitors lead on. Biggest gaps first — these are the openings."
         items={take}
-        accent="#c2745f"
-        bg="rgba(194,116,95,0.06)"
+        accent="#c44a3a"
+        bg="rgba(196,74,58,0.06)"
       />
       <Section
         title="Quick wins"
         subtitle="Specific fixes your competitors have in place that you don't. Ship these first."
         items={quickwin}
-        accent="#6f8aab"
-        bg="rgba(111,138,171,0.06)"
+        accent="#4f46e5"
+        bg="rgba(79,70,229,0.06)"
       />
       <Section
-        title="You lead"
-        subtitle="Your strongholds. Defend these while you chase the land grabs."
+        title="Where you lead"
+        subtitle="Your strongholds. Defend these while you close the gaps."
         items={lead}
         accent="#3d8b5e"
         bg="rgba(61,139,94,0.06)"
