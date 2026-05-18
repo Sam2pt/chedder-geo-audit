@@ -80,7 +80,7 @@ export default async function OpengraphImage({
               display: "flex",
               fontSize: 32,
               fontWeight: 700,
-              color: "#1f1e1d",
+              color: "#0f172a",
             }}
           >
             Chedder
@@ -129,7 +129,7 @@ export default async function OpengraphImage({
                 display: "flex",
                 fontSize: 72,
                 fontWeight: 700,
-                color: "#1f1e1d",
+                color: "#0f172a",
                 lineHeight: 1.05,
               }}
             >
@@ -213,7 +213,7 @@ export default async function OpengraphImage({
           <div style={{ display: "flex" }}>
             Where does your brand show up when customers ask AI?
           </div>
-          <div style={{ display: "flex", fontWeight: 600, color: "#1f1e1d" }}>
+          <div style={{ display: "flex", fontWeight: 600, color: "#0f172a" }}>
             chedder.2pt.ai
           </div>
         </div>

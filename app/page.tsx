@@ -295,12 +295,19 @@ export default function Home() {
 
   return (
     <main className="flex-1 relative overflow-hidden">
-      {/* Background — single soft warm wash. Old version had three
-          colored blobs that read as busy on the new cream palette.
-          Single, near-invisible coral wash sets the tone without
-          competing with content. */}
+      {/* Cool electric wash. Two soft indigo/cyan blurs sit behind
+          the hero to give the cream-replaced cool palette a hint of
+          motion-glow without going neon. */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-30%] left-1/2 -translate-x-1/2 w-[80%] h-[60%] rounded-full bg-[var(--brand-coral)]/[0.05] blur-[120px]" />
+        <div className="absolute top-[-25%] left-[10%] w-[55%] h-[55%] rounded-full bg-[var(--brand-coral)]/[0.08] blur-[140px]" />
+        <div className="absolute top-[-10%] right-[5%] w-[40%] h-[50%] rounded-full bg-[var(--brand-accent-2)]/[0.06] blur-[140px]" />
+        {/* Subtle grid texture — only visible at the edges. */}
+        <div className="absolute inset-0 opacity-[0.025]" style={{
+          backgroundImage: "linear-gradient(to right, #0f172a 1px, transparent 1px), linear-gradient(to bottom, #0f172a 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse at top, black 30%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at top, black 30%, transparent 70%)"
+        }} />
       </div>
 
       {/* Top nav with sign-in / my-audits affordance */}
@@ -315,18 +322,20 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          {/* whitespace-nowrap on each line so 72px headline never
-              orphans "AI," or "come up?" on its own line at desktop. */}
-          <h1 className="anim-slide-up text-[44px] sm:text-[68px] font-semibold tracking-[-0.045em] leading-[1.02] text-foreground">
-            <span className="block whitespace-nowrap">When shoppers ask AI,</span>
-            <span className="block whitespace-nowrap">
-              <span className="text-foreground/40">does </span>
-              <span className="text-[var(--brand-coral-dark)]">your brand</span>
-              <span className="text-foreground/40"> come up?</span>
+          {/* Two-line poster. First line states the now-fact, second line
+              poses the binary question. Indigo→cyan gradient on the key
+              phrase ("your brand") gives the futuristic accent. */}
+          <h1 className="anim-slide-up text-[44px] sm:text-[72px] font-semibold tracking-[-0.045em] leading-[1.0] text-foreground">
+            <span className="block whitespace-nowrap">Your next customer</span>
+            <span className="block whitespace-nowrap">just asked AI.</span>
+            <span className="block whitespace-nowrap mt-2 sm:mt-3">
+              <span className="text-foreground/35">Did it pick </span>
+              <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">your brand</span>
+              <span className="text-foreground/35">?</span>
             </span>
           </h1>
-          <p className="anim-slide-up delay-100 text-[17px] sm:text-[19px] leading-[1.55] text-muted-foreground font-normal max-w-[540px] mx-auto tracking-[-0.005em]">
-            ChatGPT and Perplexity now decide which DTC brand shoppers buy. Chedder tests if AI recommends <em>you</em>, where it sends them when it does, and exactly what to fix when it doesn&apos;t.
+          <p className="anim-slide-up delay-100 text-[17px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[560px] mx-auto tracking-[-0.01em]">
+            Chedder runs the exact questions shoppers ask ChatGPT, Perplexity, and Google. See if you show up, where AI sends them, and the specific fixes when you don&apos;t.
           </p>
         </div>
 
@@ -357,7 +366,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading || !url.trim()}
-                  className="h-10 px-6 rounded-xl bg-[#1f1e1d] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.96] disabled:opacity-30 disabled:pointer-events-none"
+                  className="h-10 px-6 rounded-xl bg-[#0f172a] text-white text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#0f172a]/85 active:scale-[0.96] disabled:opacity-30 disabled:pointer-events-none"
                 >
                   Analyze
                 </button>
@@ -367,7 +376,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading || !url.trim()}
-              className="sm:hidden mt-2.5 w-full h-12 rounded-2xl bg-[#1f1e1d] text-white text-[15px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.99] disabled:opacity-30 disabled:pointer-events-none"
+              className="sm:hidden mt-2.5 w-full h-12 rounded-2xl bg-[#0f172a] text-white text-[15px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:bg-[#0f172a]/85 active:scale-[0.99] disabled:opacity-30 disabled:pointer-events-none"
             >
               Analyze
             </button>
@@ -501,7 +510,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="anim-slide-up p-8 sm:p-12 rounded-3xl bg-[#1f1e1d] text-white space-y-4 relative overflow-hidden">
+          <div className="anim-slide-up p-8 sm:p-12 rounded-3xl bg-[#0f172a] text-white space-y-4 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] to-transparent pointer-events-none" />
             <p className="relative text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral)]">The problem</p>
             <p className="relative text-[22px] sm:text-[30px] font-semibold leading-[1.25] tracking-[-0.025em]">
@@ -717,7 +726,7 @@ export default function Home() {
                 href="https://twopointtechnologies.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-11 px-5 rounded-xl bg-[#1f1e1d] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#1f1e1d]/85 active:scale-[0.97]"
+                className="h-11 px-5 rounded-xl bg-[#0f172a] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#0f172a]/85 active:scale-[0.97]"
               >
                 Talk to our team
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -785,9 +794,9 @@ function TopNav() {
       <a href="/" className="inline-flex items-center gap-2 group">
         <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
           <svg viewBox="0 0 100 100" className="w-4 h-4">
-            <circle cx="34" cy="37" r="8" fill="#1f1e1d" opacity="0.85" />
-            <circle cx="64" cy="33" r="6" fill="#1f1e1d" opacity="0.85" />
-            <circle cx="58" cy="62" r="10" fill="#1f1e1d" opacity="0.85" />
+            <circle cx="34" cy="37" r="8" fill="#0f172a" opacity="0.85" />
+            <circle cx="64" cy="33" r="6" fill="#0f172a" opacity="0.85" />
+            <circle cx="58" cy="62" r="10" fill="#0f172a" opacity="0.85" />
           </svg>
         </div>
         <span className="text-[14px] font-semibold tracking-[-0.01em] text-foreground/80 group-hover:text-foreground transition-colors">Chedder</span>

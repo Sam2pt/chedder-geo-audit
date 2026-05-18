@@ -83,10 +83,10 @@ export function LeadGate({
         <div className="flex items-center justify-center">
           <div className="w-14 h-14 rounded-2xl bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(31,30,29,0.12)]">
             <svg viewBox="0 0 100 100" className="w-8 h-8">
-              <circle cx="34" cy="37" r="6" fill="#1f1e1d" opacity="0.85" />
-              <circle cx="64" cy="33" r="4" fill="#1f1e1d" opacity="0.85" />
-              <circle cx="58" cy="62" r="8" fill="#1f1e1d" opacity="0.85" />
-              <circle cx="32" cy="67" r="4" fill="#1f1e1d" opacity="0.85" />
+              <circle cx="34" cy="37" r="6" fill="#0f172a" opacity="0.85" />
+              <circle cx="64" cy="33" r="4" fill="#0f172a" opacity="0.85" />
+              <circle cx="58" cy="62" r="8" fill="#0f172a" opacity="0.85" />
+              <circle cx="32" cy="67" r="4" fill="#0f172a" opacity="0.85" />
             </svg>
           </div>
         </div>

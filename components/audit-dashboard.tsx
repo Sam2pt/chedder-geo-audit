@@ -64,7 +64,7 @@ function ScoreGauge({
   const offset = arcLen - (score / 100) * arcLen;
 
   const isDark = variant === "dark";
-  const trackStroke = isDark ? "#ffffff" : "#1f1e1d";
+  const trackStroke = isDark ? "#ffffff" : "#0f172a";
   const trackOpacity = isDark ? 0.14 : 0.06;
   const numberColor = isDark ? "text-white" : "text-foreground";
   const subColor = isDark ? "text-white/60" : "text-muted-foreground";
@@ -384,7 +384,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 h-14 px-5 rounded-full bg-[#1f1e1d] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_10px_32px_rgba(0,0,0,0.22)] transition-all active:scale-[0.97] flex items-center gap-2.5 font-semibold text-[14px] tracking-[-0.01em]"
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 h-14 px-5 rounded-full bg-[#0f172a] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_10px_32px_rgba(0,0,0,0.22)] transition-all active:scale-[0.97] flex items-center gap-2.5 font-semibold text-[14px] tracking-[-0.01em]"
         >
           {cheeseIcon}
           Download full report
@@ -472,7 +472,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
                 <button
                   type="submit"
                   disabled={sending || !name.trim() || !email.trim()}
-                  className="w-full h-10 rounded-xl bg-[#1f1e1d] text-white text-[13px] font-semibold hover:bg-[#1f1e1d]/85 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center gap-2 mt-1"
+                  className="w-full h-10 rounded-xl bg-[#0f172a] text-white text-[13px] font-semibold hover:bg-[#0f172a]/85 active:scale-[0.99] disabled:opacity-40 transition-all flex items-center justify-center gap-2 mt-1"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                   {sending ? "Generating..." : "Send me the PDF"}
@@ -485,7 +485,7 @@ function ChatPopup({ result }: { result: AuditResult }) {
               <div className="pl-9">
                 <button
                   onClick={() => { setOpen(false); reset(); }}
-                  className="w-full h-10 rounded-xl bg-[#1f1e1d] text-white text-[13px] font-semibold hover:bg-[#1f1e1d]/85 active:scale-[0.99] transition-all"
+                  className="w-full h-10 rounded-xl bg-[#0f172a] text-white text-[13px] font-semibold hover:bg-[#0f172a]/85 active:scale-[0.99] transition-all"
                 >
                   Close
                 </button>
@@ -1701,10 +1701,10 @@ function AppChrome({
     <div className="flex items-center gap-2">
       <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
         <svg viewBox="0 0 100 100" className="w-4 h-4">
-          <circle cx="34" cy="37" r="6" fill="#1f1e1d" opacity="0.85"/>
-          <circle cx="64" cy="33" r="4" fill="#1f1e1d" opacity="0.85"/>
-          <circle cx="58" cy="62" r="8" fill="#1f1e1d" opacity="0.85"/>
-          <circle cx="32" cy="67" r="4" fill="#1f1e1d" opacity="0.85"/>
+          <circle cx="34" cy="37" r="6" fill="#0f172a" opacity="0.85"/>
+          <circle cx="64" cy="33" r="4" fill="#0f172a" opacity="0.85"/>
+          <circle cx="58" cy="62" r="8" fill="#0f172a" opacity="0.85"/>
+          <circle cx="32" cy="67" r="4" fill="#0f172a" opacity="0.85"/>
         </svg>
       </div>
       <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">Chedder</span>
@@ -2175,7 +2175,7 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
             cy={cy}
             r={maxR * t}
             fill="none"
-            stroke="#1f1e1d"
+            stroke="#0f172a"
             strokeOpacity={i === rings.length - 1 ? 0.1 : 0.05}
             strokeDasharray={i === rings.length - 1 ? undefined : "2 3"}
           />
@@ -2189,7 +2189,7 @@ function RadarChart({ modules }: { modules: ModuleResult[] }) {
             y1={cy}
             x2={p.ox}
             y2={p.oy}
-            stroke="#1f1e1d"
+            stroke="#0f172a"
             strokeOpacity="0.06"
           />
         ))}
@@ -2342,7 +2342,7 @@ function LiveAITestPanel({ result }: { result: AuditResult }) {
   }
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-[#1f1e1d] text-white h-full flex flex-col relative overflow-hidden">
+    <div className="p-5 sm:p-6 rounded-2xl bg-[#0f172a] text-white h-full flex flex-col relative overflow-hidden">
       {/* subtle coral wash */}
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] via-transparent to-transparent pointer-events-none" />
       {/* Header */}
@@ -2686,7 +2686,7 @@ function CompetitivePicturePanel({ result }: { result: AuditResult }) {
               <div
                 className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold tabular-nums ${
                   row.isYou
-                    ? "bg-[#1f1e1d] text-white"
+                    ? "bg-[#0f172a] text-white"
                     : "bg-foreground/[0.06] text-foreground/60"
                 }`}
               >

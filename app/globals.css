@@ -49,48 +49,51 @@
 }
 
 :root {
-  /* 2pt-light palette. Warm cream + charcoal + restrained naturals.
-     Replaces the saturated Apple-style semaphore palette (bright blue,
-     iOS green/amber/red) which read as frantic. The new tokens are
-     warmer, less saturated, and lean on coral as the single accent. */
-  --background: #faf9f5;          /* warm cream, Anthropic-style */
-  --foreground: #1f1e1d;          /* warm charcoal */
+  /* Futuristic light palette. Cool off-white + slate ink + electric
+     indigo. Replaces the previous warm-cream Anthropic palette which
+     read as artisanal/literary. The new tokens lean on indigo as the
+     single accent and use a cooler base so the product feels closer
+     to Linear/Vercel/Stripe than to a book jacket. */
+  --background: #f8fafc;          /* cool off-white, slight slate tint */
+  --foreground: #0f172a;          /* slate-900, near-black with cool undertone */
   --card: #ffffff;
-  --card-foreground: #1f1e1d;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1f1e1d;
-  --primary: #1f1e1d;
+  --popover-foreground: #0f172a;
+  --primary: #0f172a;
   --primary-foreground: #ffffff;
-  --secondary: #f3efe5;            /* slightly darker cream */
-  --secondary-foreground: #1f1e1d;
-  --muted: #f3efe5;
-  --muted-foreground: #6b675e;     /* warm gray */
-  --accent: #f0ebe0;
-  --accent-foreground: #1f1e1d;
-  --destructive: #c44a3a;          /* terracotta, replaces bright red */
-  --border: #e8e2d5;               /* warm cream-border */
-  --input: #e8e2d5;
-  --ring: #d97757;                  /* coral, the signature accent */
-  --chart-1: #6f8aab;               /* slate-blue */
-  --chart-2: #3d8b5e;               /* sage */
-  --chart-3: #d89c3a;               /* warm amber */
-  --chart-4: #9a7aa0;               /* muted plum */
-  --chart-5: #c44a3a;               /* terracotta */
+  --secondary: #f1f5f9;            /* slate-100 */
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;     /* slate-500 */
+  --accent: #eef2ff;               /* indigo-50, soft halo */
+  --accent-foreground: #4338ca;
+  --destructive: #c44a3a;
+  --border: #e2e8f0;               /* slate-200, cool-toned */
+  --input: #e2e8f0;
+  --ring: #4f46e5;                  /* indigo-600, the signature accent */
+  --chart-1: #4f46e5;               /* indigo */
+  --chart-2: #3d8b5e;               /* clear green */
+  --chart-3: #d89c3a;               /* clear amber */
+  --chart-4: #06b6d4;               /* cyan, secondary accent */
+  --chart-5: #c44a3a;               /* clear red */
   --radius: 0.875rem;
-  --sidebar: #faf9f5;
-  --sidebar-foreground: #1f1e1d;
-  --sidebar-primary: #d97757;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #4f46e5;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0ebe0;
-  --sidebar-accent-foreground: #1f1e1d;
-  --sidebar-border: #e8e2d5;
-  --sidebar-ring: #d97757;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #4338ca;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #4f46e5;
 
-  /* Named brand tokens — used directly by inline styles in dashboard
-     where Tailwind utilities would be unwieldy. Keep these in sync if
-     you change the chart vars above. */
-  --brand-coral: #d97757;
-  --brand-coral-dark: #b85f44;
+  /* Named brand tokens — kept under their old --brand-coral name so
+     existing call-sites pick up the new value without a search/replace.
+     The accent IS the coral slot now: electric indigo with a cyan
+     counterpart for the rare two-tone gradient. */
+  --brand-coral: #4f46e5;       /* indigo-600 — replaces coral */
+  --brand-coral-dark: #4338ca;  /* indigo-700 */
+  --brand-accent-2: #06b6d4;    /* cyan-500 — for gradient pairs */
   /* Status colors. Clearer green/amber/red than the previous muted
      naturals — green should read as green, not olive — but still
      restrained: lower saturation than iOS, no neon. Each pair is
@@ -132,8 +135,8 @@ html {
 }
 
 .hero-gradient {
-  /* Warm cream gradient. Slow, almost imperceptible motion. */
-  background: linear-gradient(135deg, #faf9f5 0%, #f3efe5 25%, #faf9f5 50%, #f0ebe0 75%, #faf9f5 100%);
+  /* Cool slate gradient. Slow, almost imperceptible motion. */
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #f8fafc 50%, #eef2ff 75%, #f8fafc 100%);
   background-size: 400% 400%;
   animation: gradient-shift 14s ease infinite;
 }

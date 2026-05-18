@@ -18,7 +18,7 @@ import { AuditResult, Finding, ModuleResult, Recommendation } from "./types";
 
 // ── Palette ─────────────────────────────────────────────────────────
 const COLORS = {
-  ink: [29, 29, 31] as const, // #1f1e1d
+  ink: [29, 29, 31] as const, // #0f172a
   subtle: [107, 107, 112] as const, // #6b6b70
   faint: [160, 160, 166] as const, // #a0a0a6
   hairline: [230, 230, 233] as const, // #e6e6e9

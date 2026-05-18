@@ -53,7 +53,7 @@ export default async function OpengraphImage() {
               fontSize: 32,
               fontWeight: 700,
               letterSpacing: "-0.02em",
-              color: "#1f1e1d",
+              color: "#0f172a",
               display: "flex",
             }}
           >
@@ -93,7 +93,7 @@ export default async function OpengraphImage() {
               fontWeight: 700,
               letterSpacing: "-0.035em",
               lineHeight: 1.02,
-              color: "#1f1e1d",
+              color: "#0f172a",
             }}
           >
             <div style={{ display: "flex" }}>When shoppers ask AI,</div>
