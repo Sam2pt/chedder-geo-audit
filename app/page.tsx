@@ -804,7 +804,7 @@ function TopNav() {
             </linearGradient>
           </defs>
           <path
-            d="M 50 50 L 92 33 A 45 45 0 1 0 67 8 Z"
+            d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z"
             fill="url(#cheddTop)"
             stroke="#0f172a"
             strokeOpacity="0.08"

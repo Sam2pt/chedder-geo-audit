@@ -32,7 +32,7 @@ export default function Icon() {
               <stop offset="100%" stopColor="#a87a25" />
             </linearGradient>
           </defs>
-          <path d="M 50 50 L 92 33 A 45 45 0 1 0 67 8 Z" fill="url(#g)" stroke="#0f172a" strokeOpacity="0.1" strokeWidth="1.2" />
+          <path d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z" fill="url(#g)" stroke="#0f172a" strokeOpacity="0.1" strokeWidth="1.2" />
           <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.22" />
           <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.22" />
         </svg>
