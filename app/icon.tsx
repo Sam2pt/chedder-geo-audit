@@ -20,16 +20,21 @@ export default function Icon() {
           justifyContent: "center",
           width: "100%",
           height: "100%",
-          background: "linear-gradient(135deg, #d8a23e, #b58632)",
-          borderRadius: 14,
+          background: "#f8fafc",
         }}
       >
-        <svg width="44" height="44" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.18" />
-          <circle cx="34" cy="37" r="7" fill="#8B5A00" />
-          <circle cx="64" cy="33" r="5" fill="#8B5A00" />
-          <circle cx="58" cy="62" r="9" fill="#8B5A00" />
-          <circle cx="32" cy="67" r="5" fill="#8B5A00" />
+        {/* Refined mark: wheel with slice cut, doubles as a C */}
+        <svg width="56" height="56" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f0c46e" />
+              <stop offset="55%" stopColor="#e0a740" />
+              <stop offset="100%" stopColor="#a87a25" />
+            </linearGradient>
+          </defs>
+          <path d="M 50 50 L 92 33 A 45 45 0 1 0 67 8 Z" fill="url(#g)" stroke="#0f172a" strokeOpacity="0.1" strokeWidth="1.2" />
+          <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.22" />
+          <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.22" />
         </svg>
       </div>
     ),

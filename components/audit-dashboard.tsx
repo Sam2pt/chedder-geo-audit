@@ -1698,16 +1698,22 @@ function AppChrome({
   const [reauditing, setReauditing] = useState(false);
 
   const chedderLogo = (
-    <div className="flex items-center gap-2">
-      <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
-        <svg viewBox="0 0 100 100" className="w-4 h-4">
-          <circle cx="34" cy="37" r="6" fill="#0f172a" opacity="0.85"/>
-          <circle cx="64" cy="33" r="4" fill="#0f172a" opacity="0.85"/>
-          <circle cx="58" cy="62" r="8" fill="#0f172a" opacity="0.85"/>
-          <circle cx="32" cy="67" r="4" fill="#0f172a" opacity="0.85"/>
-        </svg>
-      </div>
-      <span className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">Chedder</span>
+    <div className="flex items-center gap-2 group">
+      {/* Refined cheese mark: wheel with one slice cut, also reads
+          as a stylized C. Gold gradient + subtle dark stroke. */}
+      <svg viewBox="0 0 100 100" className="w-7 h-7 transition-transform duration-500 group-hover:rotate-[-8deg]">
+        <defs>
+          <linearGradient id="cheddNav" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f0c46e"/>
+            <stop offset="55%" stopColor="#e0a740"/>
+            <stop offset="100%" stopColor="#a87a25"/>
+          </linearGradient>
+        </defs>
+        <path d="M 50 50 L 92 33 A 45 45 0 1 0 67 8 Z" fill="url(#cheddNav)" stroke="#0f172a" strokeOpacity="0.08" strokeWidth="1.2"/>
+        <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.2"/>
+        <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.2"/>
+      </svg>
+      <span className="text-[15px] font-semibold tracking-[-0.025em] text-foreground">Chedder</span>
     </div>
   );
 

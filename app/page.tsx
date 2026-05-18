@@ -792,14 +792,28 @@ function TopNav() {
   return (
     <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between">
       <a href="/" className="inline-flex items-center gap-2 group">
-        <div className="w-7 h-7 rounded-lg bg-[var(--brand-gold)] flex items-center justify-center shadow-[inset_0_-1px_2px_rgba(31,30,29,0.12)]">
-          <svg viewBox="0 0 100 100" className="w-4 h-4">
-            <circle cx="34" cy="37" r="8" fill="#0f172a" opacity="0.85" />
-            <circle cx="64" cy="33" r="6" fill="#0f172a" opacity="0.85" />
-            <circle cx="58" cy="62" r="10" fill="#0f172a" opacity="0.85" />
-          </svg>
-        </div>
-        <span className="text-[14px] font-semibold tracking-[-0.01em] text-foreground/80 group-hover:text-foreground transition-colors">Chedder</span>
+        {/* Refined cheese mark: a wheel with one slice cut, which also
+            reads as the letter C. Gold gradient gives depth; two small
+            asymmetric holes keep the cheese identity without clutter. */}
+        <svg viewBox="0 0 100 100" className="w-7 h-7 transition-transform duration-500 group-hover:rotate-[-8deg]">
+          <defs>
+            <linearGradient id="cheddTop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f0c46e" />
+              <stop offset="55%" stopColor="#e0a740" />
+              <stop offset="100%" stopColor="#a87a25" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M 50 50 L 92 33 A 45 45 0 1 0 67 8 Z"
+            fill="url(#cheddTop)"
+            stroke="#0f172a"
+            strokeOpacity="0.08"
+            strokeWidth="1.2"
+          />
+          <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.2" />
+          <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.2" />
+        </svg>
+        <span className="text-[15px] font-semibold tracking-[-0.025em] text-foreground/85 group-hover:text-foreground transition-colors">Chedder</span>
       </a>
       <div className="flex items-center gap-2">
         {email ? (
