@@ -308,16 +308,22 @@ export default function Home() {
 
       {/* ───── HERO ───── */}
       <section className="min-h-[90vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-12 sm:py-20">
-      <div className="w-full max-w-[640px] text-center space-y-10">
+      <div className="w-full max-w-[760px] text-center space-y-10">
         {/* Brand */}
         <div className="space-y-6">
           <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 backdrop-blur-sm border border-foreground/[0.07] text-[12.5px] text-muted-foreground font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          <h1 className="anim-slide-up text-[48px] sm:text-[72px] font-semibold tracking-[-0.045em] leading-[1.0] text-foreground">
-            When shoppers ask AI,<br/>
-            <span className="text-foreground/40">does </span><span className="text-[var(--brand-coral-dark)]">your brand</span><span className="text-foreground/40"> come up?</span>
+          {/* whitespace-nowrap on each line so 72px headline never
+              orphans "AI," or "come up?" on its own line at desktop. */}
+          <h1 className="anim-slide-up text-[44px] sm:text-[68px] font-semibold tracking-[-0.045em] leading-[1.02] text-foreground">
+            <span className="block whitespace-nowrap">When shoppers ask AI,</span>
+            <span className="block whitespace-nowrap">
+              <span className="text-foreground/40">does </span>
+              <span className="text-[var(--brand-coral-dark)]">your brand</span>
+              <span className="text-foreground/40"> come up?</span>
+            </span>
           </h1>
           <p className="anim-slide-up delay-100 text-[17px] sm:text-[19px] leading-[1.55] text-muted-foreground font-normal max-w-[540px] mx-auto tracking-[-0.005em]">
             ChatGPT and Perplexity now decide which DTC brand shoppers buy. Chedder tests if AI recommends <em>you</em>, where it sends them when it does, and exactly what to fix when it doesn&apos;t.
