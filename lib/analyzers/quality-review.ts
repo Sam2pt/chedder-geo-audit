@@ -16,6 +16,7 @@
  */
 
 import type { AICompetitor } from "../types";
+import { recordLlmSpend } from "../spend-cap";
 
 export interface QualityReview {
   /** Kept competitors, in original order, with any suggested canonical domain. */
@@ -106,6 +107,8 @@ Review each competitor against the rules. Return the JSON verdict.`;
       );
       return { competitors, dropped: [] };
     }
+    // Track the gpt-4o-mini analyzer cost for finances dashboard.
+    void recordLlmSpend(1);
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };

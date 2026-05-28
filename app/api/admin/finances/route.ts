@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFinancialSnapshot, setAdSpend } from "@/lib/finances";
+import {
+  getFinancialSnapshot,
+  setAdSpend,
+  setFixedCosts,
+  type FixedCost,
+} from "@/lib/finances";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +51,26 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
   }
+  const { kind } = body as { kind?: string };
+
+  // Two POST shapes routed by `kind`. Keeps a single endpoint instead
+  // of fanning out to /admin/finances/{ads,fixed} subroutes.
+  if (kind === "fixed_costs") {
+    const { items } = body as { items?: FixedCost[] };
+    if (!Array.isArray(items)) {
+      return NextResponse.json(
+        { error: "items[] is required" },
+        { status: 400 }
+      );
+    }
+    await setFixedCosts(items);
+    const snapshot = await getFinancialSnapshot();
+    return NextResponse.json(snapshot, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
+
+  // Default = ad spend update (back-compat with the original shape).
   const { period, usd } = body as { period?: string; usd?: number };
   if (period !== "today" && period !== "month") {
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import { getStripe } from "./stripe";
-import { SPEND_CAP_CONFIG } from "./spend-cap";
+import { SPEND_CAP_CONFIG, getEngineSpendBreakdown, type EngineSpendSnapshot } from "./spend-cap";
 
 /**
  * Financials aggregator — single source for "am I making money right
@@ -59,6 +59,11 @@ interface AiSpendSnapshot {
   /** Daily / monthly hard caps (config). UI can show as gauges. */
   dailyCapUsd: number;
   monthlyCapUsd: number;
+  /** Per-engine breakdown (openai / perplexity / brave / llm). Populated
+   *  when callers use the per-engine record functions. The legacy
+   *  aggregate above is the source of truth for cap math; this is the
+   *  source of truth for cost attribution. */
+  engines: EngineSpendSnapshot;
 }
 
 async function readSpendUsage(key: string): Promise<number> {
@@ -73,19 +78,27 @@ async function readSpendUsage(key: string): Promise<number> {
 }
 
 export async function getAiSpend(): Promise<AiSpendSnapshot> {
-  const [today, month] = await Promise.all([
+  const [today, month, engines] = await Promise.all([
     readSpendUsage(dayKey()),
     readSpendUsage(monthKey()),
+    getEngineSpendBreakdown(),
   ]);
   const cpq = SPEND_CAP_CONFIG.costPerQueryUSD;
+  // Prefer the per-engine total when it's been populated (more
+  // accurate), else fall back to the legacy aggregate × blended cost.
+  const todayUsd =
+    engines.todayTotalUsd > 0 ? engines.todayTotalUsd : today * cpq;
+  const monthUsd =
+    engines.monthTotalUsd > 0 ? engines.monthTotalUsd : month * cpq;
   return {
     todayQueries: today,
     monthQueries: month,
-    todayUsd: today * cpq,
-    monthUsd: month * cpq,
+    todayUsd,
+    monthUsd,
     costPerQueryUsd: cpq,
     dailyCapUsd: SPEND_CAP_CONFIG.maxDailySpendUSD,
     monthlyCapUsd: SPEND_CAP_CONFIG.maxMonthlySpendUSD,
+    engines,
   };
 }
 
@@ -141,45 +154,57 @@ interface RevenueSnapshot {
   activePro: number;
   /** Sum of recurring price across active subs (in USD/month). Estimate. */
   mrrUsd: number;
-  /** Actual successful charges since UTC midnight today. */
+  /** Actual successful charges since UTC midnight today (gross — fees
+   *  not yet deducted; subtract feeTodayUsd for net deposit). */
   todayUsd: number;
-  /** Actual successful charges since UTC start of this month. */
+  /** Actual successful charges since UTC start of this month (gross). */
   monthUsd: number;
+  /** Stripe fees on those charges (2.9% + $0.30 per US card on default
+   *  pricing — actual rates vary by country & dispute history). */
+  feeTodayUsd: number;
+  feeMonthUsd: number;
   /** True if the Stripe lookup succeeded — UI can show a stale notice. */
   ok: boolean;
 }
 
 /**
- * Sum charge amounts (cents → USD) since a given UTC instant. Pages
- * through the Stripe charges API in 100-at-a-time batches; for the
- * volumes we'll see at this stage (single-digit per day) the first
- * page is almost always all we need.
+ * Sum charge amounts AND Stripe fees (cents → USD) since a given UTC
+ * instant. Stripe puts the fee on the charge's balance_transaction;
+ * we expand it inline so we don't need a second round-trip per charge.
+ * Pages through 100 at a time and caps at 10 pages.
  */
 async function sumChargesSince(
   stripe: ReturnType<typeof getStripe>,
   sinceUnix: number
-): Promise<number> {
-  if (!stripe) return 0;
-  let total = 0;
+): Promise<{ chargesUsd: number; feesUsd: number }> {
+  if (!stripe) return { chargesUsd: 0, feesUsd: 0 };
+  let chargesCents = 0;
+  let feesCents = 0;
   let startingAfter: string | undefined;
   for (let i = 0; i < 10; i++) {
-    // Hard cap at 10 pages = 1000 charges so we never spin forever.
     const page = await stripe.charges.list({
       created: { gte: sinceUnix },
       limit: 100,
+      expand: ["data.balance_transaction"],
       ...(startingAfter ? { starting_after: startingAfter } : {}),
     });
     for (const c of page.data) {
-      // Only count succeeded charges. Skip refunds — we account for
-      // those by subtracting amount_refunded at the end.
-      if (c.status === "succeeded") {
-        total += c.amount - (c.amount_refunded || 0);
+      if (c.status !== "succeeded") continue;
+      chargesCents += c.amount - (c.amount_refunded || 0);
+      // balance_transaction comes back as an object thanks to expand=.
+      // The .fee field is total fees in cents on that transaction.
+      const bt = c.balance_transaction;
+      if (bt && typeof bt === "object" && "fee" in bt && typeof bt.fee === "number") {
+        feesCents += bt.fee;
       }
     }
     if (!page.has_more || page.data.length === 0) break;
     startingAfter = page.data[page.data.length - 1].id;
   }
-  return total / 100; // cents → USD
+  return {
+    chargesUsd: chargesCents / 100,
+    feesUsd: feesCents / 100,
+  };
 }
 
 /**
@@ -217,22 +242,114 @@ async function sumActiveMrr(
 export async function getRevenue(): Promise<RevenueSnapshot> {
   const stripe = getStripe();
   if (!stripe) {
-    return { activePro: 0, mrrUsd: 0, todayUsd: 0, monthUsd: 0, ok: false };
+    return {
+      activePro: 0,
+      mrrUsd: 0,
+      todayUsd: 0,
+      monthUsd: 0,
+      feeTodayUsd: 0,
+      feeMonthUsd: 0,
+      ok: false,
+    };
   }
   try {
     const dayStart = Math.floor(utcDayStart().getTime() / 1000);
     const monthStart = Math.floor(utcMonthStart().getTime() / 1000);
 
-    const [{ count, mrrUsd }, todayUsd, monthUsd] = await Promise.all([
+    const [{ count, mrrUsd }, todaySums, monthSums] = await Promise.all([
       sumActiveMrr(stripe),
       sumChargesSince(stripe, dayStart),
       sumChargesSince(stripe, monthStart),
     ]);
 
-    return { activePro: count, mrrUsd, todayUsd, monthUsd, ok: true };
+    return {
+      activePro: count,
+      mrrUsd,
+      todayUsd: todaySums.chargesUsd,
+      monthUsd: monthSums.chargesUsd,
+      feeTodayUsd: todaySums.feesUsd,
+      feeMonthUsd: monthSums.feesUsd,
+      ok: true,
+    };
   } catch (e) {
     console.error("[finances] Stripe lookup failed:", e);
-    return { activePro: 0, mrrUsd: 0, todayUsd: 0, monthUsd: 0, ok: false };
+    return {
+      activePro: 0,
+      mrrUsd: 0,
+      todayUsd: 0,
+      monthUsd: 0,
+      feeTodayUsd: 0,
+      feeMonthUsd: 0,
+      ok: false,
+    };
+  }
+}
+
+/* ── Fixed costs (manual entry: hosting, domain, monitoring etc.) ── */
+
+const FIXED_COSTS_STORE = "costs";
+const FIXED_COSTS_KEY = "fixed";
+
+export interface FixedCost {
+  id: string;
+  label: string;
+  monthlyUsd: number;
+  /** Optional notes the operator wants to leave next to the line. */
+  notes?: string;
+}
+
+interface FixedCostSnapshot {
+  items: FixedCost[];
+  totalMonthlyUsd: number;
+  /** Amortized to a single day for today-column display. */
+  todayUsd: number;
+}
+
+export async function getFixedCosts(): Promise<FixedCostSnapshot> {
+  let items: FixedCost[] = [];
+  try {
+    const store = getStore({ name: FIXED_COSTS_STORE });
+    const raw = await store.get(FIXED_COSTS_KEY, { type: "json" });
+    if (Array.isArray(raw)) items = raw as FixedCost[];
+  } catch {
+    // ignore — return empty list
+  }
+  const totalMonthlyUsd = items.reduce(
+    (acc, x) => acc + (Number.isFinite(x.monthlyUsd) ? x.monthlyUsd : 0),
+    0
+  );
+  // Days-in-month approximation (30.4 = 365/12) so the today amortization
+  // stays consistent across months.
+  const todayUsd = totalMonthlyUsd / 30.4;
+  return { items, totalMonthlyUsd, todayUsd };
+}
+
+/**
+ * Replace the entire fixed-costs list. Caller owns the array shape;
+ * we don't merge or upsert individual rows (keeps the route handler
+ * simple and the data model boring).
+ */
+export async function setFixedCosts(items: FixedCost[]): Promise<void> {
+  try {
+    const store = getStore({ name: FIXED_COSTS_STORE });
+    // Defensive normalization — coerce numbers, clip strings.
+    const cleaned: FixedCost[] = items
+      .filter((x) => x && typeof x.label === "string")
+      .map((x) => ({
+        id: typeof x.id === "string" && x.id ? x.id : crypto.randomUUID(),
+        label: x.label.trim().slice(0, 120),
+        monthlyUsd:
+          typeof x.monthlyUsd === "number" && Number.isFinite(x.monthlyUsd)
+            ? Math.max(0, x.monthlyUsd)
+            : 0,
+        notes:
+          typeof x.notes === "string" && x.notes.trim()
+            ? x.notes.trim().slice(0, 240)
+            : undefined,
+      }));
+    await store.setJSON(FIXED_COSTS_KEY, cleaned);
+  } catch (e) {
+    console.error("[finances] setFixedCosts failed:", e);
   }
 }
 
@@ -242,25 +359,40 @@ export interface FinancialSnapshot {
   ai: AiSpendSnapshot;
   revenue: RevenueSnapshot;
   ads: AdSpendSnapshot;
-  /** Net = revenue − AI cost − ad spend, for each window. */
+  fixed: FixedCostSnapshot;
+  /** Net = revenue − AI cost − Stripe fees − ad spend − fixed costs.
+   *  This is the closest thing to true daily/monthly profit we can
+   *  calculate without payroll/contractors. */
   net: { todayUsd: number; monthUsd: number };
   /** ISO timestamp this snapshot was taken — caller can display. */
   asOf: string;
 }
 
 export async function getFinancialSnapshot(): Promise<FinancialSnapshot> {
-  const [ai, revenue, ads] = await Promise.all([
+  const [ai, revenue, ads, fixed] = await Promise.all([
     getAiSpend(),
     getRevenue(),
     getAdSpend(),
+    getFixedCosts(),
   ]);
   return {
     ai,
     revenue,
     ads,
+    fixed,
     net: {
-      todayUsd: revenue.todayUsd - ai.todayUsd - ads.todayUsd,
-      monthUsd: revenue.monthUsd - ai.monthUsd - ads.monthUsd,
+      todayUsd:
+        revenue.todayUsd -
+        revenue.feeTodayUsd -
+        ai.todayUsd -
+        ads.todayUsd -
+        fixed.todayUsd,
+      monthUsd:
+        revenue.monthUsd -
+        revenue.feeMonthUsd -
+        ai.monthUsd -
+        ads.monthUsd -
+        fixed.totalMonthlyUsd,
     },
     asOf: new Date().toISOString(),
   };

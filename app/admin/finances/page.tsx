@@ -3,6 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFinancialSnapshot } from "@/lib/finances";
 import { AdSpendForm } from "./ad-spend-form";
+import { FixedCostsForm } from "./fixed-costs-form";
+
+const ENGINE_LABELS: Record<string, string> = {
+  openai: "OpenAI (web search)",
+  perplexity: "Perplexity Sonar",
+  brave: "Brave summarizer",
+  llm: "gpt-4o-mini (analyzers)",
+};
 
 export const metadata: Metadata = {
   title: "Finances · Admin",
@@ -46,7 +54,7 @@ export default async function FinancesPage({ searchParams }: Props) {
   }
 
   const snap = await getFinancialSnapshot();
-  const { ai, revenue, ads, net } = snap;
+  const { ai, revenue, ads, fixed, net } = snap;
   const dailyCapPct = ai.dailyCapUsd > 0 ? (ai.todayUsd / ai.dailyCapUsd) * 100 : 0;
   const monthlyCapPct = ai.monthlyCapUsd > 0 ? (ai.monthUsd / ai.monthlyCapUsd) * 100 : 0;
 
@@ -79,12 +87,12 @@ export default async function FinancesPage({ searchParams }: Props) {
         <HeadlineCard
           label="Net today"
           value={net.todayUsd}
-          subline={`${fmtUsd(revenue.todayUsd)} in − ${fmtUsd(ai.todayUsd + ads.todayUsd)} out`}
+          subline={`${fmtUsd(revenue.todayUsd)} in − ${fmtUsd(revenue.feeTodayUsd + ai.todayUsd + ads.todayUsd + fixed.todayUsd)} out`}
         />
         <HeadlineCard
           label="Net this month"
           value={net.monthUsd}
-          subline={`${fmtUsd(revenue.monthUsd)} in − ${fmtUsd(ai.monthUsd + ads.monthUsd)} out`}
+          subline={`${fmtUsd(revenue.monthUsd)} in − ${fmtUsd(revenue.feeMonthUsd + ai.monthUsd + ads.monthUsd + fixed.totalMonthlyUsd)} out`}
         />
       </section>
 
@@ -93,24 +101,46 @@ export default async function FinancesPage({ searchParams }: Props) {
         {/* Detail rows */}
         <div className="md:col-span-2 rounded-2xl border border-foreground/[0.07] bg-white overflow-hidden">
           <DetailRow
-            label="Revenue (Stripe)"
+            label="Revenue (Stripe charges, gross)"
             today={revenue.todayUsd}
             month={revenue.monthUsd}
             polarity="in"
           />
           <DetailRow
-            label="AI compute (OpenAI · Perplexity · Brave)"
+            label="Stripe fees (2.9% + $0.30 per charge)"
+            today={revenue.feeTodayUsd}
+            month={revenue.feeMonthUsd}
+            polarity="out"
+            note="Pulled live from each charge's balance_transaction."
+          />
+          <DetailRow
+            label="AI compute (all engines)"
             today={ai.todayUsd}
             month={ai.monthUsd}
             polarity="out"
-            note={`${ai.todayQueries} queries today · ${ai.monthQueries} this month at ${fmtUsd(ai.costPerQueryUsd, { decimals: 3 })}/query (blended)`}
+            note={
+              ai.engines.todayTotalUsd > 0
+                ? `Per-engine breakdown below. Aggregate counter: ${ai.todayQueries} queries today · ${ai.monthQueries} this month.`
+                : `${ai.todayQueries} queries today · ${ai.monthQueries} this month at ${fmtUsd(ai.costPerQueryUsd, { decimals: 3 })}/query (blended — per-engine starts after next audit).`
+            }
           />
           <DetailRow
-            label="Ad spend (manual)"
+            label="Ad spend (manual entry)"
             today={ads.todayUsd}
             month={ads.monthUsd}
             polarity="out"
-            note="Edit to keep this accurate. Wire Google Ads API later to auto-pull."
+            note="Edit below. Wire Google Ads API later to auto-pull."
+          />
+          <DetailRow
+            label="Fixed costs (hosting, domain, SaaS)"
+            today={fixed.todayUsd}
+            month={fixed.totalMonthlyUsd}
+            polarity="out"
+            note={
+              fixed.items.length === 0
+                ? "Nothing entered yet — add hosting, domain, monitoring etc. below."
+                : `${fixed.items.length} item${fixed.items.length === 1 ? "" : "s"}: ${fixed.items.map((x) => x.label).join(", ")}`
+            }
             isLast
           />
         </div>
@@ -149,6 +179,63 @@ export default async function FinancesPage({ searchParams }: Props) {
         </aside>
       </section>
 
+      {/* Per-engine AI breakdown */}
+      {ai.engines.todayTotalUsd > 0 || ai.engines.monthTotalUsd > 0 ? (
+        <section className="rounded-2xl border border-foreground/[0.07] bg-white p-5 sm:p-6 space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+              AI engine breakdown
+            </h2>
+            <p className="text-[12.5px] text-muted-foreground">
+              Per-engine cost attribution. Aggregates appear on the AI compute
+              row above.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-foreground/[0.06]">
+            <table className="w-full text-[13px]">
+              <thead className="bg-foreground/[0.03] text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80">
+                <tr>
+                  <th className="text-left font-semibold p-3">Engine</th>
+                  <th className="text-right font-semibold p-3">Cost/call</th>
+                  <th className="text-right font-semibold p-3">Today</th>
+                  <th className="text-right font-semibold p-3">This month</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ai.engines.today.map((row, i) => {
+                  const monthRow = ai.engines.month[i];
+                  return (
+                    <tr
+                      key={row.engine}
+                      className="border-t border-foreground/[0.06]"
+                    >
+                      <td className="p-3 font-medium text-foreground">
+                        {ENGINE_LABELS[row.engine] ?? row.engine}
+                      </td>
+                      <td className="p-3 text-right tabular-nums text-muted-foreground">
+                        {fmtUsd(row.costPerCallUsd, { decimals: 4 })}
+                      </td>
+                      <td className="p-3 text-right tabular-nums">
+                        <span className="text-foreground">{fmtUsd(row.usd)}</span>
+                        <span className="text-muted-foreground/70 text-[11.5px] ml-1.5">
+                          ({row.calls} calls)
+                        </span>
+                      </td>
+                      <td className="p-3 text-right tabular-nums">
+                        <span className="text-foreground">{fmtUsd(monthRow.usd)}</span>
+                        <span className="text-muted-foreground/70 text-[11.5px] ml-1.5">
+                          ({monthRow.calls} calls)
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       {/* Manual ad-spend entry until Google Ads is wired up */}
       <section className="rounded-2xl border border-foreground/[0.07] bg-white p-5 sm:p-6 space-y-4">
         <div className="space-y-1">
@@ -165,6 +252,22 @@ export default async function FinancesPage({ searchParams }: Props) {
           initialToday={ads.todayUsd}
           initialMonth={ads.monthUsd}
         />
+      </section>
+
+      {/* Fixed monthly costs (hosting, domain, monitoring etc.) */}
+      <section className="rounded-2xl border border-foreground/[0.07] bg-white p-5 sm:p-6 space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+            Fixed monthly costs
+          </h2>
+          <p className="text-[12.5px] text-muted-foreground">
+            Everything you pay on a recurring schedule that isn&apos;t
+            metered per audit. Net margin subtracts the monthly total
+            (and a 1/30.4 daily slice). Common entries: Netlify Pro, the
+            chedder.2pt.ai domain, Resend, monitoring, your own time.
+          </p>
+        </div>
+        <FixedCostsForm token={token} initial={fixed.items} />
       </section>
     </main>
   );

@@ -1,5 +1,11 @@
 import { AICompetitor, Finding, ModuleResult, Recommendation } from "../types";
-import { checkSpendCap, recordSpend } from "../spend-cap";
+import {
+  checkSpendCap,
+  recordSpend,
+  recordEngineSpend,
+  recordLlmSpend,
+  type SpendEngine,
+} from "../spend-cap";
 
 // Domains we never want to count as competitors. Populated from real
 // dogfood noise — every addition represents a false positive we saw.
@@ -1655,7 +1661,19 @@ export async function analyzeAICitations(
   const results = perEngineResults.flat();
 
   const usedQueries = results.filter((r) => r.response !== null).length;
+  // Aggregate counter (drives the global daily/monthly throttle).
   await recordSpend(usedQueries);
+  // Per-engine counters (drive the finances dashboard breakdown).
+  // We attribute one call per non-null response — failed/null responses
+  // didn't actually hit billing on the engine's side.
+  await Promise.all(
+    engines.map((engine, i) => {
+      const calls = perEngineResults[i].filter((r) => r.response !== null).length;
+      // Engine names happen to match SpendEngine values 1:1
+      // (openai / perplexity / brave). Cast is safe.
+      return recordEngineSpend(engine.name as SpendEngine, calls);
+    })
+  );
 
   // Flat, dedup'd list of every URL any engine cited across all queries.
   // The destinations analyzer reads this to classify where AI is

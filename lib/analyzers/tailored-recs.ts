@@ -1,4 +1,5 @@
 import type { ModuleResult, Recommendation } from "../types";
+import { recordLlmSpend } from "../spend-cap";
 
 /**
  * LLM-generated recommendations that are specific to the brand's
@@ -97,6 +98,9 @@ ${findingsList}`;
       );
       return [];
     }
+    // Track the gpt-4o-mini analyzer cost (separate from the AI test
+    // queries in the citations analyzer). Fire-and-forget.
+    void recordLlmSpend(1);
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
