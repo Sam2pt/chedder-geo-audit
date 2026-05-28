@@ -73,9 +73,17 @@ export default async function AdminPage({ searchParams }: Props) {
           <h1 className="text-[32px] font-semibold tracking-[-0.02em] text-foreground leading-tight">
             Admin
           </h1>
-          <p className="text-[13px] text-muted-foreground">
-            Live snapshot from Netlify Blobs. Last refreshed {new Date().toLocaleString()}.
-          </p>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <p className="text-[13px] text-muted-foreground">
+              Live snapshot from Netlify Blobs. Last refreshed {new Date().toLocaleString()}.
+            </p>
+            <Link
+              href={`/admin/finances?token=${encodeURIComponent(token!)}`}
+              className="text-[13px] font-medium text-[var(--brand-coral-dark)] hover:text-[var(--brand-coral)] transition-colors"
+            >
+              → Finances
+            </Link>
+          </div>
         </header>
 
         {/* Summary tiles */}
