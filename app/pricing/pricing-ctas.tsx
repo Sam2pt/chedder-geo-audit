@@ -105,7 +105,7 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
     return (
       <a
         href="mailto:sam@twopointtechnologies.com?subject=Chedder%20Pro%20interest&body=Hi%20Sam%2C%20I%27m%20interested%20in%20Chedder%20Pro.%20Please%20let%20me%20know%20when%20it%27s%20live."
-        className="relative mt-6 h-11 rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] text-white font-semibold text-[14px] tracking-[-0.01em] transition-colors text-center leading-[44px]"
+        className="relative mt-6 h-[52px] sm:h-11 rounded-2xl sm:rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] active:scale-[0.99] text-white font-semibold text-[15px] sm:text-[14px] tracking-[-0.01em] transition-all duration-150 text-center leading-[52px] sm:leading-[44px]"
       >
         Notify me when Pro is live
       </a>
@@ -120,11 +120,11 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
           type="button"
           onClick={openPortal}
           disabled={loading}
-          className="block w-full h-11 rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] disabled:opacity-60 text-white font-semibold text-[14px] tracking-[-0.01em] transition-colors text-center"
+          className="block w-full h-[52px] sm:h-11 rounded-2xl sm:rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] active:scale-[0.99] disabled:opacity-60 text-white font-semibold text-[15px] sm:text-[14px] tracking-[-0.01em] transition-all duration-150 text-center"
         >
           {loading ? "Opening…" : "Manage your subscription"}
         </button>
-        <p className="text-[11.5px] text-background/60 text-center">
+        <p className="text-[12px] sm:text-[11.5px] text-background/60 text-center">
           You&apos;re on Pro. Manage card, plan, or cancel here.
         </p>
         {error && (
@@ -136,15 +136,17 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
 
   return (
     <div className="relative mt-6 space-y-3">
-      {/* Interval toggle */}
-      <div className="inline-flex w-full p-1 rounded-xl bg-white/[0.06] border border-white/[0.08]">
+      {/* Interval toggle — bigger on mobile (44px) so thumb taps land
+          even when fingers are warm and imprecise. Save-17% pill grows
+          a touch on mobile too. */}
+      <div className="inline-flex w-full p-1 rounded-2xl sm:rounded-xl bg-white/[0.06] border border-white/[0.08]">
         <button
           type="button"
           onClick={() => setInterval("monthly")}
-          className={`flex-1 h-8 rounded-lg text-[12.5px] font-semibold tracking-[-0.01em] transition-colors ${
+          className={`flex-1 h-11 sm:h-8 rounded-xl sm:rounded-lg text-[13.5px] sm:text-[12.5px] font-semibold tracking-[-0.01em] transition-all duration-200 ${
             interval === "monthly"
               ? "bg-white text-foreground shadow-sm"
-              : "text-background/70 hover:text-background"
+              : "text-background/70 hover:text-background active:text-background"
           }`}
         >
           Monthly
@@ -152,14 +154,14 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
         <button
           type="button"
           onClick={() => setInterval("yearly")}
-          className={`flex-1 h-8 rounded-lg text-[12.5px] font-semibold tracking-[-0.01em] transition-colors inline-flex items-center justify-center gap-1.5 ${
+          className={`flex-1 h-11 sm:h-8 rounded-xl sm:rounded-lg text-[13.5px] sm:text-[12.5px] font-semibold tracking-[-0.01em] transition-all duration-200 inline-flex items-center justify-center gap-1.5 ${
             interval === "yearly"
               ? "bg-white text-foreground shadow-sm"
-              : "text-background/70 hover:text-background"
+              : "text-background/70 hover:text-background active:text-background"
           }`}
         >
           Yearly
-          <span className={`text-[9.5px] font-bold uppercase tracking-[0.06em] px-1.5 py-0.5 rounded ${
+          <span className={`text-[10px] sm:text-[9.5px] font-bold uppercase tracking-[0.06em] px-1.5 py-0.5 rounded ${
             interval === "yearly"
               ? "bg-[var(--brand-coral)]/15 text-[var(--brand-coral-dark)]"
               : "bg-white/[0.12] text-background/85"
@@ -169,11 +171,14 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
         </button>
       </div>
 
+      {/* Primary CTA — 52px tall on mobile for comfortable thumb reach,
+          tactile press feedback via active:scale, sticky-friendly
+          rounded-2xl. */}
       <button
         type="button"
         onClick={startCheckout}
         disabled={loading}
-        className="block w-full h-11 rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] disabled:opacity-60 text-white font-semibold text-[14px] tracking-[-0.01em] transition-colors text-center"
+        className="block w-full h-[52px] sm:h-11 rounded-2xl sm:rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] active:scale-[0.99] disabled:opacity-60 text-white font-semibold text-[15px] sm:text-[14px] tracking-[-0.01em] transition-all duration-150 text-center"
       >
         {loading
           ? "Opening Stripe…"
@@ -182,7 +187,7 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
             : "Start Pro · $29/mo"}
       </button>
 
-      <p className="text-[11px] text-background/55 text-center leading-snug">
+      <p className="text-[12px] sm:text-[11px] text-background/55 text-center leading-snug">
         Cancel anytime. Secure checkout by Stripe.
       </p>
       {error && (

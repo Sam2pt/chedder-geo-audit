@@ -7,18 +7,16 @@ import { track } from "@/lib/track";
  * Upgrade modal — shown when a free user hits a Pro-gated action
  * (running a 2nd+ audit, opening competitor compare, exporting PDF).
  *
- * Today this is a soft prompt: lists the Pro perks and points the user
- * at a "Notify me when Pro is live" CTA. When Stripe is wired the
- * primary button swaps to "Upgrade to Pro" and routes to /pricing or
- * directly to Checkout.
+ * Layout adapts to viewport:
+ *   • Mobile (< sm): renders as a bottom sheet that slides up from the
+ *     bottom of the viewport, with a grab handle and a sticky CTA at
+ *     the bottom — the same pattern an app like Cash or Linear uses.
+ *     This puts the action in thumb-reach instead of forcing a stretch
+ *     to the middle of the screen.
+ *   • Desktop (sm+): centered card, the same shape as before.
  *
- * Renders nothing when `open` is false. Parent owns open/close state.
- *
- * The `reason` controls the headline so the modal feels contextual:
- *   • audit_limit    — "You've used your free audit"
- *   • competitors    — "Compare against competitors"
- *   • pdf            — "Take this report home"
- *   • generic        — "Unlock unlimited Chedder"
+ * The contextual headline picks based on `reason`:
+ *   • audit_limit / competitors / pdf / generic.
  */
 
 export type UpgradeReason = "audit_limit" | "competitors" | "pdf" | "generic";
@@ -59,10 +57,21 @@ export function UpgradeModal({
   reason?: UpgradeReason;
   onClose: () => void;
 }) {
-  // Track when the modal opens so we know which gates are converting.
+  // Track open events so we can measure which gates convert.
   useEffect(() => {
     if (open) track("upgrade.modal.shown", { reason });
   }, [open, reason]);
+
+  // Lock body scroll while open — important on mobile so the page
+  // behind the sheet doesn't scroll with thumb gestures on the sheet.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   // ESC to close.
   useEffect(() => {
@@ -80,26 +89,49 @@ export function UpgradeModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-foreground/40 backdrop-blur-sm animate-[fadeIn_180ms_ease-out]"
+      // items-end on mobile (sheet at bottom), items-center on desktop.
+      // No horizontal padding on mobile so the sheet hugs the edges.
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:px-4 bg-foreground/40 backdrop-blur-sm animate-[fadeIn_180ms_ease-out]"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[460px] rounded-[22px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.22)] p-7 sm:p-8 space-y-5"
+        className={[
+          // Shape: bottom-rounded sheet on mobile, full card on desktop.
+          "relative w-full sm:max-w-[460px]",
+          "rounded-t-[28px] sm:rounded-[22px] bg-white",
+          "shadow-[0_-12px_40px_rgba(15,23,42,0.18)] sm:shadow-[0_24px_60px_rgba(15,23,42,0.22)]",
+          // Mobile gets a slide-up entrance; desktop already has fade.
+          "animate-[slideUpSheet_280ms_cubic-bezier(0.22,1,0.36,1)] sm:animate-none",
+          // Padding: more breathing room top on mobile (under grab handle),
+          // plus iOS safe-area bottom inset so the sticky CTA doesn't hide.
+          "pt-3 sm:pt-7 px-5 sm:px-8 pb-[calc(env(safe-area-inset-bottom)+20px)] sm:pb-8",
+          "space-y-5",
+          // Cap height on mobile so it never covers the whole viewport.
+          "max-h-[92vh] sm:max-h-none overflow-y-auto",
+        ].join(" ")}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Close button */}
+        {/* Mobile-only grab handle */}
+        <div className="sm:hidden flex justify-center pb-1">
+          <div className="w-10 h-1 rounded-full bg-foreground/15" />
+        </div>
+
+        {/* Close button — top-right on desktop, hidden on mobile (the
+            grab handle + "Maybe later" button do the dismiss work). */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 w-7 h-7 rounded-lg text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] transition-colors flex items-center justify-center"
+          className="hidden sm:flex absolute top-4 right-4 w-7 h-7 rounded-lg text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] transition-colors items-center justify-center"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
 
-        {/* Indigo/cyan halo icon */}
+        {/* Indigo→cyan halo icon */}
         <div className="flex items-center justify-center">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-coral)] to-[var(--brand-accent-2)] flex items-center justify-center shadow-[0_4px_12px_rgba(79,70,229,0.25)]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
@@ -109,17 +141,20 @@ export function UpgradeModal({
         </div>
 
         <div className="text-center space-y-1.5">
-          <h2 className="text-[22px] font-semibold tracking-[-0.025em] text-foreground">
+          <h2 className="text-[22px] sm:text-[22px] font-semibold tracking-[-0.025em] text-foreground">
             {copy.headline}
           </h2>
-          <p className="text-[14px] text-muted-foreground leading-snug max-w-[360px] mx-auto">
+          <p className="text-[14.5px] sm:text-[14px] text-muted-foreground leading-snug max-w-[360px] mx-auto">
             {copy.sub}
           </p>
         </div>
 
-        <ul className="space-y-2 pt-1">
+        <ul className="space-y-2.5 sm:space-y-2 pt-1">
           {PERKS.map((perk) => (
-            <li key={perk} className="flex items-start gap-2.5 text-[13.5px] text-foreground/85">
+            <li
+              key={perk}
+              className="flex items-start gap-2.5 text-[14px] sm:text-[13.5px] text-foreground/85 leading-snug"
+            >
               <svg className="w-4 h-4 mt-0.5 text-[var(--brand-coral)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
@@ -128,12 +163,13 @@ export function UpgradeModal({
           ))}
         </ul>
 
-        <div className="pt-2 space-y-2">
+        <div className="pt-2 space-y-2.5 sm:space-y-2">
           <UpgradeCta reason={reason} />
           <button
             type="button"
             onClick={onClose}
-            className="block w-full text-[12px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+            // Bigger tap target on mobile — full-width minimum 44px.
+            className="block w-full py-2 text-[13px] sm:text-[12px] text-muted-foreground/70 hover:text-muted-foreground active:text-foreground transition-colors"
           >
             Maybe later
           </button>
@@ -146,9 +182,8 @@ export function UpgradeModal({
 /**
  * Primary CTA inside the upgrade modal. Tries to start Stripe Checkout
  * directly. If billing isn't configured yet, the endpoint responds 503
- * and we fall through to the /pricing page (which has the mailto
- * fallback). If the user isn't signed in, we bounce through /sign-in
- * first with a next= so they land back at /pricing.
+ * and we fall through to the /pricing page. 401 bounces through
+ * /sign-in with next=/pricing.
  */
 function UpgradeCta({ reason }: { reason: UpgradeReason }) {
   const [loading, setLoading] = useState(false);
@@ -161,7 +196,6 @@ function UpgradeCta({ reason }: { reason: UpgradeReason }) {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Modal defaults to monthly — yearly toggle lives on /pricing.
         body: JSON.stringify({ interval: "monthly" }),
       });
       const data = await res.json().catch(() => ({}));
@@ -173,8 +207,6 @@ function UpgradeCta({ reason }: { reason: UpgradeReason }) {
         window.location.href = "/sign-in?next=/pricing";
         return;
       }
-      // Billing not configured, or already Pro, or anything else —
-      // fall back to the pricing page which handles each case cleanly.
       window.location.href = "/pricing";
     } catch {
       window.location.href = "/pricing";
@@ -186,7 +218,8 @@ function UpgradeCta({ reason }: { reason: UpgradeReason }) {
       type="button"
       onClick={go}
       disabled={loading}
-      className="block w-full h-11 rounded-xl bg-foreground text-background font-semibold text-[14px] tracking-[-0.01em] disabled:opacity-60 hover:bg-foreground/90 transition-colors text-center"
+      // 52px on mobile (Apple HIG comfortable tap target), 44 on desktop.
+      className="block w-full h-[52px] sm:h-11 rounded-2xl sm:rounded-xl bg-foreground text-background font-semibold text-[15px] sm:text-[14px] tracking-[-0.01em] disabled:opacity-60 hover:bg-foreground/90 active:scale-[0.98] transition-all duration-150 text-center"
     >
       {loading ? "Opening Stripe…" : "Upgrade to Pro"}
     </button>
