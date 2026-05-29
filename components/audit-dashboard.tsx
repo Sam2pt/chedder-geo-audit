@@ -109,16 +109,20 @@ function ScoreGauge({
   const numberColor = isDark ? "text-white" : "text-foreground";
   const subColor = isDark ? "text-white/60" : "text-muted-foreground";
 
+  // Scale the SVG via CSS so the gauge shrinks on mobile (160px) and
+  // returns to its full presentation size on sm+ (200px). The arc math
+  // stays in a 200×200 viewBox so the stroke geometry doesn't change —
+  // we only change render size + interior label sizing.
   return (
-    <div className="relative inline-flex items-center justify-center w-[200px] h-[200px]">
+    <div className="relative inline-flex items-center justify-center w-[160px] h-[160px] sm:w-[200px] sm:h-[200px]">
       <div className="absolute inset-4 rounded-full pulse-glow" style={{ background: `radial-gradient(circle, ${c.bg}20 0%, transparent 70%)` }} />
-      <svg width={200} height={200} className="rotate-[135deg]">
+      <svg viewBox="0 0 200 200" className="relative w-full h-full rotate-[135deg]">
         <circle cx={100} cy={100} r={nr} fill="none" stroke={trackStroke} strokeOpacity={trackOpacity} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} />
         <circle cx={100} cy={100} r={nr} fill="none" stroke={c.bg} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arcLen} ${circ}`} strokeDashoffset={offset} className="transition-all duration-[1.2s] ease-out" style={{ filter: `drop-shadow(0 0 8px ${c.bg}70)` }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-        <span className={`text-[52px] font-semibold tracking-[-0.04em] leading-none ${numberColor}`}>{score}</span>
-        <span className={`text-[13px] mt-1 ${subColor}`}>out of 100</span>
+        <span className={`text-[42px] sm:text-[52px] font-semibold tracking-[-0.04em] leading-none ${numberColor}`}>{score}</span>
+        <span className={`text-[12px] sm:text-[13px] mt-1 ${subColor}`}>out of 100</span>
       </div>
     </div>
   );
@@ -1988,8 +1992,11 @@ function AuditHero({ result }: { result: AuditResult }) {
           </div>
         </div>
 
-        {/* Score block */}
-        <div className="flex items-stretch gap-4 lg:gap-5">
+        {/* Score block — gauge alone on mobile/tablet, gauge + side
+            stack on desktop. The grade/strongest/weakest moves to a
+            mobile-only horizontal row beneath the gauge so phone users
+            don't lose that information. */}
+        <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-5">
           <ScoreGauge score={result.overallScore} variant="light" />
           <div className="hidden lg:flex flex-col justify-center gap-3 pr-2 min-w-[140px]">
             <div>
@@ -2010,6 +2017,40 @@ function AuditHero({ result }: { result: AuditResult }) {
                 {weakest.name}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile-only Grade · Strongest · Weakest row. Phones lose the
+          desktop side panel above (hidden lg:flex), so this surfaces
+          the same info in a single tappable strip beneath the gauge. */}
+      <div className="lg:hidden mt-5 grid grid-cols-3 gap-2 px-1">
+        <div className="text-center">
+          <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/60">Grade</div>
+          <div className="text-[20px] font-semibold tracking-[-0.02em] leading-none mt-1 text-foreground">
+            {result.grade}
+          </div>
+        </div>
+        <div className="text-center min-w-0">
+          <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/60">
+            Strongest
+          </div>
+          <div className="text-[12px] font-semibold leading-snug mt-1 truncate text-foreground">
+            <span className="text-muted-foreground/70 font-medium tabular-nums mr-1">
+              {strongest.score}
+            </span>
+            {strongest.name}
+          </div>
+        </div>
+        <div className="text-center min-w-0">
+          <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/60">
+            Weakest
+          </div>
+          <div className="text-[12px] font-semibold leading-snug mt-1 truncate text-foreground">
+            <span className="text-muted-foreground/70 font-medium tabular-nums mr-1">
+              {weakest.score}
+            </span>
+            {weakest.name}
           </div>
         </div>
       </div>

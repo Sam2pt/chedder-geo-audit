@@ -352,19 +352,21 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          {/* Two-line poster. First line states the now-fact, second line
-              poses the binary question. Indigo→cyan gradient on the key
-              phrase ("your brand") gives the futuristic accent. */}
-          <h1 className="anim-slide-up text-[44px] sm:text-[72px] font-semibold tracking-[-0.045em] leading-[1.0] text-foreground">
-            <span className="block whitespace-nowrap">Your next customer</span>
-            <span className="block whitespace-nowrap">just asked AI.</span>
-            <span className="block whitespace-nowrap mt-2 sm:mt-3">
+          {/* Two-line poster. First line states the now-fact, second
+              line poses the binary question. On desktop (sm:) every
+              span is whitespace-nowrap so 72px never orphans words.
+              On mobile we drop nowrap AND drop to 34px so the lines
+              fit a 390px phone width comfortably with room to breathe;
+              the question gets its own visual block beneath the fact. */}
+          <h1 className="anim-slide-up text-[34px] sm:text-[72px] font-semibold tracking-[-0.04em] sm:tracking-[-0.045em] leading-[1.05] sm:leading-[1.0] text-foreground text-balance">
+            <span className="block sm:whitespace-nowrap">Your next customer just asked AI.</span>
+            <span className="block sm:whitespace-nowrap mt-2 sm:mt-3">
               <span className="text-foreground/35">Did it pick </span>
               <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">your brand</span>
               <span className="text-foreground/35">?</span>
             </span>
           </h1>
-          <p className="anim-slide-up delay-100 text-[17px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[560px] mx-auto tracking-[-0.01em]">
+          <p className="anim-slide-up delay-100 text-[15.5px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[560px] mx-auto tracking-[-0.005em] sm:tracking-[-0.01em]">
             Chedder runs the exact questions shoppers ask ChatGPT, Perplexity, and Google. See if you show up, where AI sends them, and the specific fixes when you don&apos;t.
           </p>
         </div>
