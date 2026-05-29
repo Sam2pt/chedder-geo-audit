@@ -376,8 +376,10 @@ export default function Home() {
             at narrow widths. From sm: up, button slots inside the bar. */}
         <form onSubmit={handleAudit} className="anim-slide-up delay-200 space-y-4">
           <div className="relative group">
-            {/* Single coral halo on focus — replaces the tri-color rainbow. */}
-            <div className="absolute -inset-0.5 bg-[var(--brand-coral)]/15 rounded-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-md" />
+            {/* Single coral halo on focus — replaces the tri-color rainbow.
+                pointer-events-none so the halo never intercepts taps on
+                the mobile Analyze button that sits below it. */}
+            <div className="absolute -inset-0.5 bg-[var(--brand-coral)]/15 rounded-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-md pointer-events-none" />
             <div className="relative flex items-center rounded-2xl bg-white border border-foreground/[0.08] shadow-[0_1px_3px_rgba(31,30,29,0.04),0_4px_16px_rgba(31,30,29,0.03)] transition-all duration-300 focus-within:border-[var(--brand-coral)]/40 focus-within:shadow-[0_2px_10px_rgba(217,119,87,0.08),0_10px_32px_rgba(31,30,29,0.05)]">
               <div className="pl-5 text-muted-foreground/50">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -386,7 +388,18 @@ export default function Home() {
                 </svg>
               </div>
               <input
-                type="text"
+                // Mobile UX hardening:
+                //  inputMode=url shows the URL-optimized keyboard (with /, .)
+                //  autoCapitalize=none prevents iOS turning the first letter uppercase
+                //  autoCorrect/spellCheck=off stops 'casper.com' becoming 'capper.com'
+                //  enterKeyHint=go relabels the keyboard's Return key to 'Go' so users
+                //    can submit from the keyboard without finding the on-screen button
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Your DTC brand's website..."
