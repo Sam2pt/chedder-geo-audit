@@ -355,15 +355,17 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
             The complete GEO audit for DTC brands
           </div>
-          {/* Two-line poster. First line states the now-fact, second
-              line poses the binary question. On desktop (sm:) every
-              span is whitespace-nowrap so 72px never orphans words.
-              On mobile we drop nowrap AND drop to 34px so the lines
-              fit a 390px phone width comfortably with room to breathe;
-              the question gets its own visual block beneath the fact. */}
-          <h1 className="anim-slide-up text-[34px] sm:text-[72px] font-semibold tracking-[-0.04em] sm:tracking-[-0.045em] leading-[1.05] sm:leading-[1.0] text-foreground text-balance">
-            <span className="block sm:whitespace-nowrap">Your next customer just asked AI.</span>
-            <span className="block sm:whitespace-nowrap mt-2 sm:mt-3">
+          {/* Two-block poster: now-fact (line one) + binary question
+              (line two). Font sized so both blocks fit comfortably
+              inside the 760px hero container without overflow — at
+              72px the headlines were ~860px wide on desktop, wider
+              than the container and the search-bar below it, which
+              made the hero feel 'all over the place'. 56px on desktop
+              lets each block sit on a single line inside the column;
+              34px on mobile lets lines wrap naturally. */}
+          <h1 className="anim-slide-up text-[34px] sm:text-[56px] font-semibold tracking-[-0.04em] sm:tracking-[-0.045em] leading-[1.05] sm:leading-[1.02] text-foreground">
+            <span className="block">Your next customer just asked AI.</span>
+            <span className="block mt-2 sm:mt-3">
               <span className="text-foreground/35">Did it pick </span>
               <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">your brand</span>
               <span className="text-foreground/35">?</span>
