@@ -1844,7 +1844,7 @@ function AppChrome({
 
   return (
     <header className="sticky top-0 z-30 bg-[var(--background)]/85 backdrop-blur-xl border-b border-foreground/[0.07]">
-      <div className="w-[90%] mx-auto h-14 flex items-center justify-between gap-3">
+      <div className="w-full max-w-[1100px] mx-auto px-5 sm:px-6 h-14 flex items-center justify-between gap-3">
         <div className="flex items-center gap-4 min-w-0">
           {chedderLogo}
           <div className="hidden sm:block w-px h-5 bg-foreground/[0.08]" />
@@ -3281,11 +3281,18 @@ export function AuditDashboard({
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-[#fafafa]">
+    <div className="flex-1 min-h-screen bg-[var(--background)]">
       {/* Sticky app chrome */}
       <AppChrome result={result} onBack={onBack} />
 
-      <div className="w-[90%] mx-auto pb-28">
+      {/*
+        Content container. Was w-[90%] which stretched to 1700px+ on
+        large monitors — fine for an enterprise dashboard, wrong for a
+        focused report. Cap at 1100px so the audit hero, KPI strip,
+        and panels stay readable and the page feels deliberate rather
+        than stretched.
+      */}
+      <div className="w-full max-w-[1100px] mx-auto px-5 sm:px-6 pb-28">
         {/* Document-style hero */}
         <AuditHero result={result} />
 

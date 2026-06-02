@@ -326,17 +326,20 @@ export default function Home() {
   return (
     <main className="flex-1 relative overflow-hidden">
       {/* Cool electric wash. Two soft indigo/cyan blurs sit behind
-          the hero to give the cream-replaced cool palette a hint of
-          motion-glow without going neon. */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          the hero. The grid texture used to extend across the whole
+          page which made every content section feel busy; now the
+          radial mask fades it out aggressively past the hero so the
+          sections below render against a clean background. */}
+      <div className="absolute top-0 left-0 right-0 h-[900px] -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-[-25%] left-[10%] w-[55%] h-[55%] rounded-full bg-[var(--brand-coral)]/[0.08] blur-[140px]" />
         <div className="absolute top-[-10%] right-[5%] w-[40%] h-[50%] rounded-full bg-[var(--brand-accent-2)]/[0.06] blur-[140px]" />
-        {/* Subtle grid texture — only visible at the edges. */}
-        <div className="absolute inset-0 opacity-[0.025]" style={{
+        {/* Grid texture — narrower mask so it stays in the top quadrant
+            and doesn't compete with section content below. */}
+        <div className="absolute inset-0 opacity-[0.022]" style={{
           backgroundImage: "linear-gradient(to right, #0f172a 1px, transparent 1px), linear-gradient(to bottom, #0f172a 1px, transparent 1px)",
           backgroundSize: "48px 48px",
-          maskImage: "radial-gradient(ellipse at top, black 30%, transparent 70%)",
-          WebkitMaskImage: "radial-gradient(ellipse at top, black 30%, transparent 70%)"
+          maskImage: "radial-gradient(ellipse 60% 50% at 50% 25%, black 30%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse 60% 50% at 50% 25%, black 30%, transparent 75%)"
         }} />
       </div>
 
@@ -527,7 +530,7 @@ export default function Home() {
       </section>
 
       {/* ───── WHY THIS MATTERS ───── */}
-      <section id="why" className="px-6 py-16 sm:py-28 border-t border-foreground/[0.06]">
+      <section id="why" className="px-6 py-12 sm:py-20 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-16">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Shift</div>
@@ -567,7 +570,7 @@ export default function Home() {
       </section>
 
       {/* ───── WHAT CHEDDER DOES ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
+      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Audit</div>
@@ -627,7 +630,7 @@ export default function Home() {
       </section>
 
       {/* ───── HOW IT WORKS ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
+      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-12">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">How It Works</div>
@@ -655,7 +658,7 @@ export default function Home() {
       </section>
 
       {/* ───── SOCIAL PROOF ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
+      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
         <div className="max-w-[960px] mx-auto space-y-14">
           <div className="text-center space-y-4">
             <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Built for DTC</div>
@@ -754,7 +757,7 @@ export default function Home() {
       </section>
 
       {/* ───── AGENCY CTA ───── */}
-      <section className="px-6 py-14 sm:py-24 border-t border-foreground/[0.06]">
+      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto">
           <div className="p-8 sm:p-12 rounded-3xl bg-[var(--brand-coral)]/[0.04] border border-[var(--brand-coral)]/[0.15] space-y-6">
             <div className="space-y-3">
