@@ -394,12 +394,16 @@ export default function Home() {
               </div>
               <input
                 // Mobile UX hardening:
+                //  type=text (NOT type=url) — type=url triggers HTML5
+                //    native validation that requires a scheme like https://,
+                //    which rejects 'casper.com' before our server can add it.
+                //    inputMode below still gives us the URL keyboard.
                 //  inputMode=url shows the URL-optimized keyboard (with /, .)
                 //  autoCapitalize=none prevents iOS turning the first letter uppercase
                 //  autoCorrect/spellCheck=off stops 'casper.com' becoming 'capper.com'
                 //  enterKeyHint=go relabels the keyboard's Return key to 'Go' so users
                 //    can submit from the keyboard without finding the on-screen button
-                type="url"
+                type="text"
                 inputMode="url"
                 autoCapitalize="none"
                 autoCorrect="off"
