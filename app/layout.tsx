@@ -14,20 +14,26 @@ export const metadata: Metadata = {
   // dev-style output even in production builds.
   metadataBase: new URL("https://chedder.2pt.ai"),
   title: {
-    default: "Chedder · The Complete GEO Audit for DTC Brands",
+    default: "Chedder · The Complete GEO Audit for DTC and CPG Brands",
     template: "%s · Chedder",
   },
   description:
-    "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Chedder runs the complete GEO audit — score, action plan, and where AI sends customers when it mentions you.",
+    "When shoppers ask ChatGPT or Perplexity what to buy, does your brand come up? Chedder runs the complete GEO audit — score, action plan, and where AI sends customers when it mentions you.",
   keywords: [
     "GEO audit",
-    "DTC GEO",
+    "AEO audit",
     "AI search visibility",
     "generative engine optimization",
+    "answer engine optimization",
+    "CPG GEO",
+    "DTC GEO",
     "DTC SEO",
+    "CPG SEO",
     "Shopify SEO",
     "ChatGPT optimization",
     "Perplexity optimization",
+    "AI Overviews optimization",
+    "CPG brand audit",
     "DTC brand audit",
     "AI brand mentions",
   ],
@@ -35,16 +41,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Chedder",
-    title: "Chedder · The Complete GEO Audit for DTC Brands",
+    title: "Chedder · The Complete GEO Audit for DTC and CPG Brands",
     description:
-      "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
+      "When shoppers ask ChatGPT or Perplexity what to buy, does your brand come up? Free audit, action plan included.",
     url: "https://chedder.2pt.ai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chedder · The Complete GEO Audit for DTC Brands",
+    title: "Chedder · The Complete GEO Audit for DTC and CPG Brands",
     description:
-      "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
+      "When shoppers ask ChatGPT or Perplexity what to buy, does your brand come up? Free audit, action plan included.",
   },
   // Search engine verification. Each value emits the corresponding
   // meta tag in <head>:

@@ -370,7 +370,7 @@ export default function Home() {
             visitors recognize what we do immediately. */}
         <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-foreground/[0.07] text-[12px] text-muted-foreground font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
-          GEO + AEO audit for DTC brands
+          GEO + AEO audit for DTC and CPG brands
         </div>
 
         {/* Chedder introduces themselves — Spark at hero scale with
@@ -436,7 +436,7 @@ export default function Home() {
                 enterKeyHint="go"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Your DTC brand's website..."
+                placeholder="Your brand's website..."
                 className="flex-1 min-w-0 h-[56px] px-3 bg-transparent text-[16px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none tracking-[-0.01em]"
                 disabled={loading}
               />
@@ -534,7 +534,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-6 text-[12px] text-muted-foreground/60 font-medium">
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#3d8b5e]"><path d="M20 6L9 17l-5-5"/></svg>
-            Built for DTC
+            Built for DTC and CPG
           </div>
           <div className="flex items-center gap-1.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#3d8b5e]"><path d="M20 6L9 17l-5-5"/></svg>
@@ -940,12 +940,12 @@ function PromptsMock() {
 // real observations from dogfooding ~200 DTC audits. Keep lines short
 // enough to read in about 3 seconds.
 const LOADING_QUIPS = [
-  "Did you know. About 1 in 4 DTC shoppers now start product research with ChatGPT.",
+  "Did you know. About 1 in 4 consumer shoppers now start product research with ChatGPT.",
   "The top three AI picks get most of the clicks. The top pick gets most of those.",
-  "Half the DTC brands we audit are blocking GPTBot by accident. We're checking yours now.",
+  "Half the brands we audit are blocking GPTBot by accident. We're checking yours now.",
   "AI reads your reviews before your hero image. Make sure they're there.",
   "Your product page schema is doing more work than your TikTok.",
-  "Most DTC brands score below 60 on their first audit. Solid room to grow.",
+  "Most brands score below 60 on their first audit. Solid room to grow.",
   "Reddit is the secret sauce. AI weighs organic shopper opinions heavily.",
   "Wikipedia is gold. Even a short stub helps you show up.",
   "Brands get cited for being specific, not clever.",
