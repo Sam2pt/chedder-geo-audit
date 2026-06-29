@@ -779,92 +779,139 @@ function ChromeBar({ url }: { url: string }) {
 
 /** Main audit dashboard — center of the mosaic. */
 function AuditMock() {
+  // Helper: sparkline path for a small trend
+  const spark = (vals: number[], w = 60, h = 18) => {
+    const max = Math.max(...vals);
+    const min = Math.min(...vals);
+    const range = Math.max(1, max - min);
+    return vals
+      .map((v, i) => {
+        const x = (i / (vals.length - 1)) * w;
+        const y = h - ((v - min) / range) * h;
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(" ");
+  };
+
   return (
-    <svg viewBox="0 0 1000 600" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
-      {/* Brand header — left aligned. Score lives in a separate horizontal
-          row on the right, all in row 1 so module cards (row 2) can claim
-          the full width below without competing for the right column. */}
-      <g transform="translate(36, 38)">
-        <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
-        <text x="28" y="38" textAnchor="middle" fontSize="24" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
-        <text x="76" y="22" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
-        <text x="76" y="42" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Mattresses · audit run 12 mins ago</text>
-        <text x="76" y="60" fontSize="10.5" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">4 pages · 47 signals analyzed</text>
+    <svg viewBox="0 0 1000 660" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Header — brand left, compact score right */}
+      <g transform="translate(36, 36)">
+        <rect x="0" y="0" width="52" height="52" rx="11" fill="#0f172a" />
+        <text x="26" y="35" textAnchor="middle" fontSize="22" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
+        <text x="68" y="20" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
+        <g transform="translate(68, 32)">
+          <rect x="0" y="0" width="78" height="18" rx="4" fill="#f1f5f9" />
+          <text x="39" y="13" textAnchor="middle" fontSize="10" fontWeight="600" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">Mattresses</text>
+          <text x="86" y="13" fontSize="10.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">· 247 pages crawled · 1,830 signals</text>
+        </g>
+        <text x="68" y="64" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">audit started 4:12pm · finished in 58s · auto-refresh weekly</text>
       </g>
 
-      {/* Score row on the right — gauge + grade pill side-by-side so the
-          column stays the same height as the brand header and doesn't
-          intrude into the module-cards row below. */}
-      <g transform="translate(776, 38)">
-        <circle cx="36" cy="36" r="32" fill="none" stroke="#f1f5f9" strokeWidth="6" />
-        <path d="M 36 4 A 32 32 0 1 1 6 56" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
-        <text x="36" y="42" textAnchor="middle" fontSize="24" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">66</text>
-        <g transform="translate(84, 22)">
-          <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
-          <text x="0" y="18" fontSize="14" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">B</text>
-          <text x="14" y="18" fontSize="10" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">out of A+</text>
-          <text x="0" y="38" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+8 since last week</text>
+      {/* Score column — gauge + delta + grade */}
+      <g transform="translate(792, 30)">
+        <circle cx="34" cy="36" r="30" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+        <path d="M 34 6 A 30 30 0 1 1 6 54" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
+        <text x="34" y="42" textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">64</text>
+        <g transform="translate(78, 18)">
+          <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
+          <text x="0" y="18" fontSize="11" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">vs Mattresses median: 71</text>
+          <g transform="translate(0, 28)">
+            <path d={`M 0 14 ${spark([55, 58, 56, 60, 59, 62, 64], 78, 14)}`.replace("M 0 14 M", "M") } fill="none" stroke="#16a34a" strokeWidth="1.5" />
+          </g>
+          <text x="0" y="68" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+9 over 6 weeks</text>
         </g>
       </g>
 
-      {/* Module cards row — pushed down to give the brand/score row real
-          breathing room. Was 156, now 184, with viewBox grown from 560
-          to 600 so radar+findings stay visible. */}
-      <g transform="translate(36, 184)">
+      {/* Module cards — 7 specific, slightly varied scores. Two-row grid
+          breaks the "five identical boxes" symmetry that read as AI-generated. */}
+      <g transform="translate(36, 130)">
         {[
-          { label: "Page tags", score: 90, x: 0 },
-          { label: "Content", score: 85, x: 188 },
-          { label: "Trust", score: 90, x: 376 },
-          { label: "AI access", score: 70, x: 564 },
-          { label: "Products", score: 25, x: 752 },
+          { label: "Schema markup", score: 87, hint: "Product · Org · FAQ", x: 0, y: 0 },
+          { label: "Content depth", score: 73, hint: "12 weak PDPs", x: 144, y: 0 },
+          { label: "Crawler access", score: 41, hint: "3 bots blocked", x: 288, y: 0 },
+          { label: "Authority", score: 58, hint: "No Wikipedia", x: 432, y: 0 },
+          { label: "Product data", score: 23, hint: "No ratings markup", x: 576, y: 0 },
+          { label: "External cites", score: 79, hint: "24 sources", x: 720, y: 0 },
+          { label: "AI mentions", score: 56, hint: "6 of 18 prompts", x: 0, y: 86 },
         ].map((m) => {
-          const color = m.score >= 80 ? "#16a34a" : m.score >= 60 ? "#f59e0b" : "#dc2626";
+          const color = m.score >= 80 ? "#16a34a" : m.score >= 55 ? "#f59e0b" : "#dc2626";
           return (
-            <g key={m.label} transform={`translate(${m.x}, 0)`}>
-              <rect x="0" y="0" width="172" height="74" rx="10" fill="#fafafa" stroke="#e2e8f0" />
-              <rect x="0" y="0" width="172" height="3" rx="2" fill={color} />
-              <text x="14" y="28" fontSize="9.5" fontWeight="700" fill="#94a3b8" letterSpacing="0.8" fontFamily="-apple-system, Inter, sans-serif">{m.label.toUpperCase()}</text>
-              <text x="14" y="56" fontSize="26" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">{m.score}</text>
+            <g key={m.label} transform={`translate(${m.x}, ${m.y})`}>
+              <rect x="0" y="0" width="128" height="72" rx="9" fill="#fff" stroke="#e2e8f0" />
+              <rect x="0" y="0" width="128" height="2.5" rx="2" fill={color} />
+              <text x="12" y="24" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6" fontFamily="-apple-system, Inter, sans-serif">{m.label.toUpperCase()}</text>
+              <text x="12" y="50" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">{m.score}</text>
+              <text x="44" y="50" fontSize="10" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">/ 100</text>
+              <text x="12" y="64" fontSize="9.5" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">{m.hint}</text>
             </g>
           );
         })}
-      </g>
-
-      {/* Radar */}
-      <g transform="translate(36, 286)">
-        <rect x="0" y="0" width="424" height="290" rx="12" fill="#fff" stroke="#e2e8f0" />
-        <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Your signal shape</text>
-        <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">How AI sees your brand across 7 signals</text>
-        <g transform="translate(212, 168)">
-          {[0.33, 0.66, 1].map((r, i) => (
-            <polygon key={i}
-              points="0,-83.6 73.0,-41.8 73.0,41.8 0,83.6 -73.0,41.8 -73.0,-41.8"
-              transform={`scale(${r})`}
-              fill="none" stroke="#e2e8f0" strokeWidth="1" />
+        {/* AI engine breakdown — fills the empty right side of row 2 */}
+        <g transform="translate(144, 86)">
+          <rect x="0" y="0" width="416" height="72" rx="9" fill="#fafafa" stroke="#e2e8f0" />
+          <text x="12" y="20" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6" fontFamily="-apple-system, Inter, sans-serif">CITATION RATE PER ENGINE</text>
+          {[
+            { engine: "ChatGPT", pct: 28, delta: "-4", color: "#10a37f", x: 12 },
+            { engine: "Perplexity", pct: 44, delta: "+11", color: "#1fb6ff", x: 112 },
+            { engine: "Brave", pct: 39, delta: "+2", color: "#f97316", x: 212 },
+            { engine: "Google AIO", pct: 22, delta: "-7", color: "#4285f4", x: 312 },
+          ].map((e) => (
+            <g key={e.engine} transform={`translate(${e.x}, 28)`}>
+              <circle cx="4" cy="6" r="3" fill={e.color} />
+              <text x="12" y="9" fontSize="10" fontWeight="600" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">{e.engine}</text>
+              <text x="0" y="28" fontSize="18" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">{e.pct}%</text>
+              <text x="36" y="28" fontSize="9.5" fill={e.delta.startsWith("+") ? "#16a34a" : "#dc2626"} fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">{e.delta}</text>
+            </g>
           ))}
-          <polygon points="0,-75 65,-30 60,40 -10,72 -55,32 -55,-30" fill="#ff5e47" fillOpacity="0.16" stroke="#ff5e47" strokeWidth="2" />
-          {[-75, -30, 40, 72, 32, -30].map((y, i) => (
-            <circle key={i} cx={[0, 65, 60, -10, -55, -55][i]} cy={y} r="3.5" fill="#ff5e47" />
-          ))}
+        </g>
+        {/* Streak / activity stat */}
+        <g transform="translate(576, 86)">
+          <rect x="0" y="0" width="280" height="72" rx="9" fill="#fff1ed" stroke="#ffd9cc" />
+          <text x="14" y="20" fontSize="9" fontWeight="700" fill="#b8412f" letterSpacing="0.6" fontFamily="-apple-system, Inter, sans-serif">FASTEST WIN</text>
+          <text x="14" y="40" fontSize="14" fontWeight="600" fill="#0f172a" letterSpacing="-0.3" fontFamily="-apple-system, Inter, sans-serif">Unblock GPTBot at Cloudflare</text>
+          <text x="14" y="58" fontSize="10.5" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">~3 min · estimated +18 citation rate</text>
         </g>
       </g>
 
-      {/* Findings */}
-      <g transform="translate(484, 286)">
-        <rect x="0" y="0" width="480" height="290" rx="12" fill="#fff" stroke="#e2e8f0" />
-        <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Action plan</text>
-        <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">3 urgent · 8 important · 6 worth doing</text>
+      {/* Findings — denser, real URLs, specific impact estimates */}
+      <g transform="translate(36, 320)">
+        <rect x="0" y="0" width="928" height="316" rx="12" fill="#fff" stroke="#e2e8f0" />
+        <g transform="translate(20, 24)">
+          <text x="0" y="0" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Findings · 17 total</text>
+          <text x="0" y="18" fontSize="10.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Sorted by estimated impact on AI citation rate</text>
+        </g>
+        {/* Filter chips */}
+        <g transform="translate(540, 22)">
+          {[
+            { label: "All", n: 17, active: true },
+            { label: "Urgent", n: 3, active: false },
+            { label: "Important", n: 8, active: false },
+            { label: "Worth doing", n: 6, active: false },
+          ].map((c, i) => {
+            const x = i === 0 ? 0 : i === 1 ? 38 : i === 2 ? 102 : 184;
+            return (
+              <g key={c.label} transform={`translate(${x}, 0)`}>
+                <rect x="0" y="0" width={c.label === "All" ? 32 : c.label === "Urgent" ? 56 : c.label === "Important" ? 72 : 78} height="20" rx="6" fill={c.active ? "#0f172a" : "transparent"} stroke="#e2e8f0" />
+                <text x={(c.label === "All" ? 32 : c.label === "Urgent" ? 56 : c.label === "Important" ? 72 : 78) / 2} y="13" textAnchor="middle" fontSize="9.5" fontWeight={c.active ? "700" : "600"} fill={c.active ? "#fff" : "#475569"} fontFamily="-apple-system, Inter, sans-serif">{c.label} {c.n}</text>
+              </g>
+            );
+          })}
+        </g>
+
         {[
-          { sev: "Urgent", color: "#dc2626", text: "Product schema missing aggregateRating on 12 PDPs" },
-          { sev: "Urgent", color: "#dc2626", text: "GPTBot blocked by Cloudflare bot protection" },
-          { sev: "Important", color: "#f59e0b", text: "No Wikipedia entry — qualifies based on coverage" },
-          { sev: "Important", color: "#f59e0b", text: "Missing FAQ schema on top-traffic pages" },
-          { sev: "Worth doing", color: "#16a34a", text: "Reddit presence in r/mattress is light" },
+          { sev: "Urgent", color: "#dc2626", title: "12 PDPs missing aggregateRating", meta: "/products/original-mattress and 11 more · est +14% citation rate" },
+          { sev: "Urgent", color: "#dc2626", title: "GPTBot blocked at Cloudflare", meta: "Bot Fight Mode: ON · also blocks PerplexityBot · est +18%" },
+          { sev: "Urgent", color: "#dc2626", title: "Open Graph image missing on 8 collection pages", meta: "/collections/cooling, /collections/firm and 6 more · est +6%" },
+          { sev: "Important", color: "#f59e0b", title: "No Wikipedia entry — likely qualifies", meta: "Has 6 reliable sources (NYT Wirecutter, Fast Company, +4) · est +9%" },
+          { sev: "Important", color: "#f59e0b", title: "Reddit footprint thin in /r/Mattress", meta: "3 mentions last 30d vs Purple's 47 · founder-presence: none · est +8%" },
+          { sev: "Important", color: "#f59e0b", title: "FAQ schema absent on /how-it-works", meta: "Page already ranks · adding markup unlocks Perplexity citations · est +5%" },
         ].map((f, i) => (
-          <g key={i} transform={`translate(20, ${78 + i * 38})`}>
-            <rect x="0" y="0" width="62" height="20" rx="10" fill={f.color} fillOpacity="0.12" />
-            <text x="31" y="14" textAnchor="middle" fontSize="9.5" fontWeight="700" fill={f.color} fontFamily="-apple-system, Inter, sans-serif">{f.sev}</text>
-            <text x="74" y="14" fontSize="11.5" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{f.text}</text>
+          <g key={i} transform={`translate(20, ${68 + i * 40})`}>
+            <rect x="0" y="0" width="58" height="18" rx="9" fill={f.color} fillOpacity="0.12" />
+            <text x="29" y="12" textAnchor="middle" fontSize="9" fontWeight="700" fill={f.color} fontFamily="-apple-system, Inter, sans-serif">{f.sev}</text>
+            <text x="68" y="11" fontSize="12" fontWeight="600" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">{f.title}</text>
+            <text x="68" y="26" fontSize="10" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">{f.meta}</text>
           </g>
         ))}
       </g>
@@ -872,60 +919,169 @@ function AuditMock() {
   );
 }
 
-/** Competitor comparison view — left tilted card. */
+/** Competitor comparison view — left tilted card.
+    Richer than a simple bar list: per-brand row shows score, AI mention
+    rate, schema/citation breakdown, and a 1-line "edge" summary. The
+    asymmetric data (uneven numbers, varied edges) reads as real audit
+    output, not a templated comparison. */
 function CompareMock() {
   const brands = [
-    { name: "Casper", score: 66, color: "#ff5e47", w: 264 },
-    { name: "Purple", score: 78, color: "#f59e0b", w: 312 },
-    { name: "Saatva", score: 84, color: "#16a34a", w: 336 },
+    { name: "Casper", score: 64, cite: 31, schema: 87, cites: 24, edge: "Schema solid · crawler blocked · no Wikipedia", you: true },
+    { name: "Purple", score: 71, cite: 44, schema: 72, cites: 31, edge: "Strong Reddit · weak product markup", you: false },
+    { name: "Saatva", score: 81, cite: 63, schema: 91, cites: 48, edge: "Wikipedia + listicle dominance", you: false },
+    { name: "Tempur-Pedic", score: 78, cite: 58, schema: 85, cites: 52, edge: "Heritage authority · slow on fresh content", you: false },
   ];
   return (
-    <svg viewBox="0 0 700 480" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(32, 28)">
-        <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">COMPARE</text>
-        <text x="0" y="26" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">Casper vs Purple vs Saatva</text>
-        <text x="0" y="48" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Mattresses · last updated today</text>
+    <svg viewBox="0 0 760 540" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Header */}
+      <g transform="translate(30, 28)">
+        <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">COMPARE · MATTRESSES</text>
+        <text x="0" y="22" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">Casper vs 3 competitors</text>
+        <text x="0" y="40" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">4 brands · 18 prompts run · refreshed today 4:12pm</text>
+      </g>
+
+      {/* Column headers */}
+      <g transform="translate(30, 92)" fontFamily="-apple-system, Inter, sans-serif">
+        <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6">BRAND</text>
+        <text x="280" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6">SCORE</text>
+        <text x="370" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6">AI MENTION %</text>
+        <text x="500" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6">SCHEMA</text>
+        <text x="600" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="0.6">CITATIONS</text>
       </g>
 
       {brands.map((b, i) => (
-        <g key={b.name} transform={`translate(32, ${110 + i * 100})`}>
-          <text x="0" y="0" fontSize="14" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">{b.name}</text>
-          <text x="624" y="0" textAnchor="end" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.8" fontFamily="-apple-system, Inter, sans-serif">{b.score}</text>
-          <rect x="0" y="14" width="624" height="10" rx="5" fill="#f1f5f9" />
-          <rect x="0" y="14" width={b.w} height="10" rx="5" fill={b.color} />
-          <text x="0" y="48" fontSize="11" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">
-            {b.name === "Casper" ? "Schema gap · GPTBot blocked" : b.name === "Purple" ? "Strong on Reddit · weak schema" : "Wikipedia entry · listicle leader"}
-          </text>
+        <g key={b.name} transform={`translate(0, ${112 + i * 96})`}>
+          {/* Row background — coral tint on "you" row to anchor the user */}
+          <rect x="20" y="0" width="720" height="84" rx="10" fill={b.you ? "#fff1ed" : "#fafafa"} stroke={b.you ? "#ffd9cc" : "#e2e8f0"} />
+
+          {/* Brand name + "you" pill */}
+          <g transform="translate(38, 26)">
+            <text x="0" y="0" fontSize="14" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">{b.name}</text>
+            {b.you && (
+              <g transform="translate(0, 12)">
+                <rect x="0" y="0" width="26" height="14" rx="7" fill="#ff5e47" />
+                <text x="13" y="10" textAnchor="middle" fontSize="8" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">YOU</text>
+              </g>
+            )}
+            <text x="0" y={b.you ? 44 : 22} fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">{b.edge}</text>
+          </g>
+
+          {/* Score */}
+          <g transform="translate(298, 32)">
+            <text x="0" y="0" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.8" fontFamily="-apple-system, Inter, sans-serif">{b.score}</text>
+            <text x="32" y="0" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">/100</text>
+          </g>
+
+          {/* AI mention rate — number + small bar */}
+          <g transform="translate(388, 30)">
+            <text x="0" y="0" fontSize="16" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">{b.cite}%</text>
+            <rect x="0" y="14" width="80" height="6" rx="3" fill="#f1f5f9" />
+            <rect x="0" y="14" width={(b.cite / 70) * 80} height="6" rx="3" fill={b.you ? "#ff5e47" : "#475569"} />
+          </g>
+
+          {/* Schema dot + score */}
+          <g transform="translate(518, 30)">
+            <circle cx="3" cy="-3" r="3" fill={b.schema >= 85 ? "#16a34a" : b.schema >= 70 ? "#f59e0b" : "#dc2626"} />
+            <text x="14" y="0" fontSize="14" fontWeight="600" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{b.schema}</text>
+          </g>
+
+          {/* External citations count */}
+          <g transform="translate(618, 30)">
+            <text x="0" y="0" fontSize="14" fontWeight="600" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{b.cites}</text>
+            <text x="22" y="0" fontSize="9" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">sources</text>
+            <text x="0" y="14" fontSize="9" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">{b.cites > 40 ? "Wikipedia + 3 listicles" : b.cites > 30 ? "1 listicle" : "no listicles"}</text>
+          </g>
         </g>
       ))}
+
+      {/* Footer chip */}
+      <g transform="translate(30, 500)">
+        <rect x="0" y="0" width="700" height="28" rx="8" fill="#fafafa" stroke="#e2e8f0" />
+        <text x="14" y="18" fontSize="10.5" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">Closing the gap to Saatva mostly needs Wikipedia + 2 more listicle mentions · 6-week effort</text>
+      </g>
     </svg>
   );
 }
 
-/** Prompt-analysis view — right tilted card. */
+/** Prompt-analysis view — right tilted card.
+    Shows real shopper prompts + which brands each engine named. Coral
+    chip = your brand appeared. Black chip = competitor named. Grey =
+    not named. The mix of hits and misses reads as honest output. */
 function PromptsMock() {
+  const engines = ["ChatGPT", "Perplexity", "Brave"] as const;
+  const engineColors: Record<string, string> = {
+    ChatGPT: "#10a37f",
+    Perplexity: "#1fb6ff",
+    Brave: "#f97316",
+  };
+
   const prompts = [
-    { q: "Best mattress for back pain?", brands: [{ n: "Saatva", hit: true }, { n: "Tempur", hit: true }, { n: "Casper", hit: false }] },
-    { q: "Best cooling mattress 2026?", brands: [{ n: "Purple", hit: true }, { n: "Casper", hit: true }, { n: "Helix", hit: false }] },
-    { q: "Affordable bed in a box?", brands: [{ n: "Tuft & Needle", hit: true }, { n: "Nectar", hit: true }, { n: "Casper", hit: false }] },
+    {
+      q: "best mattress for back pain?",
+      ChatGPT: ["Saatva", "Tempur", "Helix"],
+      Perplexity: ["Saatva", "Casper", "Tempur"],
+      Brave: ["Saatva", "Casper", "Bear"],
+    },
+    {
+      q: "cooling mattress for hot sleepers",
+      ChatGPT: ["Purple", "Brooklyn", "Casper"],
+      Perplexity: ["Purple", "Cocoon", "Casper"],
+      Brave: ["Saatva", "Purple", "Helix"],
+    },
+    {
+      q: "mattress in a box under $1000",
+      ChatGPT: ["Nectar", "DreamCloud", "Tuft & Needle"],
+      Perplexity: ["Nectar", "Tuft & Needle", "Allswell"],
+      Brave: ["Tuft & Needle", "Nectar", "Zinus"],
+    },
   ];
+
   return (
-    <svg viewBox="0 0 700 480" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(32, 28)">
-        <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">AI PROMPTS</text>
-        <text x="0" y="26" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">What shoppers asked AI</text>
-        <text x="0" y="48" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Casper appeared in 1 of 3 category prompts</text>
+    <svg viewBox="0 0 760 540" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Header */}
+      <g transform="translate(30, 28)">
+        <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">PROMPTS TESTED</text>
+        <text x="0" y="22" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">What shoppers actually ask</text>
+        <text x="0" y="40" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">
+          Casper appeared in <tspan fontWeight="700" fill="#ff5e47">6 of 18</tspan> prompts · 3 engines · refreshed today
+        </text>
+      </g>
+
+      {/* Engine legend */}
+      <g transform="translate(540, 32)">
+        {engines.map((eng, i) => (
+          <g key={eng} transform={`translate(${i * 72}, 0)`}>
+            <circle cx="4" cy="6" r="3" fill={engineColors[eng]} />
+            <text x="12" y="9" fontSize="9.5" fontWeight="600" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">{eng}</text>
+          </g>
+        ))}
       </g>
 
       {prompts.map((p, i) => (
-        <g key={p.q} transform={`translate(32, ${110 + i * 116})`}>
-          <rect x="0" y="0" width="624" height="96" rx="10" fill="#fafafa" stroke="#e2e8f0" />
-          <text x="16" y="26" fontSize="12.5" fontWeight="600" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">&ldquo;{p.q}&rdquo;</text>
-          {p.brands.map((b, j) => (
-            <g key={b.n} transform={`translate(${16 + j * 200}, 50)`}>
-              <rect x="0" y="0" width="180" height="32" rx="8" fill={b.hit ? (b.n === "Casper" ? "#fff1ed" : "#f1f5f9") : "#fafafa"} stroke={b.hit && b.n === "Casper" ? "#ff5e47" : "#e2e8f0"} />
-              <circle cx="14" cy="16" r="4" fill={b.hit && b.n === "Casper" ? "#ff5e47" : b.hit ? "#0f172a" : "#cbd5e1"} />
-              <text x="26" y="20" fontSize="11.5" fontWeight={b.n === "Casper" ? "700" : "500"} fill={b.hit && b.n === "Casper" ? "#b8412f" : b.hit ? "#0f172a" : "#94a3b8"} fontFamily="-apple-system, Inter, sans-serif">{b.n}</text>
+        <g key={p.q} transform={`translate(30, ${100 + i * 142})`}>
+          <rect x="0" y="0" width="700" height="128" rx="10" fill="#fafafa" stroke="#e2e8f0" />
+          <text x="20" y="26" fontSize="13" fontWeight="600" fill="#0f172a" fontStyle="italic" fontFamily="-apple-system, Inter, sans-serif">&ldquo;{p.q}&rdquo;</text>
+
+          {engines.map((eng, j) => (
+            <g key={eng} transform={`translate(20, ${44 + j * 26})`}>
+              <circle cx="4" cy="9" r="3" fill={engineColors[eng]} />
+              <text x="14" y="13" fontSize="9.5" fontWeight="700" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">{eng.toUpperCase()}</text>
+              {p[eng].map((b, k) => {
+                const isYou = b === "Casper";
+                return (
+                  <g key={k} transform={`translate(${94 + k * 192}, 0)`}>
+                    <rect x="0" y="-2" width="180" height="20" rx="6"
+                      fill={isYou ? "#fff1ed" : "#fff"}
+                      stroke={isYou ? "#ff5e47" : "#e2e8f0"} />
+                    <text x="90" y="12" textAnchor="middle" fontSize="10.5"
+                      fontWeight={isYou ? "700" : "500"}
+                      fill={isYou ? "#b8412f" : "#0f172a"}
+                      fontFamily="-apple-system, Inter, sans-serif">
+                      {k + 1}. {b}
+                    </text>
+                  </g>
+                );
+              })}
             </g>
           ))}
         </g>
