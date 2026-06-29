@@ -954,9 +954,11 @@ function ChromeBar({ url }: { url: string }) {
 /** Main audit dashboard — center of the mosaic. */
 function AuditMock() {
   return (
-    <svg viewBox="0 0 1000 560" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
-      {/* Brand header — left aligned, no score on the right yet */}
-      <g transform="translate(36, 32)">
+    <svg viewBox="0 0 1000 600" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Brand header — left aligned. Score lives in a separate horizontal
+          row on the right, all in row 1 so module cards (row 2) can claim
+          the full width below without competing for the right column. */}
+      <g transform="translate(36, 38)">
         <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
         <text x="28" y="38" textAnchor="middle" fontSize="24" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
         <text x="76" y="22" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
@@ -964,18 +966,25 @@ function AuditMock() {
         <text x="76" y="60" fontSize="10.5" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">4 pages · 47 signals analyzed</text>
       </g>
 
-      {/* Score column on the right — gauge + grade pill, vertically stacked */}
-      <g transform="translate(820, 24)">
-        <text x="68" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
-        <circle cx="68" cy="62" r="38" fill="none" stroke="#f1f5f9" strokeWidth="7" />
-        <path d="M 68 24 A 38 38 0 1 1 33 84" fill="none" stroke="#ff5e47" strokeWidth="7" strokeLinecap="round" />
-        <text x="68" y="68" textAnchor="middle" fontSize="30" fontWeight="700" fill="#0f172a" letterSpacing="-1.5" fontFamily="-apple-system, Inter, sans-serif">66</text>
-        <rect x="46" y="108" width="44" height="20" rx="6" fill="#fff1ed" />
-        <text x="68" y="122" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#b8412f" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
+      {/* Score row on the right — gauge + grade pill side-by-side so the
+          column stays the same height as the brand header and doesn't
+          intrude into the module-cards row below. */}
+      <g transform="translate(776, 38)">
+        <circle cx="36" cy="36" r="32" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+        <path d="M 36 4 A 32 32 0 1 1 6 56" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
+        <text x="36" y="42" textAnchor="middle" fontSize="24" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">66</text>
+        <g transform="translate(84, 22)">
+          <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
+          <text x="0" y="18" fontSize="14" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">B</text>
+          <text x="14" y="18" fontSize="10" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">out of A+</text>
+          <text x="0" y="38" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+8 since last week</text>
+        </g>
       </g>
 
-      {/* Module cards row */}
-      <g transform="translate(36, 156)">
+      {/* Module cards row — pushed down to give the brand/score row real
+          breathing room. Was 156, now 184, with viewBox grown from 560
+          to 600 so radar+findings stay visible. */}
+      <g transform="translate(36, 184)">
         {[
           { label: "Page tags", score: 90, x: 0 },
           { label: "Content", score: 85, x: 188 },
@@ -996,8 +1005,8 @@ function AuditMock() {
       </g>
 
       {/* Radar */}
-      <g transform="translate(36, 256)">
-        <rect x="0" y="0" width="424" height="280" rx="12" fill="#fff" stroke="#e2e8f0" />
+      <g transform="translate(36, 286)">
+        <rect x="0" y="0" width="424" height="290" rx="12" fill="#fff" stroke="#e2e8f0" />
         <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Your signal shape</text>
         <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">How AI sees your brand across 7 signals</text>
         <g transform="translate(212, 168)">
@@ -1015,8 +1024,8 @@ function AuditMock() {
       </g>
 
       {/* Findings */}
-      <g transform="translate(484, 256)">
-        <rect x="0" y="0" width="480" height="280" rx="12" fill="#fff" stroke="#e2e8f0" />
+      <g transform="translate(484, 286)">
+        <rect x="0" y="0" width="480" height="290" rx="12" fill="#fff" stroke="#e2e8f0" />
         <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Action plan</text>
         <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">3 urgent · 8 important · 6 worth doing</text>
         {[
