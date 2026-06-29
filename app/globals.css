@@ -49,67 +49,95 @@
 }
 
 :root {
-  /* Futuristic light palette. Cool off-white + slate ink + electric
-     indigo. Replaces the previous warm-cream Anthropic palette which
-     read as artisanal/literary. The new tokens lean on indigo as the
-     single accent and use a cooler base so the product feels closer
-     to Linear/Vercel/Stripe than to a book jacket. */
-  --background: #f8fafc;          /* cool off-white, slight slate tint */
+  /* Chedder palette — warm coral primary on a cool-neutral surface.
+     Coral carries the brand energy (Spark's body, CTAs, the dot in
+     the wordmark). Neutrals stay cool-slate so the warm coral pops
+     without competing — same play as Stripe's #635BFF on a slate
+     surface. The complementary teal and warm amber slots exist for
+     data viz and the occasional secondary accent; we don't lean on
+     them in marketing surfaces. */
+
+  /* Surfaces — cool whites, warm-neutral hints */
+  --background: #fafafa;          /* very soft warm-grey, less clinical than pure white */
   --foreground: #0f172a;          /* slate-900, near-black with cool undertone */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #0f172a;
+
+  /* Primary surfaces (the dark "CTA" tone) */
+  --primary: #0f172a;             /* slate-900, used on filled CTAs */
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;            /* slate-100 */
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;     /* slate-500 */
-  --accent: #eef2ff;               /* indigo-50, soft halo */
-  --accent-foreground: #4338ca;
-  --destructive: #c44a3a;
-  --border: #e2e8f0;               /* slate-200, cool-toned */
-  --input: #e2e8f0;
-  --ring: #4f46e5;                  /* indigo-600, the signature accent */
-  --chart-1: #4f46e5;               /* indigo */
-  --chart-2: #3d8b5e;               /* clear green */
-  --chart-3: #d89c3a;               /* clear amber */
-  --chart-4: #06b6d4;               /* cyan, secondary accent */
-  --chart-5: #c44a3a;               /* clear red */
-  --radius: 0.875rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2ff;
-  --sidebar-accent-foreground: #4338ca;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4f46e5;
+  --muted-foreground: #475569;     /* slate-600 — slightly darker, more readable than slate-500 */
 
-  /* Named brand tokens — kept under their old --brand-coral name so
-     existing call-sites pick up the new value without a search/replace.
-     The accent IS the coral slot now: electric indigo with a cyan
-     counterpart for the rare two-tone gradient. */
-  --brand-coral: #4f46e5;       /* indigo-600 — replaces coral */
-  --brand-coral-dark: #4338ca;  /* indigo-700 */
-  --brand-accent-2: #06b6d4;    /* cyan-500 — for gradient pairs */
-  /* Status colors. Clearer green/amber/red than the previous muted
-     naturals — green should read as green, not olive — but still
-     restrained: lower saturation than iOS, no neon. Each pair is
-     bg-strength + accessible-on-cream text. */
-  --brand-sage: #3d8b5e;        /* clear green, restrained */
-  --brand-sage-dark: #266c44;
-  --brand-amber: #d89c3a;       /* clear amber, less brown */
-  --brand-amber-dark: #9a6b1f;
-  --brand-terracotta: #c44a3a;  /* clear red, less brown */
-  --brand-terracotta-dark: #9e342a;
-  --brand-slate: #6f8aab;
-  --brand-slate-dark: #4d6478;
-  --brand-plum: #9a7aa0;
-  --brand-plum-dark: #7a5c82;
-  --brand-gold: #d8a23e;            /* toned cheese */
-  --brand-gold-dark: #b58632;
+  /* Coral accent halo */
+  --accent: #fff1ed;               /* coral-50, soft warm halo (was indigo-50) */
+  --accent-foreground: #b8412f;    /* coral-700, accessible on cream */
+
+  --destructive: #dc2626;          /* red-600 */
+  --border: #e2e8f0;               /* slate-200, cool-toned divider */
+  --input: #e2e8f0;
+  --ring: #ff5e47;                 /* coral-500 — focus ring color */
+
+  /* Chart palette — coral leads, complementary cool + warm pairs for contrast */
+  --chart-1: #ff5e47;              /* coral primary */
+  --chart-2: #0d9488;              /* teal-600, true complement to coral */
+  --chart-3: #f59e0b;              /* amber-500, warm secondary */
+  --chart-4: #3b82f6;              /* blue-500, data-viz cool */
+  --chart-5: #dc2626;              /* red-600, status only */
+
+  --radius: 0.875rem;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #ff5e47;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fff1ed;
+  --sidebar-accent-foreground: #b8412f;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #ff5e47;
+
+  /* ===== Chedder brand tokens =====
+     The --brand-coral var name is preserved so existing call-sites
+     (a lot of them) keep working without a search/replace. The values
+     are now actual warm coral, not the indigo this used to be. */
+
+  /* Coral — the signature color */
+  --brand-coral: #ff5e47;          /* coral-500, the Spark body color */
+  --brand-coral-dark: #e04a35;     /* coral-600, hover/pressed */
+  --brand-coral-light: #fff1ed;    /* coral-50, soft tint backgrounds */
+  --brand-coral-tint: #ffd9cc;     /* coral-100, slightly stronger tint */
+
+  /* --brand-accent-2 used by existing gradient call-sites.
+     Repurposed from cyan to a warm amber that harmonizes with coral
+     instead of fighting it. Coral → amber gradient feels sunset-y;
+     coral → cyan felt sci-fi. */
+  --brand-accent-2: #f59e0b;       /* amber-500 — for coral→amber gradients */
+
+  /* Status colors — restrained, accessible on cream backgrounds */
+  --brand-sage: #16a34a;           /* green-600, clearer than the old olive */
+  --brand-sage-dark: #15803d;
+  --brand-amber: #f59e0b;          /* amber-500, the warm accent */
+  --brand-amber-dark: #d97706;
+  --brand-terracotta: #dc2626;     /* red-600 — danger/error */
+  --brand-terracotta-dark: #b91c1c;
+
+  /* Slate scales — primary neutral. Used everywhere there isn't a
+     coral or status reason to pick something else. */
+  --brand-slate: #475569;          /* slate-600 */
+  --brand-slate-dark: #334155;     /* slate-700 */
+
+  /* Legacy tokens kept for backwards compatibility with older
+     components (plum/gold) that haven't migrated yet. Recolored
+     to fit the new palette so even if they're rendered, they
+     don't clash. Should be removed once those components are
+     audited and migrated. */
+  --brand-plum: #475569;
+  --brand-plum-dark: #334155;
+  --brand-gold: #f59e0b;
+  --brand-gold-dark: #d97706;
 }
 
 @layer base {
@@ -220,6 +248,37 @@ html {
 @keyframes slideUpSheet {
   from { opacity: 0; transform: translateY(60%); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Spark animations — driven by components/spark.tsx via inline style.
+   Defined here so the SVG element doesn't ship the keyframes inline
+   on every render. */
+
+/* Idle blink — open eyes 92% of the cycle, closed for the remaining
+   400ms (split across two transitions so it reads as a real blink,
+   not just a frame-swap). 5s cycle keeps it ambient, not distracting. */
+@keyframes sparkBlinkOpen {
+  0%, 92%, 100% { opacity: 1; }
+  93%, 99% { opacity: 0; }
+}
+@keyframes sparkBlinkClosed {
+  0%, 92%, 100% { opacity: 0; }
+  93%, 99% { opacity: 1; }
+}
+
+/* Audit-running bounce — gentle vertical wobble so Spark feels alive
+   while the audit churns. Tied to "auditing" variant. */
+@keyframes sparkBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Magnifying glass wiggle — tilts the lens slightly back and forth.
+   Pairs with sparkBounce so the lens looks like Spark is actively
+   inspecting something. */
+@keyframes sparkWiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
 }
 
 /* Blog post body — styles HTML produced by marked from content/posts/*.md.

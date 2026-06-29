@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { Spark } from "@/components/spark";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
 export default function Home() {
@@ -927,18 +928,17 @@ const LOADING_QUIPS = [
   "Half the DTC brands we audit are blocking GPTBot by accident. We're checking yours now.",
   "AI reads your reviews before your hero image. Make sure they're there.",
   "Your product page schema is doing more work than your TikTok.",
-  "Fun cheese fact. Aging improves both flavor and AI visibility.",
-  "AI tools love FAQs. Even more than a good cracker.",
   "Most DTC brands score below 60 on their first audit. Solid room to grow.",
   "Reddit is the secret sauce. AI weighs organic shopper opinions heavily.",
   "Wikipedia is gold. Even a short stub helps you show up.",
-  "Curds up. Great AI visibility is built, not rushed.",
   "Brands get cited for being specific, not clever.",
   "If AI sends shoppers to Amazon instead of your site, you keep the order but lose the customer.",
   "Founder story pages are GEO content. AI loves a 'why we built this.'",
   "Structured data is the wrapping paper AI unwraps first.",
   "Over 40 signals checked in every audit. Almost there.",
   "If AI can't read you, it can't recommend you. We're checking that now.",
+  "Spark is reading your meta tags right now. Don't make eye contact.",
+  "Pages that lead with the answer get cited the most. Bury nothing.",
 ];
 
 /**
@@ -1022,30 +1022,14 @@ function CheeseWheelLoader({
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
       <div className="max-w-[520px] w-full space-y-7">
         <div className="flex flex-col items-center text-center space-y-4">
-          {/* The brand C-mark, spinning. Same shape as the logo so the
-              loader IS the brand identity — clean and confident, not
-              the chunky 7-hole spinner of before. Indigo ambient halo
-              behind to tie into the futuristic palette. */}
-          <div className="relative w-[76px] h-[76px]">
+          {/* Spark in auditing mode — bounces gently with a magnifying
+              glass while the audit runs. Replaces the old cheese-wheel
+              spinner. Coral halo behind ties the character into the
+              surface without competing for attention. The Spark
+              component handles the bounce + wiggle animations. */}
+          <div className="relative w-[100px] h-[104px]">
             <div className="absolute inset-0 rounded-full bg-[var(--brand-coral)]/15 blur-[18px]" />
-            <svg viewBox="0 0 100 100" className="relative w-full h-full animate-spin" style={{ animationDuration: "4.5s" }}>
-              <defs>
-                <linearGradient id="cheddLoader" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f0c46e" />
-                  <stop offset="55%" stopColor="#e0a740" />
-                  <stop offset="100%" stopColor="#a87a25" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z"
-                fill="url(#cheddLoader)"
-                stroke="#0f172a"
-                strokeOpacity="0.1"
-                strokeWidth="1.4"
-              />
-              <circle cx="32" cy="48" r="4.5" fill="#0f172a" opacity="0.22" />
-              <circle cx="45" cy="68" r="3" fill="#0f172a" opacity="0.22" />
-            </svg>
+            <Spark variant="auditing" animate size={100} className="relative" />
           </div>
 
           <div className="space-y-1.5">
