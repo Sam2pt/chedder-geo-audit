@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logo } from "./logo";
 
+interface MeResponse {
+  email: string | null;
+  plan?: "free" | "pro";
+}
+
 /**
  * TopNav — sticky site navigation.
  *
@@ -40,7 +45,9 @@ const NAV_LINKS = [
 
 export function TopNav({ variant = "auto" }: TopNavProps) {
   const [scrolled, setScrolled] = useState(variant === "solid");
+  const [me, setMe] = useState<MeResponse | null>(null);
 
+  // Solidify on scroll for the homepage "auto" variant.
   useEffect(() => {
     if (variant === "solid") return;
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -49,7 +56,28 @@ export function TopNav({ variant = "auto" }: TopNavProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [variant]);
 
+  // Swap "Sign in" for "My audits" once the user is authenticated.
+  // /api/auth/me is cheap (server-side blob read) — fine to call on every
+  // mount; the answer feels instant in practice. We don't block initial
+  // render — the signed-out CTA shows first, then swaps if/when the
+  // response lands.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { email: null }))
+      .then((d: MeResponse) => {
+        if (!cancelled) setMe(d);
+      })
+      .catch(() => {
+        if (!cancelled) setMe({ email: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const solid = scrolled;
+  const signedIn = !!me?.email;
 
   return (
     <header
@@ -77,20 +105,44 @@ export function TopNav({ variant = "auto" }: TopNavProps) {
           ))}
         </ul>
 
-        {/* Right CTAs */}
+        {/* Right CTAs — swap for signed-in users so they get to their
+            history fast instead of seeing a redundant Sign in. */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/sign-in"
-            className="hidden sm:inline-flex items-center h-9 px-3 text-[13px] font-medium text-foreground/70 hover:text-foreground transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center h-9 px-4 rounded-full bg-foreground text-background text-[13px] font-semibold tracking-[-0.005em] hover:bg-foreground/90 transition-colors"
-          >
-            Free audit
-          </Link>
+          {signedIn ? (
+            <Link
+              href="/my-audits"
+              className="inline-flex items-center h-9 px-4 rounded-full bg-foreground text-background text-[13px] font-semibold tracking-[-0.005em] hover:bg-foreground/90 transition-colors gap-1.5"
+            >
+              My audits
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden sm:inline-flex items-center h-9 px-3 text-[13px] font-medium text-foreground/70 hover:text-foreground transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex items-center h-9 px-4 rounded-full bg-foreground text-background text-[13px] font-semibold tracking-[-0.005em] hover:bg-foreground/90 transition-colors"
+              >
+                Free audit
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>

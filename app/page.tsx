@@ -5,6 +5,8 @@ import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { Spark } from "@/components/spark";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
 export default function Home() {
@@ -550,6 +552,170 @@ export default function Home() {
       </div>
       </section>
 
+      {/* ───── PRODUCT PREVIEW ─────
+          The single most-asked-for thing from the audit:
+          "show me what the result actually looks like before I run it."
+          Inline SVG mock of a dashboard — keeps the page light (no
+          external image, no waiting) and renders crisply at any size.
+          Below it: real trust stats (197 brands, 15 categories) and
+          a 6-card grid of what gets analyzed. */}
+      <section className="px-6 py-16 sm:py-24 border-t border-foreground/[0.06]">
+        <div className="max-w-[1100px] mx-auto space-y-14 sm:space-y-16">
+          <div className="text-center space-y-3 max-w-[640px] mx-auto">
+            <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-coral-dark)]">
+              What you get
+            </div>
+            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.035em] leading-[1.08]">
+              See where you stand in AI search, in 60 seconds.
+            </h2>
+            <p className="text-[15.5px] sm:text-[17px] text-muted-foreground leading-[1.55] max-w-[540px] mx-auto pt-2">
+              Real shopper prompts. Real AI answers. Your score across the
+              seven signals that decide whether AI recommends you.
+            </p>
+          </div>
+
+          {/* Dashboard mock — inline SVG, scales to any width */}
+          <div className="relative">
+            <div className="absolute inset-x-16 top-1/3 h-2/3 bg-[var(--brand-coral)]/15 blur-3xl rounded-full -z-10 pointer-events-none" />
+            <div className="rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_24px_80px_-32px_rgba(15,23,42,0.18)] overflow-hidden">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-1.5 px-4 h-9 border-b border-foreground/[0.06] bg-foreground/[0.015]">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <div className="px-3 py-1 rounded-md bg-foreground/[0.04] text-[11px] text-foreground/55 tabular-nums">
+                    chedder.2pt.ai / a / casper
+                  </div>
+                </div>
+              </div>
+              {/* Dashboard SVG content */}
+              <svg viewBox="0 0 1000 540" className="w-full h-auto block" xmlns="http://www.w3.org/2000/svg">
+                {/* Brand header row */}
+                <g transform="translate(40, 36)">
+                  <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
+                  <text x="28" y="38" textAnchor="middle" fontSize="24" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
+                  <text x="76" y="22" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
+                  <text x="76" y="44" fontSize="12.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Direct-to-consumer mattress brand · audit run 12 mins ago</text>
+                  <text x="76" y="62" fontSize="11" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">4 pages · 47 signals analyzed</text>
+                </g>
+
+                {/* Score gauge (right side) */}
+                <g transform="translate(770, 38)">
+                  <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
+                  <circle cx="60" cy="60" r="44" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                  <path d="M 60 16 A 44 44 0 1 1 18 84" fill="none" stroke="#ff5e47" strokeWidth="8" strokeLinecap="round" />
+                  <text x="60" y="64" textAnchor="middle" fontSize="34" fontWeight="700" fill="#0f172a" letterSpacing="-1.5" fontFamily="-apple-system, Inter, sans-serif">66</text>
+                  <text x="60" y="80" textAnchor="middle" fontSize="9" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">out of 100</text>
+                  <rect x="120" y="36" width="50" height="22" rx="6" fill="#fff1ed" />
+                  <text x="145" y="51" textAnchor="middle" fontSize="11" fontWeight="700" fill="#b8412f" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
+                </g>
+
+                {/* Module cards row */}
+                <g transform="translate(40, 130)">
+                  {[
+                    { label: "Page tags", score: 90, x: 0 },
+                    { label: "Content", score: 85, x: 188 },
+                    { label: "Trust", score: 90, x: 376 },
+                    { label: "AI access", score: 70, x: 564 },
+                    { label: "Products", score: 25, x: 752 },
+                  ].map((m) => {
+                    const color = m.score >= 80 ? "#16a34a" : m.score >= 60 ? "#f59e0b" : "#dc2626";
+                    return (
+                      <g key={m.label} transform={`translate(${m.x}, 0)`}>
+                        <rect x="0" y="0" width="172" height="74" rx="10" fill="#fafafa" stroke="#e2e8f0" />
+                        <rect x="0" y="0" width="172" height="3" rx="2" fill={color} />
+                        <text x="14" y="28" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="0.8" fontFamily="-apple-system, Inter, sans-serif">{m.label.toUpperCase()}</text>
+                        <text x="14" y="56" fontSize="26" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">{m.score}</text>
+                      </g>
+                    );
+                  })}
+                </g>
+
+                {/* Radar / signal shape */}
+                <g transform="translate(40, 240)">
+                  <rect x="0" y="0" width="424" height="260" rx="12" fill="#fff" stroke="#e2e8f0" />
+                  <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Your signal shape</text>
+                  <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">How AI sees your brand across 7 signals</text>
+                  <g transform="translate(212, 158)">
+                    {[0.33, 0.66, 1].map((r, i) => (
+                      <polygon key={i}
+                        points="0,-83.6 73.0,-41.8 73.0,41.8 0,83.6 -73.0,41.8 -73.0,-41.8"
+                        transform={`scale(${r})`}
+                        fill="none" stroke="#e2e8f0" strokeWidth="1" />
+                    ))}
+                    <polygon points="0,-75 65,-30 60,40 -10,72 -55,32 -55,-30" fill="#ff5e47" fillOpacity="0.16" stroke="#ff5e47" strokeWidth="2" />
+                    {[-75, -30, 40, 72, 32, -30].map((y, i) => (
+                      <circle key={i} cx={[0, 65, 60, -10, -55, -55][i]} cy={y} r="3.5" fill="#ff5e47" />
+                    ))}
+                  </g>
+                </g>
+
+                {/* Findings list */}
+                <g transform="translate(484, 240)">
+                  <rect x="0" y="0" width="476" height="260" rx="12" fill="#fff" stroke="#e2e8f0" />
+                  <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Action plan</text>
+                  <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">3 urgent · 8 important · 6 worth doing</text>
+                  {[
+                    { sev: "Urgent", color: "#dc2626", text: "Product schema missing aggregateRating on 12 PDPs" },
+                    { sev: "Urgent", color: "#dc2626", text: "GPTBot blocked by Cloudflare bot protection" },
+                    { sev: "Important", color: "#f59e0b", text: "No Wikipedia entry — qualifies based on coverage" },
+                    { sev: "Important", color: "#f59e0b", text: "Missing FAQ schema on top-traffic education pages" },
+                    { sev: "Worth doing", color: "#16a34a", text: "Reddit presence in r/mattress is light vs competitors" },
+                  ].map((f, i) => (
+                    <g key={i} transform={`translate(20, ${70 + i * 36})`}>
+                      <rect x="0" y="0" width="60" height="18" rx="9" fill={f.color} fillOpacity="0.12" />
+                      <text x="30" y="13" textAnchor="middle" fontSize="9.5" fontWeight="700" fill={f.color} fontFamily="-apple-system, Inter, sans-serif">{f.sev}</text>
+                      <text x="72" y="13" fontSize="12" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{f.text}</text>
+                    </g>
+                  ))}
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          {/* Trust strip — real numbers */}
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 pt-2">
+            {[
+              { stat: "197", label: "brands audited" },
+              { stat: "15", label: "CPG categories" },
+              { stat: "47", label: "signals per audit" },
+              { stat: "60s", label: "typical run time" },
+            ].map((s, i, arr) => (
+              <div key={s.label} className="flex items-center gap-10">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[24px] font-semibold text-foreground tabular-nums tracking-[-0.03em]">{s.stat}</span>
+                  <span className="text-[13px] text-muted-foreground">{s.label}</span>
+                </div>
+                {i < arr.length - 1 && <div className="hidden sm:block w-px h-4 bg-foreground/10" />}
+              </div>
+            ))}
+          </div>
+
+          {/* Feature grid — what gets analyzed */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { title: "Page tags", desc: "Title, description, OG, structured data — the wrapper AI reads first." },
+              { title: "Content depth", desc: "Visible content quality, AI-citability, comparison readiness." },
+              { title: "Trust signals", desc: "Wikipedia, press citations, review density across the open web." },
+              { title: "AI access", desc: "GPTBot, ClaudeBot, PerplexityBot, Google-Extended — are they welcome?" },
+              { title: "Products", desc: "Product schema, pricing, availability, ratings — AI's product context." },
+              { title: "AI citations", desc: "Real prompts across ChatGPT, Perplexity, Brave — who got named, who didn't." },
+            ].map((f) => (
+              <div key={f.title} className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.06] hover:border-foreground/[0.12] transition-colors">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
+                  <h3 className="text-[14.5px] font-semibold text-foreground tracking-[-0.01em]">{f.title}</h3>
+                </div>
+                <p className="text-[13px] text-muted-foreground leading-[1.55]">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ───── WHY THIS MATTERS ───── */}
       <section id="why" className="px-6 py-12 sm:py-20 border-t border-foreground/[0.06]">
         <div className="max-w-[900px] mx-auto space-y-16">
@@ -812,101 +978,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───── FOOTER ───── */}
-      <footer className="px-6 py-10 border-t border-foreground/[0.06]">
-        <div className="max-w-[900px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <a
-            href="https://twopointtechnologies.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 group"
-          >
-            <img src="/2pt-logo.svg" alt="Two Point Technologies" className="h-6 rounded transition-opacity group-hover:opacity-80" />
-            <span className="text-[13px] text-muted-foreground/60 group-hover:text-muted-foreground transition-colors font-medium">
-              Chedder · Made by Two Point Technologies
-            </span>
-          </a>
-          <div className="flex items-center gap-4 text-[12px] text-muted-foreground/50">
-            <a href="/sign-in" className="hover:text-foreground transition-colors">Sign in</a>
-            <a href="/blog" className="hover:text-foreground transition-colors">Blog</a>
-            <a href="/brand" className="hover:text-foreground transition-colors">Brands</a>
-            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="https://twopointtechnologies.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">twopointtechnologies.com</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
         {upgrade}
     </main>
-  );
-}
-
-/**
- * Small fixed top nav. Fetches /api/auth/me once on mount and swaps
- * "Sign in" for "My audits" once the user has a session.
- */
-function TopNav() {
-  const [email, setEmail] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled && d?.email) setEmail(d.email);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return (
-    <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between">
-      <a href="/" className="inline-flex items-center gap-2 group">
-        {/* Refined cheese mark: a wheel with one slice cut, which also
-            reads as the letter C. Gold gradient gives depth; two small
-            asymmetric holes keep the cheese identity without clutter. */}
-        <svg viewBox="0 0 100 100" className="w-7 h-7 transition-transform duration-500 group-hover:rotate-[-8deg]">
-          <defs>
-            <linearGradient id="cheddTop" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f0c46e" />
-              <stop offset="55%" stopColor="#e0a740" />
-              <stop offset="100%" stopColor="#a87a25" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 50 50 L 91.6 32.8 A 45 45 0 1 1 67.2 8.4 Z"
-            fill="url(#cheddTop)"
-            stroke="#0f172a"
-            strokeOpacity="0.08"
-            strokeWidth="1.2"
-          />
-          <circle cx="32" cy="48" r="4.2" fill="#0f172a" opacity="0.2" />
-          <circle cx="45" cy="68" r="2.8" fill="#0f172a" opacity="0.2" />
-        </svg>
-        <span className="text-[15px] font-semibold tracking-[-0.025em] text-foreground/85 group-hover:text-foreground transition-colors">Chedder</span>
-      </a>
-      <div className="flex items-center gap-2">
-        {email ? (
-          <a
-            href="/my-audits"
-            className="h-9 px-3.5 rounded-lg bg-foreground text-background text-[13px] font-semibold tracking-[-0.01em] inline-flex items-center gap-1.5 hover:bg-foreground/90 transition-colors"
-          >
-            My audits
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
-        ) : (
-          <a
-            href="/sign-in"
-            className="h-9 px-3.5 rounded-lg bg-white border border-foreground/[0.09] text-[13px] font-medium text-foreground/80 hover:text-foreground hover:bg-foreground/[0.03] transition-colors inline-flex items-center"
-          >
-            Sign in
-          </a>
-        )}
-      </div>
-    </nav>
   );
 }
 
