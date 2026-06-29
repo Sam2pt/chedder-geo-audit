@@ -70,10 +70,10 @@
         "Olipop vs Poppi vs Health-Ade",
         "Best non-alcoholic beer for a craft beer lover",
         "What's the best canned water brand?",
-        "Best coffee subscription for dark roast lovers",
+        "Best functional drinks with real prebiotic benefits",
         "Best energy drink without artificial sweeteners",
-        "Functional drinks with real prebiotic benefits",
-        "Best ready-to-drink iced coffee in a can"
+        "Best ready-to-drink iced coffee in a can",
+        "Best electrolyte drink for athletes"
       ]
     },
     "household": {
@@ -149,6 +149,81 @@
         "What hair brand do hairstylists actually use?",
         "Best scalp care routine",
         "Affordable alternatives to Olaplex"
+      ]
+    },
+    "supplements": {
+      "label": "Supplements & wellness",
+      "noun": "supplement brand",
+      "questionsLeadIn": "When shoppers ask AI about supplements, vitamins, and wellness products, these are the prompts that surface real recommendations.",
+      "prompts": [
+        "Best multivitamin for women over 40",
+        "Cleanest creatine brand without fillers",
+        "What protein powder do trainers actually recommend?",
+        "Best electrolyte powder for daily hydration",
+        "AG1 vs Bloom vs Huel: which is worth it?",
+        "Best magnesium supplement for sleep",
+        "Are greens powders actually effective?",
+        "Best collagen brand that mixes clean in coffee"
+      ]
+    },
+    "baby": {
+      "label": "Baby & kids",
+      "noun": "baby brand",
+      "questionsLeadIn": "When parents ask AI for help choosing products for babies and kids, these are the recurring questions.",
+      "prompts": [
+        "Cleanest baby formula brands available in the US",
+        "Best diaper brand for sensitive skin",
+        "Honest Company vs Coterie diapers",
+        "Best baby food subscription for picky eaters",
+        "What car seat do safety experts actually recommend?",
+        "Best non-toxic baby skincare brand",
+        "Affordable stroller alternatives to UPPAbaby",
+        "Best organic kids snacks"
+      ]
+    },
+    "coffee-tea": {
+      "label": "Coffee & tea",
+      "noun": "coffee brand",
+      "questionsLeadIn": "When shoppers ask AI for coffee and tea recommendations, these are the most common prompts.",
+      "prompts": [
+        "Best coffee subscription for dark roast lovers",
+        "Trade Coffee vs Atlas Coffee Club",
+        "Best espresso beans for home machines",
+        "Cleanest matcha brand in the US",
+        "Best decaf coffee that doesn't taste decaf",
+        "Best instant coffee for camping",
+        "What tea brand do tea sommeliers actually recommend?",
+        "Best cold brew concentrate"
+      ]
+    },
+    "alcohol-spirits": {
+      "label": "Alcohol & spirits",
+      "noun": "spirits brand",
+      "questionsLeadIn": "When shoppers ask AI about spirits, wine, and ready-to-drink cocktails, these are the prompts that surface brands.",
+      "prompts": [
+        "Best ready-to-drink margarita brands",
+        "Casamigos vs Don Julio: which tequila is worth it?",
+        "Best non-alcoholic gin for cocktails",
+        "Best wine subscription for under $30 a bottle",
+        "Casa Dragones vs Clase Azul",
+        "Best canned cocktails for a beach day",
+        "What whiskey do bartenders actually recommend under $50?",
+        "Best natural wine brands"
+      ]
+    },
+    "home-fragrance": {
+      "label": "Home fragrance",
+      "noun": "fragrance brand",
+      "questionsLeadIn": "When shoppers ask AI about candles, diffusers, and home fragrance, these are the prompts that surface brand picks.",
+      "prompts": [
+        "Best clean-burning candle brands",
+        "Boy Smells vs Diptyque: which is worth it?",
+        "Best non-toxic candles for sensitive noses",
+        "Best diffuser for a small living room",
+        "Affordable alternatives to Diptyque",
+        "Best long-lasting candle scents",
+        "What candle brand do interior designers actually use?",
+        "Best room spray for a guest bathroom"
       ]
     }
   }
