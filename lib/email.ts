@@ -337,6 +337,101 @@ export async function sendMagicLink(input: {
   });
 }
 
+/**
+ * Send a "Welcome to Chedder Pro" email after a successful subscription.
+ * Fired from the Stripe webhook on `checkout.session.completed`. Same
+ * fail-soft pattern as the other email helpers: no-op if Resend isn't
+ * configured, returns skipped:true so the webhook still 200s.
+ *
+ * Indigo→cyan gradient mark, three perk bullets, two CTAs (Run an
+ * audit / Manage billing). Kept to a single-column 480px max-width
+ * so it renders cleanly in Gmail / Apple Mail / Outlook.
+ */
+export async function sendProWelcome(input: {
+  to: string;
+  name?: string;
+  /** ISO timestamp for when the subscription renews, optional. */
+  planRenewsAt?: string;
+  /** Origin for the audit / billing URLs (e.g. https://chedder.2pt.ai) */
+  origin?: string;
+}): Promise<SendEmailResult> {
+  const origin = input.origin || "https://chedder.2pt.ai";
+  const firstName = (input.name || "").split(/\s+/)[0] || "there";
+  const renewLine = input.planRenewsAt
+    ? `Your plan renews on ${new Date(input.planRenewsAt).toLocaleDateString(
+        "en-US",
+        { month: "long", day: "numeric", year: "numeric" }
+      )}.`
+    : "";
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; color: #0f172a; max-width: 480px; margin: 0 auto; padding: 28px 24px; background: #ffffff;">
+      <!-- Indigo→cyan gradient mark -->
+      <div style="display: inline-block; background: linear-gradient(135deg, #4f46e5, #06b6d4); width: 48px; height: 48px; border-radius: 14px; margin-bottom: 22px;"></div>
+
+      <h1 style="margin: 0 0 6px; font-size: 26px; font-weight: 600; letter-spacing: -0.025em;">
+        Welcome to Chedder Pro, ${escapeHtml(firstName)}.
+      </h1>
+      <p style="color: #5a5a60; margin: 0 0 22px; font-size: 15.5px;">
+        Your subscription is active. Here's what just unlocked.
+      </p>
+
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 0 24px;">
+        <tr>
+          <td style="vertical-align: top; padding: 4px 10px 4px 0; color: #4f46e5;">✓</td>
+          <td style="vertical-align: top; padding: 4px 0; color: #0f172a;">Unlimited audits — run as often as you want, on any DTC site.</td>
+        </tr>
+        <tr>
+          <td style="vertical-align: top; padding: 4px 10px 4px 0; color: #4f46e5;">✓</td>
+          <td style="vertical-align: top; padding: 4px 0; color: #0f172a;">Compare up to 3 competitors per audit side by side.</td>
+        </tr>
+        <tr>
+          <td style="vertical-align: top; padding: 4px 10px 4px 0; color: #4f46e5;">✓</td>
+          <td style="vertical-align: top; padding: 4px 0; color: #0f172a;">Downloadable PDF reports + full audit history saved forever.</td>
+        </tr>
+      </table>
+
+      <a href="${origin}/" style="display: inline-block; background: #0f172a; color: #fff; text-decoration: none; padding: 13px 22px; border-radius: 12px; font-weight: 600; font-size: 14px; margin-right: 8px;">
+        Run an audit
+      </a>
+      <a href="${origin}/api/billing/portal" style="display: inline-block; background: #f1f5f9; color: #0f172a; text-decoration: none; padding: 13px 22px; border-radius: 12px; font-weight: 600; font-size: 14px;">
+        Manage billing
+      </a>
+
+      <p style="color: #8b8b90; font-size: 12.5px; margin: 28px 0 0; line-height: 1.55;">
+        ${renewLine ? escapeHtml(renewLine) + "<br/>" : ""}Your Stripe receipt arrives separately. Questions? Reply to this email or write to sam@twopointtechnologies.com.
+      </p>
+    </div>
+  `;
+  const text = `Welcome to Chedder Pro, ${firstName}.
+
+Your subscription is active. Here's what unlocked:
+
+  • Unlimited audits, on any DTC site
+  • Compare up to 3 competitors per audit side by side
+  • Downloadable PDF reports + full audit history saved forever
+
+Run an audit: ${origin}/
+Manage billing: ${origin}/api/billing/portal
+
+${renewLine}
+
+Your Stripe receipt arrives separately. Questions? Reply to this email or write to sam@twopointtechnologies.com.`;
+
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[email] Pro welcome skipped for ${input.to} (no RESEND_API_KEY).`);
+    return { ok: false, skipped: true };
+  }
+
+  return sendEmail({
+    to: input.to,
+    subject: "Welcome to Chedder Pro 🧀",
+    html,
+    text,
+    tags: [{ name: "type", value: "pro_welcome" }],
+  });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

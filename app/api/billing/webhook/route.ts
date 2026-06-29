@@ -3,9 +3,11 @@ import type Stripe from "stripe";
 import { getStripe, WEBHOOK_SECRET } from "@/lib/stripe";
 import {
   applyBillingUpdate,
+  getOrMigrateUser,
   getUserByStripeCustomerId,
   linkStripeCustomer,
 } from "@/lib/users";
+import { sendProWelcome } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -111,7 +113,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       // Activate immediately so the user doesn't have to wait for the
       // subscription.updated event to fire (it usually does within a
       // second, but the UX win is real).
-      await applyBillingUpdate(email, {
+      const updatedUser = await applyBillingUpdate(email, {
         plan: "pro",
         planStatus: "active",
         stripeCustomerId: customerId,
@@ -120,6 +122,20 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
             ? session.subscription
             : session.subscription?.id,
       });
+
+      // Send the branded 'Welcome to Pro' email. Fire-and-forget so a
+      // slow Resend round-trip never blocks the webhook ACK (Stripe
+      // retries on >20s responses). If the user record didn't exist
+      // yet, fall back to a lookup that lazy-migrates from the lead
+      // store so we still have a name for the salutation.
+      void (async () => {
+        const user = updatedUser ?? (await getOrMigrateUser(email));
+        await sendProWelcome({
+          to: email,
+          name: user?.name,
+          planRenewsAt: user?.planRenewsAt,
+        });
+      })();
       return;
     }
 
