@@ -553,148 +553,82 @@ export default function Home() {
       </section>
 
       {/* ───── PRODUCT PREVIEW ─────
-          The single most-asked-for thing from the audit:
-          "show me what the result actually looks like before I run it."
-          Inline SVG mock of a dashboard — keeps the page light (no
-          external image, no waiting) and renders crisply at any size.
-          Below it: real trust stats (197 brands, 15 categories) and
-          a 6-card grid of what gets analyzed. */}
-      <section className="px-6 py-16 sm:py-24 border-t border-foreground/[0.06]">
-        <div className="max-w-[1100px] mx-auto space-y-14 sm:space-y-16">
-          <div className="text-center space-y-3 max-w-[640px] mx-auto">
-            <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-coral-dark)]">
+          SimilarWeb-inspired: dark backdrop + layered mosaic of three
+          dashboard cards. The main casper.com audit anchors the center;
+          smaller competitor-compare and prompt-analysis views tilt
+          behind to suggest product depth. Below: trust strip (real
+          numbers) and a feature grid of what gets analyzed. */}
+      <section className="relative px-6 py-20 sm:py-28 bg-foreground text-white overflow-hidden">
+        {/* Coral glow behind the dashboards — same color signature, just
+            on a dark surface so it reads as ambient depth not a flat fill. */}
+        <div className="absolute inset-x-0 top-1/4 h-1/2 bg-[var(--brand-coral)]/20 blur-[180px] pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-foreground to-transparent pointer-events-none" />
+
+        <div className="relative max-w-[1180px] mx-auto space-y-16 sm:space-y-20">
+          <div className="text-center space-y-3 max-w-[680px] mx-auto">
+            <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-coral)]">
               What you get
             </div>
-            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.035em] leading-[1.08]">
-              See where you stand in AI search, in 60 seconds.
+            <h2 className="text-[34px] sm:text-[52px] font-semibold tracking-[-0.035em] leading-[1.05] text-white">
+              See where you stand in{" "}
+              <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">
+                AI search
+              </span>
+              , in 60 seconds.
             </h2>
-            <p className="text-[15.5px] sm:text-[17px] text-muted-foreground leading-[1.55] max-w-[540px] mx-auto pt-2">
+            <p className="text-[15.5px] sm:text-[17px] text-white/55 leading-[1.55] max-w-[540px] mx-auto pt-3">
               Real shopper prompts. Real AI answers. Your score across the
               seven signals that decide whether AI recommends you.
             </p>
           </div>
 
-          {/* Dashboard mock — inline SVG, scales to any width */}
-          <div className="relative">
-            <div className="absolute inset-x-16 top-1/3 h-2/3 bg-[var(--brand-coral)]/15 blur-3xl rounded-full -z-10 pointer-events-none" />
-            <div className="rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_24px_80px_-32px_rgba(15,23,42,0.18)] overflow-hidden">
-              {/* Browser chrome */}
-              <div className="flex items-center gap-1.5 px-4 h-9 border-b border-foreground/[0.06] bg-foreground/[0.015]">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="px-3 py-1 rounded-md bg-foreground/[0.04] text-[11px] text-foreground/55 tabular-nums">
-                    chedder.2pt.ai / a / casper
-                  </div>
-                </div>
-              </div>
-              {/* Dashboard SVG content */}
-              <svg viewBox="0 0 1000 540" className="w-full h-auto block" xmlns="http://www.w3.org/2000/svg">
-                {/* Brand header row */}
-                <g transform="translate(40, 36)">
-                  <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
-                  <text x="28" y="38" textAnchor="middle" fontSize="24" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
-                  <text x="76" y="22" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
-                  <text x="76" y="44" fontSize="12.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Direct-to-consumer mattress brand · audit run 12 mins ago</text>
-                  <text x="76" y="62" fontSize="11" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">4 pages · 47 signals analyzed</text>
-                </g>
+          {/* Layered mosaic — three dashboards, center prominent + two
+              tilted behind. Uses CSS perspective + rotation for depth. */}
+          <div className="relative w-full aspect-[16/10] max-w-[1100px] mx-auto" style={{ perspective: "1800px" }}>
+            {/* Left tilted card — competitor comparison */}
+            <div
+              className="absolute left-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-right"
+              style={{ transform: "rotateY(14deg) translateZ(-100px) translateX(-4%)", opacity: 0.92 }}
+            >
+              <ChromeBar url="chedder.2pt.ai / compare" />
+              <CompareMock />
+            </div>
 
-                {/* Score gauge (right side) */}
-                <g transform="translate(770, 38)">
-                  <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
-                  <circle cx="60" cy="60" r="44" fill="none" stroke="#e2e8f0" strokeWidth="8" />
-                  <path d="M 60 16 A 44 44 0 1 1 18 84" fill="none" stroke="#ff5e47" strokeWidth="8" strokeLinecap="round" />
-                  <text x="60" y="64" textAnchor="middle" fontSize="34" fontWeight="700" fill="#0f172a" letterSpacing="-1.5" fontFamily="-apple-system, Inter, sans-serif">66</text>
-                  <text x="60" y="80" textAnchor="middle" fontSize="9" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">out of 100</text>
-                  <rect x="120" y="36" width="50" height="22" rx="6" fill="#fff1ed" />
-                  <text x="145" y="51" textAnchor="middle" fontSize="11" fontWeight="700" fill="#b8412f" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
-                </g>
+            {/* Right tilted card — prompt analysis */}
+            <div
+              className="absolute right-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-left"
+              style={{ transform: "rotateY(-14deg) translateZ(-100px) translateX(4%)", opacity: 0.92 }}
+            >
+              <ChromeBar url="chedder.2pt.ai / a / casper / prompts" />
+              <PromptsMock />
+            </div>
 
-                {/* Module cards row */}
-                <g transform="translate(40, 130)">
-                  {[
-                    { label: "Page tags", score: 90, x: 0 },
-                    { label: "Content", score: 85, x: 188 },
-                    { label: "Trust", score: 90, x: 376 },
-                    { label: "AI access", score: 70, x: 564 },
-                    { label: "Products", score: 25, x: 752 },
-                  ].map((m) => {
-                    const color = m.score >= 80 ? "#16a34a" : m.score >= 60 ? "#f59e0b" : "#dc2626";
-                    return (
-                      <g key={m.label} transform={`translate(${m.x}, 0)`}>
-                        <rect x="0" y="0" width="172" height="74" rx="10" fill="#fafafa" stroke="#e2e8f0" />
-                        <rect x="0" y="0" width="172" height="3" rx="2" fill={color} />
-                        <text x="14" y="28" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="0.8" fontFamily="-apple-system, Inter, sans-serif">{m.label.toUpperCase()}</text>
-                        <text x="14" y="56" fontSize="26" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">{m.score}</text>
-                      </g>
-                    );
-                  })}
-                </g>
-
-                {/* Radar / signal shape */}
-                <g transform="translate(40, 240)">
-                  <rect x="0" y="0" width="424" height="260" rx="12" fill="#fff" stroke="#e2e8f0" />
-                  <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Your signal shape</text>
-                  <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">How AI sees your brand across 7 signals</text>
-                  <g transform="translate(212, 158)">
-                    {[0.33, 0.66, 1].map((r, i) => (
-                      <polygon key={i}
-                        points="0,-83.6 73.0,-41.8 73.0,41.8 0,83.6 -73.0,41.8 -73.0,-41.8"
-                        transform={`scale(${r})`}
-                        fill="none" stroke="#e2e8f0" strokeWidth="1" />
-                    ))}
-                    <polygon points="0,-75 65,-30 60,40 -10,72 -55,32 -55,-30" fill="#ff5e47" fillOpacity="0.16" stroke="#ff5e47" strokeWidth="2" />
-                    {[-75, -30, 40, 72, 32, -30].map((y, i) => (
-                      <circle key={i} cx={[0, 65, 60, -10, -55, -55][i]} cy={y} r="3.5" fill="#ff5e47" />
-                    ))}
-                  </g>
-                </g>
-
-                {/* Findings list */}
-                <g transform="translate(484, 240)">
-                  <rect x="0" y="0" width="476" height="260" rx="12" fill="#fff" stroke="#e2e8f0" />
-                  <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Action plan</text>
-                  <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">3 urgent · 8 important · 6 worth doing</text>
-                  {[
-                    { sev: "Urgent", color: "#dc2626", text: "Product schema missing aggregateRating on 12 PDPs" },
-                    { sev: "Urgent", color: "#dc2626", text: "GPTBot blocked by Cloudflare bot protection" },
-                    { sev: "Important", color: "#f59e0b", text: "No Wikipedia entry — qualifies based on coverage" },
-                    { sev: "Important", color: "#f59e0b", text: "Missing FAQ schema on top-traffic education pages" },
-                    { sev: "Worth doing", color: "#16a34a", text: "Reddit presence in r/mattress is light vs competitors" },
-                  ].map((f, i) => (
-                    <g key={i} transform={`translate(20, ${70 + i * 36})`}>
-                      <rect x="0" y="0" width="60" height="18" rx="9" fill={f.color} fillOpacity="0.12" />
-                      <text x="30" y="13" textAnchor="middle" fontSize="9.5" fontWeight="700" fill={f.color} fontFamily="-apple-system, Inter, sans-serif">{f.sev}</text>
-                      <text x="72" y="13" fontSize="12" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{f.text}</text>
-                    </g>
-                  ))}
-                </g>
-              </svg>
+            {/* Center main card — full audit */}
+            <div className="absolute left-1/2 top-0 w-[68%] -translate-x-1/2 rounded-xl bg-white shadow-[0_40px_100px_-15px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10 z-10">
+              <ChromeBar url="chedder.2pt.ai / a / casper" />
+              <AuditMock />
             </div>
           </div>
 
-          {/* Trust strip — real numbers */}
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 pt-2">
+          {/* Trust strip — light text on dark */}
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5 pt-4">
             {[
               { stat: "197", label: "brands audited" },
               { stat: "15", label: "CPG categories" },
               { stat: "47", label: "signals per audit" },
               { stat: "60s", label: "typical run time" },
             ].map((s, i, arr) => (
-              <div key={s.label} className="flex items-center gap-10">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[24px] font-semibold text-foreground tabular-nums tracking-[-0.03em]">{s.stat}</span>
-                  <span className="text-[13px] text-muted-foreground">{s.label}</span>
+              <div key={s.label} className="flex items-center gap-12">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[26px] font-semibold text-white tabular-nums tracking-[-0.03em]">{s.stat}</span>
+                  <span className="text-[13.5px] text-white/55">{s.label}</span>
                 </div>
-                {i < arr.length - 1 && <div className="hidden sm:block w-px h-4 bg-foreground/10" />}
+                {i < arr.length - 1 && <div className="hidden sm:block w-px h-4 bg-white/15" />}
               </div>
             ))}
           </div>
 
-          {/* Feature grid — what gets analyzed */}
+          {/* Feature grid — six cards on the dark backdrop */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {[
               { title: "Page tags", desc: "Title, description, OG, structured data — the wrapper AI reads first." },
@@ -704,12 +638,12 @@ export default function Home() {
               { title: "Products", desc: "Product schema, pricing, availability, ratings — AI's product context." },
               { title: "AI citations", desc: "Real prompts across ChatGPT, Perplexity, Brave — who got named, who didn't." },
             ].map((f) => (
-              <div key={f.title} className="p-5 sm:p-6 rounded-2xl bg-white border border-foreground/[0.06] hover:border-foreground/[0.12] transition-colors">
+              <div key={f.title} className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.14] transition-colors">
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
-                  <h3 className="text-[14.5px] font-semibold text-foreground tracking-[-0.01em]">{f.title}</h3>
+                  <h3 className="text-[14.5px] font-semibold text-white tracking-[-0.01em]">{f.title}</h3>
                 </div>
-                <p className="text-[13px] text-muted-foreground leading-[1.55]">{f.desc}</p>
+                <p className="text-[13px] text-white/60 leading-[1.55]">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -990,6 +924,179 @@ function scoreAccent(score: number) {
   if (score >= 60) return "#6f8aab";
   if (score >= 40) return "#d89c3a";
   return "#c44a3a";
+}
+
+/**
+ * Mock UIs used in the homepage product-preview mosaic. All inline SVG
+ * so they ship with the page, render crisp at every zoom, and don't
+ * fight a layered tilt (no async image decoding mid-rotation). Each is
+ * a self-contained card body — pair with <ChromeBar /> at the top to
+ * frame it as a browser window.
+ */
+
+function ChromeBar({ url }: { url: string }) {
+  return (
+    <div className="flex items-center gap-1.5 px-4 h-9 border-b border-foreground/[0.06] bg-foreground/[0.015]">
+      <div className="flex gap-1.5">
+        <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+        <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+        <div className="w-2.5 h-2.5 rounded-full bg-foreground/15" />
+      </div>
+      <div className="flex-1 flex justify-center">
+        <div className="px-3 py-1 rounded-md bg-foreground/[0.04] text-[10.5px] text-foreground/55 tabular-nums truncate max-w-[60%]">
+          {url}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Main audit dashboard — center of the mosaic. */
+function AuditMock() {
+  return (
+    <svg viewBox="0 0 1000 560" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Brand header — left aligned, no score on the right yet */}
+      <g transform="translate(36, 32)">
+        <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
+        <text x="28" y="38" textAnchor="middle" fontSize="24" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
+        <text x="76" y="22" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
+        <text x="76" y="42" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Mattresses · audit run 12 mins ago</text>
+        <text x="76" y="60" fontSize="10.5" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">4 pages · 47 signals analyzed</text>
+      </g>
+
+      {/* Score column on the right — gauge + grade pill, vertically stacked */}
+      <g transform="translate(820, 24)">
+        <text x="68" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">SCORE</text>
+        <circle cx="68" cy="62" r="38" fill="none" stroke="#f1f5f9" strokeWidth="7" />
+        <path d="M 68 24 A 38 38 0 1 1 33 84" fill="none" stroke="#ff5e47" strokeWidth="7" strokeLinecap="round" />
+        <text x="68" y="68" textAnchor="middle" fontSize="30" fontWeight="700" fill="#0f172a" letterSpacing="-1.5" fontFamily="-apple-system, Inter, sans-serif">66</text>
+        <rect x="46" y="108" width="44" height="20" rx="6" fill="#fff1ed" />
+        <text x="68" y="122" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#b8412f" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
+      </g>
+
+      {/* Module cards row */}
+      <g transform="translate(36, 156)">
+        {[
+          { label: "Page tags", score: 90, x: 0 },
+          { label: "Content", score: 85, x: 188 },
+          { label: "Trust", score: 90, x: 376 },
+          { label: "AI access", score: 70, x: 564 },
+          { label: "Products", score: 25, x: 752 },
+        ].map((m) => {
+          const color = m.score >= 80 ? "#16a34a" : m.score >= 60 ? "#f59e0b" : "#dc2626";
+          return (
+            <g key={m.label} transform={`translate(${m.x}, 0)`}>
+              <rect x="0" y="0" width="172" height="74" rx="10" fill="#fafafa" stroke="#e2e8f0" />
+              <rect x="0" y="0" width="172" height="3" rx="2" fill={color} />
+              <text x="14" y="28" fontSize="9.5" fontWeight="700" fill="#94a3b8" letterSpacing="0.8" fontFamily="-apple-system, Inter, sans-serif">{m.label.toUpperCase()}</text>
+              <text x="14" y="56" fontSize="26" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">{m.score}</text>
+            </g>
+          );
+        })}
+      </g>
+
+      {/* Radar */}
+      <g transform="translate(36, 256)">
+        <rect x="0" y="0" width="424" height="280" rx="12" fill="#fff" stroke="#e2e8f0" />
+        <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Your signal shape</text>
+        <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">How AI sees your brand across 7 signals</text>
+        <g transform="translate(212, 168)">
+          {[0.33, 0.66, 1].map((r, i) => (
+            <polygon key={i}
+              points="0,-83.6 73.0,-41.8 73.0,41.8 0,83.6 -73.0,41.8 -73.0,-41.8"
+              transform={`scale(${r})`}
+              fill="none" stroke="#e2e8f0" strokeWidth="1" />
+          ))}
+          <polygon points="0,-75 65,-30 60,40 -10,72 -55,32 -55,-30" fill="#ff5e47" fillOpacity="0.16" stroke="#ff5e47" strokeWidth="2" />
+          {[-75, -30, 40, 72, 32, -30].map((y, i) => (
+            <circle key={i} cx={[0, 65, 60, -10, -55, -55][i]} cy={y} r="3.5" fill="#ff5e47" />
+          ))}
+        </g>
+      </g>
+
+      {/* Findings */}
+      <g transform="translate(484, 256)">
+        <rect x="0" y="0" width="480" height="280" rx="12" fill="#fff" stroke="#e2e8f0" />
+        <text x="20" y="28" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Action plan</text>
+        <text x="20" y="46" fontSize="11" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">3 urgent · 8 important · 6 worth doing</text>
+        {[
+          { sev: "Urgent", color: "#dc2626", text: "Product schema missing aggregateRating on 12 PDPs" },
+          { sev: "Urgent", color: "#dc2626", text: "GPTBot blocked by Cloudflare bot protection" },
+          { sev: "Important", color: "#f59e0b", text: "No Wikipedia entry — qualifies based on coverage" },
+          { sev: "Important", color: "#f59e0b", text: "Missing FAQ schema on top-traffic pages" },
+          { sev: "Worth doing", color: "#16a34a", text: "Reddit presence in r/mattress is light" },
+        ].map((f, i) => (
+          <g key={i} transform={`translate(20, ${78 + i * 38})`}>
+            <rect x="0" y="0" width="62" height="20" rx="10" fill={f.color} fillOpacity="0.12" />
+            <text x="31" y="14" textAnchor="middle" fontSize="9.5" fontWeight="700" fill={f.color} fontFamily="-apple-system, Inter, sans-serif">{f.sev}</text>
+            <text x="74" y="14" fontSize="11.5" fill="#334155" fontFamily="-apple-system, Inter, sans-serif">{f.text}</text>
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+/** Competitor comparison view — left tilted card. */
+function CompareMock() {
+  const brands = [
+    { name: "Casper", score: 66, color: "#ff5e47", w: 264 },
+    { name: "Purple", score: 78, color: "#f59e0b", w: 312 },
+    { name: "Saatva", score: 84, color: "#16a34a", w: 336 },
+  ];
+  return (
+    <svg viewBox="0 0 700 480" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(32, 28)">
+        <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">COMPARE</text>
+        <text x="0" y="26" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">Casper vs Purple vs Saatva</text>
+        <text x="0" y="48" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Mattresses · last updated today</text>
+      </g>
+
+      {brands.map((b, i) => (
+        <g key={b.name} transform={`translate(32, ${110 + i * 100})`}>
+          <text x="0" y="0" fontSize="14" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">{b.name}</text>
+          <text x="624" y="0" textAnchor="end" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.8" fontFamily="-apple-system, Inter, sans-serif">{b.score}</text>
+          <rect x="0" y="14" width="624" height="10" rx="5" fill="#f1f5f9" />
+          <rect x="0" y="14" width={b.w} height="10" rx="5" fill={b.color} />
+          <text x="0" y="48" fontSize="11" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">
+            {b.name === "Casper" ? "Schema gap · GPTBot blocked" : b.name === "Purple" ? "Strong on Reddit · weak schema" : "Wikipedia entry · listicle leader"}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/** Prompt-analysis view — right tilted card. */
+function PromptsMock() {
+  const prompts = [
+    { q: "Best mattress for back pain?", brands: [{ n: "Saatva", hit: true }, { n: "Tempur", hit: true }, { n: "Casper", hit: false }] },
+    { q: "Best cooling mattress 2026?", brands: [{ n: "Purple", hit: true }, { n: "Casper", hit: true }, { n: "Helix", hit: false }] },
+    { q: "Affordable bed in a box?", brands: [{ n: "Tuft & Needle", hit: true }, { n: "Nectar", hit: true }, { n: "Casper", hit: false }] },
+  ];
+  return (
+    <svg viewBox="0 0 700 480" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(32, 28)">
+        <text x="0" y="0" fontSize="10" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">AI PROMPTS</text>
+        <text x="0" y="26" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">What shoppers asked AI</text>
+        <text x="0" y="48" fontSize="12" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Casper appeared in 1 of 3 category prompts</text>
+      </g>
+
+      {prompts.map((p, i) => (
+        <g key={p.q} transform={`translate(32, ${110 + i * 116})`}>
+          <rect x="0" y="0" width="624" height="96" rx="10" fill="#fafafa" stroke="#e2e8f0" />
+          <text x="16" y="26" fontSize="12.5" fontWeight="600" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">&ldquo;{p.q}&rdquo;</text>
+          {p.brands.map((b, j) => (
+            <g key={b.n} transform={`translate(${16 + j * 200}, 50)`}>
+              <rect x="0" y="0" width="180" height="32" rx="8" fill={b.hit ? (b.n === "Casper" ? "#fff1ed" : "#f1f5f9") : "#fafafa"} stroke={b.hit && b.n === "Casper" ? "#ff5e47" : "#e2e8f0"} />
+              <circle cx="14" cy="16" r="4" fill={b.hit && b.n === "Casper" ? "#ff5e47" : b.hit ? "#0f172a" : "#cbd5e1"} />
+              <text x="26" y="20" fontSize="11.5" fontWeight={b.n === "Casper" ? "700" : "500"} fill={b.hit && b.n === "Casper" ? "#b8412f" : b.hit ? "#0f172a" : "#94a3b8"} fontFamily="-apple-system, Inter, sans-serif">{b.n}</text>
+            </g>
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
 }
 
 // Rotating fun quips shown under the stage text while the audit runs.
