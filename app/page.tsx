@@ -364,32 +364,40 @@ export default function Home() {
       <TopNav />
 
       {/* ───── HERO ───── */}
-      <section className="min-h-[90vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-12 sm:py-20">
-      <div className="w-full max-w-[760px] text-center space-y-10">
-        {/* Brand */}
-        <div className="space-y-6">
-          <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 backdrop-blur-sm border border-foreground/[0.07] text-[12.5px] text-muted-foreground font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
-            The complete GEO audit for DTC brands
-          </div>
-          {/* Two-block poster: now-fact (line one) + binary question
-              (line two). Font sized so both blocks fit comfortably
-              inside the 760px hero container without overflow — at
-              72px the headlines were ~860px wide on desktop, wider
-              than the container and the search-bar below it, which
-              made the hero feel 'all over the place'. 56px on desktop
-              lets each block sit on a single line inside the column;
-              34px on mobile lets lines wrap naturally. */}
-          <h1 className="anim-slide-up text-[34px] sm:text-[56px] font-semibold tracking-[-0.04em] sm:tracking-[-0.045em] leading-[1.05] sm:leading-[1.02] text-foreground">
-            <span className="block">Your next customer just asked AI.</span>
-            <span className="block mt-2 sm:mt-3">
-              <span className="text-foreground/35">Did it pick </span>
-              <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">your brand</span>
-              <span className="text-foreground/35">?</span>
+      <section className="min-h-[88vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-16 sm:py-20 relative">
+      <div className="w-full max-w-[760px] text-center space-y-8">
+        {/* Intro pill — short, naming both acronyms so search-savvy
+            visitors recognize what we do immediately. */}
+        <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-foreground/[0.07] text-[12px] text-muted-foreground font-medium">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
+          GEO + AEO audit for DTC brands
+        </div>
+
+        {/* Chedder introduces themselves — Spark at hero scale with
+            ambient blink and bounce, then headline below. The visual
+            establishes the character as the brand before any copy
+            does. */}
+        <div className="relative flex justify-center pt-2 pb-1">
+          <div className="absolute inset-0 -m-8 bg-[var(--brand-coral)]/12 blur-3xl rounded-full -z-10" />
+          <Spark variant="idle" animate size={120} className="anim-fade-in" />
+        </div>
+
+        <div className="space-y-5">
+          <h1 className="anim-slide-up text-[36px] sm:text-[60px] font-semibold tracking-[-0.04em] sm:tracking-[-0.045em] leading-[1.02] text-foreground">
+            <span className="block">
+              Meet{" "}
+              <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">
+                Chedder
+              </span>
+              .
+            </span>
+            <span className="block mt-1 sm:mt-2 text-foreground/45">
+              Your assistant for AI search.
             </span>
           </h1>
-          <p className="anim-slide-up delay-100 text-[15.5px] sm:text-[20px] leading-[1.5] text-muted-foreground font-normal max-w-[560px] mx-auto tracking-[-0.005em] sm:tracking-[-0.01em]">
-            Chedder runs the exact questions shoppers ask ChatGPT, Perplexity, and Google. See if you show up, where AI sends them, and the specific fixes when you don&apos;t.
+          <p className="anim-slide-up delay-100 text-[15.5px] sm:text-[19px] leading-[1.5] text-muted-foreground font-normal max-w-[540px] mx-auto tracking-[-0.005em]">
+            I check 47 signals across ChatGPT, Perplexity, and Google AI to
+            show where your brand stands, and exactly what to fix.
           </p>
         </div>
 
@@ -538,17 +546,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll cue */}
-        <div className="pt-4">
-          <button
-            type="button"
-            onClick={() => document.getElementById("why")?.scrollIntoView({ behavior: "smooth" })}
-            className="text-[13px] text-muted-foreground/60 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
-          >
-            Why this matters now
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        </div>
       </div>
       </section>
 
@@ -650,264 +647,93 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ───── WHY THIS MATTERS ───── */}
-      <section id="why" className="px-6 py-12 sm:py-20 border-t border-foreground/[0.06]">
-        <div className="max-w-[900px] mx-auto space-y-16">
-          <div className="text-center space-y-4">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Shift</div>
-            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
-              Search is becoming conversation.<br/>
-              Your brand needs a seat at that table.
-            </h2>
-            <p className="text-[17px] text-muted-foreground max-w-[600px] mx-auto leading-[1.6]">
-              People aren&apos;t clicking through 10 blue links anymore. They&apos;re asking AI, and trusting the first answer.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            {[
-              { stat: "47%", label: "of Google searches now show AI Overviews" },
-              { stat: "1 in 4", label: "DTC shoppers start product research with ChatGPT" },
-              { stat: "0", label: "clicks needed for AI to pick a brand for them" },
-            ].map((s, i) => (
-              <div key={i} className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300" style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="text-[32px] sm:text-[52px] font-semibold tracking-[-0.045em] leading-none text-foreground tabular-nums">
-                  {s.stat}
-                </div>
-                <p className="text-[11.5px] sm:text-[13.5px] text-muted-foreground leading-[1.45] sm:leading-[1.55] mt-3 sm:mt-4">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="anim-slide-up p-8 sm:p-12 rounded-3xl bg-[#0f172a] text-white space-y-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-coral)]/[0.08] to-transparent pointer-events-none" />
-            <p className="relative text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral)]">The problem</p>
-            <p className="relative text-[22px] sm:text-[30px] font-semibold leading-[1.25] tracking-[-0.025em]">
-              If ChatGPT, Perplexity, or Google AI doesn&apos;t mention you when a customer asks,
-              <span className="text-white/45 font-medium"> you&apos;ve lost the sale before you knew it happened.</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ───── WHAT CHEDDER DOES ───── */}
-      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
-        <div className="max-w-[900px] mx-auto space-y-12">
-          <div className="text-center space-y-4">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">The Audit</div>
-            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
-              7 signals. One clear score.<br/>
-              A real action plan.
-            </h2>
-            <p className="text-[17px] text-muted-foreground max-w-[600px] mx-auto leading-[1.6]">
-              Chedder checks every factor AI models use to decide which brands to recommend, then tells you exactly what to fix.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              {
-                title: "Real AI search tests",
-                desc: "We ask ChatGPT, Perplexity, and Brave Search real customer questions about your category and check whether your brand comes up, with exact verbatim excerpts.",
-                badge: "Killer feature",
-              },
-              {
-                title: "External brand signals",
-                desc: "Wikipedia, Reddit, and web presence. The sources AI models cross-reference when they answer.",
-              },
-              {
-                title: "Structured data audit",
-                desc: "Schema.org, JSON-LD, FAQ markup. The data that AI parses directly from your pages.",
-              },
-              {
-                title: "AI crawler access",
-                desc: "GPTBot, ClaudeBot, Google-Extended. Are your pages even reachable by the bots that train these models?",
-              },
-              {
-                title: "Meta & content quality",
-                desc: "Title tags, descriptions, FAQs, headings, lists. The formats AI prefers to cite verbatim.",
-              },
-              {
-                title: "Trust & authority signals",
-                desc: "E-E-A-T factors: authorship, contact info, social proof, legal pages. These are why AI trusts you as a source.",
-              },
-            ].map((f, i) => (
-              <div key={i} className="anim-slide-up-sm p-5 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 40}ms` }}>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-[15.5px] font-semibold tracking-[-0.012em] text-foreground">{f.title}</h3>
-                    {f.badge && (
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)]">
-                        {f.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[13px] text-muted-foreground leading-[1.6]">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── HOW IT WORKS ───── */}
-      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
-        <div className="max-w-[900px] mx-auto space-y-12">
-          <div className="text-center space-y-4">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">How It Works</div>
-            <h2 className="text-[36px] sm:text-[48px] font-semibold tracking-[-0.04em] leading-[1.05]">
-              From URL to action plan in under a minute.
+      {/* ───── HOW CHEDDER WORKS ─────
+          Three focused capability cards, each anchored by a Spark
+          variant so the character carries the section. Replaces five
+          older mid-page sections (Why this matters, What Chedder does,
+          How it works, Social proof, Agency CTA) that were doing the
+          same selling job with too many words. */}
+      <section className="px-6 py-20 sm:py-28 border-t border-foreground/[0.06]">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center space-y-3 max-w-[620px] mx-auto mb-14 sm:mb-20">
+            <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-coral-dark)]">
+              How Chedder works
+            </div>
+            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.035em] leading-[1.08]">
+              Three things, in 60 seconds.
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
             {[
-              { num: "1", title: "Paste any URL", desc: "Your site or a competitor&apos;s, even both side-by-side." },
-              { num: "2", title: "Chedder audits everything", desc: "Crawls your pages, runs real questions through ChatGPT, Perplexity, and Brave Search, and checks Wikipedia and Reddit, scoring every signal." },
-              { num: "3", title: "Get your action plan", desc: "Prioritized recommendations, downloadable PDF report, competitor gaps." },
-            ].map((step, i) => (
-              <div key={i} className="relative p-6 rounded-2xl bg-white border border-foreground/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                <div className="w-9 h-9 rounded-lg bg-[var(--brand-coral)]/10 text-[var(--brand-coral-dark)] flex items-center justify-center text-[14px] font-semibold mb-4 border border-[var(--brand-coral)]/20 tabular-nums tracking-[-0.01em]">
-                  {step.num}
-                </div>
-                <h3 className="text-[17px] font-semibold tracking-[-0.01em] mb-2">{step.title}</h3>
-                <p className="text-[14px] text-muted-foreground leading-[1.55]" dangerouslySetInnerHTML={{ __html: step.desc }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── SOCIAL PROOF ───── */}
-      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
-        <div className="max-w-[960px] mx-auto space-y-14">
-          <div className="text-center space-y-4">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Built for DTC</div>
-            <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.04em] leading-[1.05]">
-              For the brands shoppers ask AI about.
-            </h2>
-            <p className="text-[16px] text-muted-foreground max-w-[580px] mx-auto leading-[1.6]">
-              Chedder is tuned for direct-to-consumer. Not B2B SaaS, not enterprise tools, not agencies. Just the brands shoppers actually buy. Categories we&apos;re good at:
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-center max-w-[640px] mx-auto">
-            {[
-              "Mattresses",
-              "Pet food",
-              "Dog beds",
-              "Beauty",
-              "Chocolate",
-              "Beverages",
-              "Detergent",
-              "Candles",
-              "Supplements",
-              "Skincare",
-              "Coffee",
-              "Apparel",
-            ].map((category) => (
+              {
+                variant: "auditing" as const,
+                kicker: "01 · See",
+                title: "Where you rank in AI",
+                body: "Real shopper prompts across ChatGPT, Perplexity, Brave, and Google AI Overviews. Verbatim excerpts of who got named.",
+              },
+              {
+                variant: "thinking" as const,
+                kicker: "02 · Know",
+                title: "What's holding you back",
+                body: "47 signals across schema, content, citations, crawler access, and product data. Scored, prioritized, explained.",
+              },
+              {
+                variant: "celebrating" as const,
+                kicker: "03 · Fix",
+                title: "With a real action plan",
+                body: "Urgent, important, and worth-doing tasks written for brand marketers, not server administrators. Ship in a week.",
+              },
+            ].map((card) => (
               <div
-                key={category}
-                className="px-3.5 py-1.5 rounded-full bg-white border border-foreground/[0.09] text-[13px] font-medium text-foreground/70"
+                key={card.kicker}
+                className="group p-6 sm:p-8 rounded-2xl bg-white border border-foreground/[0.06] hover:border-foreground/[0.14] hover:shadow-[0_12px_40px_-16px_rgba(15,23,42,0.08)] transition-all duration-300"
               >
-                {category}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6">
-            {[
-              {
-                stat: "60",
-                label: "Typical first-audit score for DTC brands. Even ones with nine-figure ad budgets.",
-                prefix: "<",
-              },
-              {
-                stat: "1 in 2",
-                label: "DTC brands we audit are blocking GPTBot or ClaudeBot by accident.",
-              },
-              {
-                stat: "40",
-                label: "Signals scored per audit, including marketplace shadow analysis.",
-                suffix: "+",
-              },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="anim-slide-up p-5 sm:p-7 rounded-2xl bg-white/70 backdrop-blur-sm border border-foreground/[0.06] hover:border-foreground/[0.12] hover:bg-white transition-all duration-300"
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div className="text-[30px] sm:text-[50px] font-semibold tracking-[-0.045em] leading-none flex items-baseline gap-[1px] sm:gap-1 text-foreground tabular-nums">
-                  {s.prefix}
-                  {s.stat}
-                  {s.suffix}
+                <div className="flex items-center justify-between mb-6">
+                  <Spark variant={card.variant} animate size={56} />
+                  <span className="text-[10.5px] font-semibold tracking-[0.14em] text-foreground/35 uppercase">
+                    {card.kicker}
+                  </span>
                 </div>
-                <p className="text-[11.5px] sm:text-[13.5px] text-muted-foreground leading-[1.45] sm:leading-[1.6] mt-3 sm:mt-4">
-                  {s.label}
+                <h3 className="text-[18px] sm:text-[20px] font-semibold text-foreground tracking-[-0.02em] leading-[1.25] mb-2.5">
+                  {card.title}
+                </h3>
+                <p className="text-[13.5px] sm:text-[14px] text-muted-foreground leading-[1.6]">
+                  {card.body}
                 </p>
               </div>
             ))}
           </div>
-
-          <figure className="max-w-[720px] mx-auto p-8 sm:p-10 rounded-3xl bg-white border border-foreground/[0.07] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              className="text-[#d8a23e]"
-            >
-              <path
-                d="M7 7h4v10H3V11c0-2.2 1.8-4 4-4zm10 0h4v10h-8V11c0-2.2 1.8-4 4-4z"
-                fill="currentColor"
-                opacity="0.2"
-              />
-              <path
-                d="M7 7h4v6H5v-2c0-2.2 0.9-4 2-4zm10 0h4v6h-6v-2c0-2.2 0.9-4 2-4z"
-                fill="currentColor"
-              />
-            </svg>
-            <blockquote className="text-[19px] sm:text-[21px] leading-[1.5] tracking-[-0.015em] text-foreground font-medium">
-              Half the brands we audit are blocking GPTBot by accident. The other half don&apos;t have a single FAQ schema on the page. Both are 90-minute fixes with real upside. We built Chedder so teams could see this without hiring anyone.
-            </blockquote>
-            <figcaption className="text-[13px] text-muted-foreground">
-              Sam Gormley · Founder, Two Point Technologies
-            </figcaption>
-          </figure>
         </div>
       </section>
 
-      {/* ───── AGENCY CTA ───── */}
-      <section className="px-6 py-10 sm:py-18 border-t border-foreground/[0.06]">
-        <div className="max-w-[900px] mx-auto">
-          <div className="p-8 sm:p-12 rounded-3xl bg-[var(--brand-coral)]/[0.04] border border-[var(--brand-coral)]/[0.15] space-y-6">
-            <div className="space-y-3">
-              <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-coral-dark)]">Need help fixing it?</div>
-              <h2 className="text-[30px] sm:text-[42px] font-semibold tracking-[-0.04em] leading-[1.1] max-w-[680px]">
-                The audit is free. The implementation is where our GEO agency comes in.
-              </h2>
-              <p className="text-[16px] text-muted-foreground leading-[1.6] max-w-[620px]">
-                Two Point Technologies builds AI visibility strategies for DTC brands that want to own their category in the ChatGPT/Perplexity era. We take your Chedder audit and turn it into a 90-day plan, then execute it.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 items-center">
-              <a
-                href="https://twopointtechnologies.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-11 px-5 rounded-xl bg-[#0f172a] text-white text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-[#0f172a]/85 active:scale-[0.97]"
-              >
-                Talk to our team
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-              <button
-                type="button"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="h-11 px-5 rounded-xl bg-white border border-foreground/[0.09] text-[14px] font-semibold tracking-[-0.01em] inline-flex items-center gap-2 transition-all duration-200 hover:bg-foreground/[0.03] active:scale-[0.97]"
-              >
-                Run a free audit first
-              </button>
-            </div>
+      {/* ───── FINAL CTA ─────
+          One sentence, one button. Coral halo behind. The page ends on
+          the action we want, not on chrome. */}
+      <section className="relative px-6 py-24 sm:py-32 border-t border-foreground/[0.06] overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-full bg-gradient-to-b from-[var(--brand-coral)]/[0.04] to-transparent pointer-events-none" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[var(--brand-coral)]/15 blur-[120px] rounded-full pointer-events-none" />
+        <div className="relative max-w-[640px] mx-auto text-center space-y-7">
+          <div className="flex justify-center">
+            <Spark variant="peeking" animate size={88} />
+          </div>
+          <h2 className="text-[34px] sm:text-[48px] font-semibold tracking-[-0.035em] leading-[1.05]">
+            Don&apos;t be invisible when shoppers ask AI.
+          </h2>
+          <p className="text-[16px] sm:text-[17px] text-muted-foreground leading-[1.55] max-w-[460px] mx-auto">
+            Run your first audit free. Sixty seconds, no signup.
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="inline-flex items-center gap-2 h-12 px-7 rounded-full bg-foreground text-background text-[15px] font-semibold tracking-[-0.01em] hover:bg-foreground/90 active:scale-[0.98] transition-all"
+            >
+              Audit my brand
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       </section>
