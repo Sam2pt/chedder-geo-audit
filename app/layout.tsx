@@ -46,6 +46,13 @@ export const metadata: Metadata = {
     description:
       "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
   },
+  // Search engine verification. Google Search Console "URL prefix"
+  // property at https://chedder.2pt.ai. Emits the meta tag in <head>
+  // of every page. Don't remove even after verification succeeds —
+  // GSC will re-check periodically and de-verify if the tag is gone.
+  verification: {
+    google: "8xywW89prKdSlcAP_01m-sqtbTu1-VnlWv4CapYmjGo",
+  },
   // Favicon comes from app/icon.tsx (auto-detected by Next.js).
   // OG image comes from app/opengraph-image.tsx (auto-detected).
 };
