@@ -221,3 +221,71 @@ html {
   from { opacity: 0; transform: translateY(60%); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Blog post body — styles HTML produced by marked from content/posts/*.md.
+   Mirrors the hand-rolled prose styling the original introducing-chedder
+   post used so migrated posts stay visually consistent. We don't use
+   @tailwindcss/typography because the override matrix isn't worth the
+   bundle for a half-dozen tag types. */
+.post-body {
+  color: rgb(from var(--foreground) r g b / 0.9);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.post-body > * + * { margin-top: 20px; }
+.post-body h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 40px;
+  color: var(--foreground);
+}
+.post-body h3 {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 32px;
+  color: var(--foreground);
+}
+.post-body ul, .post-body ol {
+  padding-left: 24px;
+}
+.post-body ul { list-style: disc; }
+.post-body ol { list-style: decimal; }
+.post-body li + li { margin-top: 8px; }
+.post-body strong { font-weight: 600; color: var(--foreground); }
+.post-body a {
+  color: var(--brand-coral);
+  text-decoration: none;
+}
+.post-body a:hover { text-decoration: underline; }
+.post-body blockquote {
+  border-left: 3px solid rgb(from var(--foreground) r g b / 0.12);
+  padding-left: 16px;
+  color: rgb(from var(--foreground) r g b / 0.7);
+  font-style: italic;
+}
+.post-body code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  background: rgb(from var(--foreground) r g b / 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.post-body pre {
+  background: rgb(from var(--foreground) r g b / 0.04);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.post-body pre code {
+  background: transparent;
+  padding: 0;
+}
+.post-body hr {
+  border: 0;
+  border-top: 1px solid rgb(from var(--foreground) r g b / 0.08);
+  margin: 32px 0;
+}
