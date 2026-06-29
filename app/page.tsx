@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AuditResult } from "@/lib/types";
 import { AuditDashboard } from "@/components/audit-dashboard";
-import { LeadGate } from "@/components/lead-gate";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
@@ -44,34 +43,17 @@ export default function Home() {
     });
   }, []);
 
-  // Soft gate state. First audit is free + anon; second audit asks for
-  // name + role + company + email. Tracked in localStorage (easily
-  // bypassed, which is fine — this is a soft gate, not a paywall).
-  const [showLeadGate, setShowLeadGate] = useState(false);
-  // Pro-gate modal — opens when a signed-in free user tries to run a
-  // second+ audit and the server returns 402 upgrade_required.
+  // Pro-gate modal — opens when the user attempts a 2nd+ audit (either
+  // from the client-side hasFirstAudit() flag or a 402 upgrade_required
+  // response from /api/audit/stream). Replaces the old LeadGate which
+  // captured name/role/company/email — now it's a direct pay path.
   const [showUpgrade, setShowUpgrade] = useState(false);
-  // Keep the submit event alive so we can resume the audit after the
-  // user completes the gate (or dismisses it).
-  const [pendingAuditKickoff, setPendingAuditKickoff] = useState<
-    (() => void) | null
-  >(null);
 
   /** Has the user already run at least one audit in this browser? */
   function hasFirstAudit(): boolean {
     if (typeof window === "undefined") return false;
     try {
       return localStorage.getItem("chedder:firstAuditDone") === "1";
-    } catch {
-      return false;
-    }
-  }
-
-  /** Has the user signed up (completed the lead gate)? */
-  function hasSignedUp(): boolean {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem("chedder:signedUp") === "1";
     } catch {
       return false;
     }
@@ -89,13 +71,21 @@ export default function Home() {
     e.preventDefault();
     if (!url.trim()) return;
 
-    // Intercept second+ audits with the soft gate when the user hasn't
-    // signed up yet. Stash the kickoff so we can resume after the
-    // gate is dismissed.
-    if (hasFirstAudit() && !hasSignedUp()) {
-      setPendingAuditKickoff(() => () => void runAudit());
-      setShowLeadGate(true);
-      track("gate.shown", { url: url.trim() });
+    // Second audit attempt → go straight to the Pro upgrade modal.
+    // (Used to be a name/role/company/email lead-gate form before this
+    //  flow became 'pay-for-more' instead of 'capture-for-more'.) The
+    //  hasFirstAudit() localStorage flag is the only client-side
+    //  signal we need; the server still gates signed-in users via a
+    //  402 in /api/audit/stream, which the upgrade-modal interceptor
+    //  in runAudit() also catches. Anonymous abuse is bounded by the
+    //  platform-wide spend caps in lib/spend-cap.ts.
+    if (hasFirstAudit()) {
+      track("upgrade.modal.shown", {
+        source: "client_gate",
+        reason: "audit_limit",
+        url: url.trim(),
+      });
+      setShowUpgrade(true);
       return;
     }
 
@@ -265,26 +255,9 @@ export default function Home() {
     setCompetitors(competitors.map((c, idx) => (idx === i ? val : c)));
   }
 
-  // Shared gate element (rendered over any screen when triggered).
-  const gate = showLeadGate ? (
-    <LeadGate
-      sourceAuditSlug={result?.slug}
-      onComplete={() => {
-        setShowLeadGate(false);
-        const kickoff = pendingAuditKickoff;
-        setPendingAuditKickoff(null);
-        if (kickoff) kickoff();
-      }}
-      onDismiss={() => {
-        setShowLeadGate(false);
-        setPendingAuditKickoff(null);
-        track("gate.dismissed");
-      }}
-    />
-  ) : null;
-
-  // Pro-gate modal, mounted alongside the lead-gate so it overlays
-  // whatever screen the user is on when the 402 hits.
+  // Pro-gate modal — rendered globally so it overlays whatever screen
+  // the user is on when either the client-side hasFirstAudit() check
+  // or a server-side 402 fires.
   const upgrade = (
     <UpgradeModal
       open={showUpgrade}
@@ -298,7 +271,7 @@ export default function Home() {
     return (
       <>
         <CheeseWheelLoader url={url} stage={currentStage} progress={progress} />
-        {gate}
+
         {upgrade}
       </>
     );
@@ -317,7 +290,7 @@ export default function Home() {
             }
           }}
         />
-        {gate}
+
         {upgrade}
       </>
     );
@@ -820,7 +793,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-      {gate}
+
         {upgrade}
     </main>
   );
