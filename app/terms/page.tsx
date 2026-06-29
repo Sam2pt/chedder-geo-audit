@@ -93,7 +93,7 @@ export default function TermsPage() {
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">Contact</h2>
 
           <p>
-            sam@twopointtechnologies.com.
+            info@twopointtechnologies.com.
           </p>
           <p className="text-[13px] text-muted-foreground mt-6">
             Two Point Technologies Ltd. UK company registered at [registered address].

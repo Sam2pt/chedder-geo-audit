@@ -7,7 +7,7 @@
  *   RESEND_FROM        — defaults to "Chedder <hello@chedder.2pt.ai>" (needs
  *                        your sending domain verified in Resend first)
  *   NOTIFY_EMAIL       — where internal "new lead" pings go. Defaults to
- *                        sam@twopointtechnologies.com.
+ *                        info@twopointtechnologies.com.
  *
  * If RESEND_API_KEY is unset, every call is a no-op (logs once at debug).
  * This keeps local dev and pre-launch deploys from erroring out; once
@@ -118,7 +118,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
 /** Where internal "new lead" / "audit completed" pings should go. */
 export function getNotifyEmail(): string {
-  return process.env.NOTIFY_EMAIL || "sam@twopointtechnologies.com";
+  return process.env.NOTIFY_EMAIL || "info@twopointtechnologies.com";
 }
 
 /**
@@ -174,7 +174,7 @@ export async function notifyNewLead(lead: {
 /**
  * Fire a notification when someone submits the contact form or requests
  * the PDF download. Both surfaces hit /api/contact and both deserve a
- * "hey, someone wants to talk" ping to sam@twopointtechnologies.com.
+ * "hey, someone wants to talk" ping to info@twopointtechnologies.com.
  * Fire-and-forget, never throws.
  */
 export async function notifyContactSubmission(input: {
@@ -399,7 +399,7 @@ export async function sendProWelcome(input: {
       </a>
 
       <p style="color: #8b8b90; font-size: 12.5px; margin: 28px 0 0; line-height: 1.55;">
-        ${renewLine ? escapeHtml(renewLine) + "<br/>" : ""}Your Stripe receipt arrives separately. Questions? Reply to this email or write to sam@twopointtechnologies.com.
+        ${renewLine ? escapeHtml(renewLine) + "<br/>" : ""}Your Stripe receipt arrives separately. Questions? Reply to this email or write to info@twopointtechnologies.com.
       </p>
     </div>
   `;
@@ -416,7 +416,7 @@ Manage billing: ${origin}/api/billing/portal
 
 ${renewLine}
 
-Your Stripe receipt arrives separately. Questions? Reply to this email or write to sam@twopointtechnologies.com.`;
+Your Stripe receipt arrives separately. Questions? Reply to this email or write to info@twopointtechnologies.com.`;
 
   if (!process.env.RESEND_API_KEY) {
     console.log(`[email] Pro welcome skipped for ${input.to} (no RESEND_API_KEY).`);

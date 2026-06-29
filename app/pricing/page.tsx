@@ -140,8 +140,8 @@ export default function PricingPage() {
 
       <footer className="text-center mt-12 sm:mt-16 text-[13px] text-muted-foreground">
         Questions?{" "}
-        <a href="mailto:sam@twopointtechnologies.com" className="underline hover:text-foreground transition-colors">
-          sam@twopointtechnologies.com
+        <a href="mailto:info@twopointtechnologies.com" className="underline hover:text-foreground transition-colors">
+          info@twopointtechnologies.com
         </a>
       </footer>
     </main>

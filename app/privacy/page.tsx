@@ -28,7 +28,7 @@ export default function PrivacyPage() {
 
         <section className="space-y-5 text-[15px] leading-[1.65] text-foreground/90">
           <p>
-            Chedder is a free AI search visibility tool built by Two Point Technologies Ltd (&quot;TPT&quot;, &quot;we&quot;, &quot;us&quot;). This page explains what information we collect when you use it, why we collect it, and what we do with it. We wrote it in plain English. If anything here is unclear, email sam@twopointtechnologies.com and we&apos;ll fix it.
+            Chedder is a free AI search visibility tool built by Two Point Technologies Ltd (&quot;TPT&quot;, &quot;we&quot;, &quot;us&quot;). This page explains what information we collect when you use it, why we collect it, and what we do with it. We wrote it in plain English. If anything here is unclear, email info@twopointtechnologies.com and we&apos;ll fix it.
           </p>
 
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">What we collect</h2>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
           </ul>
 
           <p>
-            Email sam@twopointtechnologies.com with the email address you signed up with and we&apos;ll action it within 30 days.
+            Email info@twopointtechnologies.com with the email address you signed up with and we&apos;ll action it within 30 days.
           </p>
 
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">Sharing</h2>
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
           <h2 className="text-[22px] font-semibold tracking-[-0.015em] mt-8">Contact</h2>
 
           <p>
-            Questions: sam@twopointtechnologies.com.
+            Questions: info@twopointtechnologies.com.
           </p>
           <p className="text-[13px] text-muted-foreground mt-6">
             Two Point Technologies Ltd. UK company registered at [registered address].

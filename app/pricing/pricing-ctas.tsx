@@ -104,7 +104,7 @@ export function PricingCTAs({ billingLive }: { billingLive: boolean }) {
   if (!billingLive) {
     return (
       <a
-        href="mailto:sam@twopointtechnologies.com?subject=Chedder%20Pro%20interest&body=Hi%20Sam%2C%20I%27m%20interested%20in%20Chedder%20Pro.%20Please%20let%20me%20know%20when%20it%27s%20live."
+        href="mailto:info@twopointtechnologies.com?subject=Chedder%20Pro%20interest&body=Hi%20team%2C%20I%27m%20interested%20in%20Chedder%20Pro.%20Please%20let%20me%20know%20when%20it%27s%20live."
         className="relative mt-6 h-[52px] sm:h-11 rounded-2xl sm:rounded-xl bg-[var(--brand-coral)] hover:bg-[var(--brand-coral-dark)] active:scale-[0.99] text-white font-semibold text-[15px] sm:text-[14px] tracking-[-0.01em] transition-all duration-150 text-center leading-[52px] sm:leading-[44px]"
       >
         Notify me when Pro is live
