@@ -7,6 +7,8 @@ import {
   listBrands,
   siblingBrands,
 } from "@/lib/brands";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * Programmatic SEO landing page per CPG brand.
@@ -60,6 +62,8 @@ export default async function BrandPage({ params }: Params) {
   const auditHref = `/?url=${encodeURIComponent(`https://${brand.domain}`)}`;
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16">
       <article className="max-w-[760px] mx-auto">
         <header className="mb-10 space-y-4">
@@ -266,5 +270,7 @@ export default async function BrandPage({ params }: Params) {
         </footer>
       </article>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

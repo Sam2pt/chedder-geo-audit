@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getAuditsForLead } from "@/lib/audit-store";
 import { SignOutButton } from "./sign-out-button";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "My audits",
@@ -20,6 +22,8 @@ export default async function MyAuditsPage() {
   const audits = await getAuditsForLead(email);
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-12">
       <div className="max-w-[900px] mx-auto space-y-8">
         <header className="flex items-start justify-between gap-4 flex-wrap">
@@ -123,5 +127,7 @@ export default async function MyAuditsPage() {
         )}
       </div>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

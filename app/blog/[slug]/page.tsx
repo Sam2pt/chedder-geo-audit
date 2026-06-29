@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPost, listPosts } from "@/lib/posts";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * Dynamic blog post page. Reads markdown from content/posts/<slug>.md
@@ -55,6 +57,8 @@ export default async function BlogPostPage({ params }: Params) {
     : "";
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16">
       <article className="max-w-[720px] mx-auto">
         <header className="mb-10 space-y-4">
@@ -132,5 +136,7 @@ export default async function BlogPostPage({ params }: Params) {
         </footer>
       </article>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { SignInForm } from "./sign-in-form";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
+import { Spark } from "@/components/spark";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -21,25 +24,16 @@ export default async function SignInPage({ searchParams }: Props) {
   const { error, sent } = await searchParams;
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16 flex items-start justify-center">
       <div className="w-full max-w-[440px] space-y-8">
-        <div className="text-center space-y-3">
-          <Link
-            href="/"
-            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to Chedder
-          </Link>
+        <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d8a23e] to-[#b58632] flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.12)]">
-              <svg viewBox="0 0 100 100" className="w-8 h-8">
-                <circle cx="50" cy="50" r="46" fill="#fff" fillOpacity="0.15" />
-                <circle cx="34" cy="37" r="6" fill="#9a6d24" />
-                <circle cx="64" cy="33" r="4" fill="#9a6d24" />
-                <circle cx="58" cy="62" r="8" fill="#9a6d24" />
-                <circle cx="32" cy="67" r="4" fill="#9a6d24" />
-              </svg>
-            </div>
+            {/* Spark greets the user — friendlier than a logo block here,
+                and reinforces the character as the "assistant" who's
+                about to help once they're inside. */}
+            <Spark variant="idle" animate size={68} />
           </div>
           <h1 className="text-[30px] font-semibold tracking-[-0.02em] text-foreground">
             Sign in to Chedder
@@ -78,5 +72,7 @@ export default async function SignInPage({ searchParams }: Props) {
         </p>
       </div>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

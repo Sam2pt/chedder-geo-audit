@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brandsByCategory } from "@/lib/brands";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * /brand — directory of every brand we have a programmatic page for.
@@ -21,15 +23,11 @@ export default function BrandIndex() {
   const total = groups.reduce((sum, g) => sum + g.brands.length, 0);
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16">
       <article className="max-w-[860px] mx-auto">
         <header className="mb-12 space-y-3">
-          <Link
-            href="/"
-            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to Chedder
-          </Link>
           <h1 className="text-[40px] sm:text-[48px] font-semibold tracking-[-0.025em] text-foreground leading-[1.05]">
             CPG brands in <span className="bg-gradient-to-r from-[var(--brand-coral)] to-[var(--brand-accent-2)] bg-clip-text text-transparent">AI search</span>
           </h1>
@@ -119,5 +117,7 @@ export default function BrandIndex() {
         </footer>
       </article>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

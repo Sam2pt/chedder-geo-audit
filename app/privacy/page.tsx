@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -9,6 +11,8 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16">
       <article className="max-w-[720px] mx-auto prose prose-slate">
         <header className="mb-10 space-y-3">
@@ -127,5 +131,7 @@ export default function PrivacyPage() {
         </div>
       </article>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

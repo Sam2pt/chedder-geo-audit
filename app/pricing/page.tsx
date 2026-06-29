@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { isBillingConfigured } from "@/lib/stripe";
 import { PricingCTAs } from "./pricing-ctas";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * Pricing page — single Pro tier, no trial.
@@ -39,7 +41,9 @@ export default function PricingPage() {
   const billingLive = isBillingConfigured();
 
   return (
-    <main className="min-h-screen px-5 sm:px-6 py-12 sm:py-24 max-w-[1040px] mx-auto pb-[calc(env(safe-area-inset-bottom)+48px)]">
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
+    <main className="flex-1 px-5 sm:px-6 py-12 sm:py-20 max-w-[1040px] mx-auto pb-[calc(env(safe-area-inset-bottom)+48px)] w-full">
       <header className="text-center space-y-3 sm:space-y-4 mb-10 sm:mb-14">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 backdrop-blur-sm border border-foreground/[0.07] text-[12.5px] text-muted-foreground font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
@@ -145,5 +149,7 @@ export default function PricingPage() {
         </a>
       </footer>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listPosts } from "@/lib/posts";
+import { TopNav } from "@/components/top-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -12,15 +14,11 @@ export default function BlogIndex() {
   const posts = listPosts();
 
   return (
+    <div className="min-h-screen flex flex-col">
+    <TopNav variant="solid" />
     <main className="flex-1 px-6 py-16">
       <article className="max-w-[720px] mx-auto">
         <header className="mb-12 space-y-3">
-          <Link
-            href="/"
-            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to Chedder
-          </Link>
           <h1 className="text-[36px] font-semibold tracking-[-0.02em] text-foreground leading-tight">
             Blog
           </h1>
@@ -69,5 +67,7 @@ export default function BlogIndex() {
         )}
       </article>
     </main>
+    <SiteFooter />
+    </div>
   );
 }
