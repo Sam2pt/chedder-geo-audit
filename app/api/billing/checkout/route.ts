@@ -45,25 +45,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Anonymous checkout is allowed: the audit page's pay-for-more flow
+  // sends users straight to Stripe without a signup form, and Stripe
+  // Checkout itself collects the email + cardholder name. The webhook
+  // then creates the Pro user record from session.customer_email when
+  // checkout.session.completed fires. We still resolve the signed-in
+  // user when one exists, so returning Free users skip the email
+  // prompt and already-Pro users are bounced to the portal instead of
+  // duplicate-subscribing themselves.
   const email = await getCurrentUser();
-  if (!email) {
-    return NextResponse.json(
-      { error: "Sign in first.", code: "not_authenticated" },
-      { status: 401 }
-    );
-  }
-
-  const user = await getOrMigrateUser(email);
-  if (!user) {
-    return NextResponse.json(
-      { error: "Account not found. Sign in again." },
-      { status: 401 }
-    );
-  }
+  const user = email ? await getOrMigrateUser(email) : null;
 
   // Already Pro? Bounce them to the Customer Portal instead so they
   // can manage the existing subscription rather than start a duplicate.
-  if (user.plan === "pro") {
+  if (user?.plan === "pro") {
     return NextResponse.json(
       {
         error: "You're already on Pro. Use the billing portal to change plan.",
@@ -111,22 +106,34 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      // Use existing customer if we already have one; otherwise prefill
-      // their email so Checkout shows it pre-filled. In subscription
-      // mode Stripe ALWAYS auto-creates a Customer when one isn't
-      // passed — the `customer_creation` flag we previously set is
-      // payment-mode only and Stripe rejects it for subscriptions.
-      ...(user.stripeCustomerId
+      // Three customer paths:
+      //   • Existing Stripe customer → use it (avoids duplicate customers)
+      //   • Signed-in user without a Stripe customer yet → prefill email
+      //   • Anonymous → omit, Stripe collects email during Checkout
+      // In subscription mode Stripe ALWAYS auto-creates a Customer when
+      // one isn't passed, so we don't need customer_creation: 'always'
+      // (which is also payment-mode-only and was rejected previously).
+      ...(user?.stripeCustomerId
         ? { customer: user.stripeCustomerId }
-        : { customer_email: user.email }),
-      // Stamp the user's email into client_reference_id so we can
-      // resolve the customer even when the webhook arrives before we've
-      // had a chance to write the reverse index. Belt + suspenders.
-      client_reference_id: user.email,
+        : user?.email
+          ? { customer_email: user.email }
+          : {}),
+      // Stamp the email into client_reference_id when we have one so
+      // the webhook can resolve the customer immediately. For anon
+      // checkouts this stays undefined and the webhook falls back to
+      // session.customer_email (which Stripe populates from the email
+      // collected on the Checkout page).
+      ...(user?.email ? { client_reference_id: user.email } : {}),
       // Echo the interval back into metadata for analytics / debugging.
       metadata: { plan: "pro", interval },
       subscription_data: {
-        metadata: { plan: "pro", interval, email: user.email },
+        metadata: {
+          plan: "pro",
+          interval,
+          // Only stamp email when we know it; anon checkouts get the
+          // email through session.customer_email at webhook time.
+          ...(user?.email ? { email: user.email } : {}),
+        },
       },
       // Where the browser lands after success / cancel.
       success_url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -145,10 +152,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Eager-link the customer if Stripe gave us one synchronously
-    // (typical for sessions with `customer` set). Webhook does this too;
-    // doing it here removes the small race window.
-    if (typeof session.customer === "string") {
+    // Eager-link the customer if Stripe gave us one synchronously AND
+    // we have a known email for the user. Webhook does this too (with
+    // the email Stripe collects during anon checkout); doing it here
+    // removes the small race window for signed-in flows.
+    if (typeof session.customer === "string" && user?.email) {
       void linkStripeCustomer(user.email, session.customer);
     }
 

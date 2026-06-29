@@ -71,21 +71,39 @@ export default function Home() {
     e.preventDefault();
     if (!url.trim()) return;
 
-    // Second audit attempt → go straight to the Pro upgrade modal.
-    // (Used to be a name/role/company/email lead-gate form before this
-    //  flow became 'pay-for-more' instead of 'capture-for-more'.) The
-    //  hasFirstAudit() localStorage flag is the only client-side
-    //  signal we need; the server still gates signed-in users via a
-    //  402 in /api/audit/stream, which the upgrade-modal interceptor
-    //  in runAudit() also catches. Anonymous abuse is bounded by the
-    //  platform-wide spend caps in lib/spend-cap.ts.
+    // Second audit attempt → go STRAIGHT to Stripe Checkout. No
+    // intermediate modal, no signup form — Stripe collects the email
+    // during payment and the webhook creates the Pro user record from
+    // it. The only client-side signal we need is the hasFirstAudit()
+    // localStorage flag; server-side 402 in /api/audit/stream still
+    // gates signed-in users as a defense-in-depth. The upgrade modal
+    // sticks around as a fallback if /api/billing/checkout itself
+    // 503s (e.g. Stripe env vars not configured yet).
     if (hasFirstAudit()) {
-      track("upgrade.modal.shown", {
+      track("upgrade.checkout.direct", {
         source: "client_gate",
-        reason: "audit_limit",
         url: url.trim(),
       });
-      setShowUpgrade(true);
+      setLoading(true);
+      try {
+        const res = await fetch("/api/billing/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ interval: "monthly" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data?.url) {
+          window.location.href = data.url as string;
+          return;
+        }
+        // Stripe not configured, already-Pro, or some other failure —
+        // fall back to the modal so the user has a path forward.
+        setLoading(false);
+        setShowUpgrade(true);
+      } catch {
+        setLoading(false);
+        setShowUpgrade(true);
+      }
       return;
     }
 
