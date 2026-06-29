@@ -1,0 +1,155 @@
+{
+  "_comment": "Category metadata for /brand/[slug] pages. Each category has a human label, plural noun, and a list of real prompts shoppers ask AI tools in that category. These prompts get rendered on every brand page in that category so each page has unique, useful content that's not just templated brand info.",
+  "categories": {
+    "mattresses": {
+      "label": "Mattresses & sleep",
+      "noun": "mattress brand",
+      "questionsLeadIn": "When shoppers ask AI for a mattress recommendation, these are the prompts that come up most often.",
+      "prompts": [
+        "What's the best mattress for back pain?",
+        "Best mattress for side sleepers under $1000",
+        "Compare Casper vs Purple vs Saatva",
+        "What's the best cooling mattress for hot sleepers?",
+        "Best mattress in a box 2026",
+        "What mattress do chiropractors recommend?",
+        "Is a Tempur-Pedic worth the price?",
+        "Best mattress for couples with different sleep preferences"
+      ]
+    },
+    "beauty": {
+      "label": "Skincare & beauty",
+      "noun": "beauty brand",
+      "questionsLeadIn": "When shoppers research beauty and skincare with AI, these are the prompts that surface real brand recommendations.",
+      "prompts": [
+        "What's the best skincare routine for sensitive skin?",
+        "Best vitamin C serum that actually works",
+        "Affordable retinol that dermatologists recommend",
+        "What's the best foundation for mature skin?",
+        "Clean beauty brands worth trying in 2026",
+        "Best skincare brand for hormonal acne",
+        "What makeup brand has the most inclusive shade range?",
+        "Drunk Elephant vs The Ordinary, which is worth it?"
+      ]
+    },
+    "pet": {
+      "label": "Pet food & supplies",
+      "noun": "pet brand",
+      "questionsLeadIn": "When pet owners ask AI for help feeding or caring for their animals, these are the recurring questions.",
+      "prompts": [
+        "What's the best fresh dog food subscription?",
+        "Healthiest dog food for a senior lab",
+        "The Farmer's Dog vs Ollie, which is better?",
+        "Best grain-free cat food brands",
+        "What pet brand do veterinarians actually recommend?",
+        "Most chew-resistant dog toys",
+        "Best subscription box for cats",
+        "Affordable alternatives to The Farmer's Dog"
+      ]
+    },
+    "snacks": {
+      "label": "Snacks & candy",
+      "noun": "snack brand",
+      "questionsLeadIn": "When shoppers ask AI for snack and candy recommendations, these are the most common prompts.",
+      "prompts": [
+        "Healthiest protein bars that actually taste good",
+        "Best low-sugar snacks for kids",
+        "What candy brands have the cleanest ingredients?",
+        "Best snacks for hiking that don't melt",
+        "RXBAR vs KIND vs Larabar comparison",
+        "What's a healthier alternative to Oreos?",
+        "Best gourmet candy brand for gifts",
+        "Best snacks for a long flight"
+      ]
+    },
+    "beverages": {
+      "label": "Beverages",
+      "noun": "beverage brand",
+      "questionsLeadIn": "When shoppers ask AI what to drink, these are the prompts that produce brand recommendations.",
+      "prompts": [
+        "Best healthy soda alternatives",
+        "Olipop vs Poppi vs Health-Ade",
+        "Best non-alcoholic beer for a craft beer lover",
+        "What's the best canned water brand?",
+        "Best coffee subscription for dark roast lovers",
+        "Best energy drink without artificial sweeteners",
+        "Functional drinks with real prebiotic benefits",
+        "Best ready-to-drink iced coffee in a can"
+      ]
+    },
+    "household": {
+      "label": "Household & cleaning",
+      "noun": "household brand",
+      "questionsLeadIn": "When shoppers ask AI about cleaning their home, these are the typical recommendation prompts.",
+      "prompts": [
+        "Best non-toxic cleaning products",
+        "Plant-based cleaning brands that actually work",
+        "Mrs. Meyer's vs Method vs Branch Basics",
+        "Best refillable cleaning subscription",
+        "Most sustainable laundry detergent",
+        "What cleaning brand do dermatologists recommend?",
+        "Best dish soap that won't dry hands",
+        "Affordable non-toxic alternatives to Mrs. Meyer's"
+      ]
+    },
+    "personal-care": {
+      "label": "Personal care",
+      "noun": "personal care brand",
+      "questionsLeadIn": "When shoppers ask AI for personal care recommendations, these are the prompts that surface brands.",
+      "prompts": [
+        "Best aluminum-free deodorant that actually works",
+        "Native vs Schmidt's vs Dove",
+        "Best body wash for sensitive skin",
+        "What men's grooming brand is worth the price?",
+        "Cleanest soap brands for everyday use",
+        "Best women's razor subscription",
+        "What deodorant do dermatologists recommend?",
+        "Affordable alternatives to Native"
+      ]
+    },
+    "apparel": {
+      "label": "Apparel & footwear",
+      "noun": "apparel brand",
+      "questionsLeadIn": "When shoppers research apparel and footwear with AI, these are the prompts that come up.",
+      "prompts": [
+        "Best sustainable shoe brands in 2026",
+        "Allbirds vs Rothy's vs Veja",
+        "Best athleisure brand that isn't Lululemon",
+        "Most comfortable everyday walking shoes",
+        "What's a good vegan leather brand?",
+        "Best DTC clothing brand for basics",
+        "Affordable alternative to Lululemon",
+        "Best workout clothes for hot yoga"
+      ]
+    },
+    "kitchen": {
+      "label": "Cookware & kitchen",
+      "noun": "cookware brand",
+      "questionsLeadIn": "When shoppers ask AI about cookware and kitchen gear, these are the recurring prompts.",
+      "prompts": [
+        "Best non-toxic non-stick pan",
+        "Our Place vs Caraway vs GreenPan",
+        "Worth-it cookware investments under $200",
+        "Best ceramic-coated cookware brands",
+        "What pans do professional chefs actually use at home?",
+        "Best Dutch oven brand for the price",
+        "Affordable alternative to Le Creuset",
+        "Most durable everyday cookware set"
+      ]
+    },
+    "hair-care": {
+      "label": "Hair care",
+      "noun": "hair care brand",
+      "questionsLeadIn": "When shoppers ask AI about hair care and treatments, these are the prompts that surface brand picks.",
+      "prompts": [
+        "Best shampoo for color-treated hair",
+        "Olaplex vs K18, what's the difference?",
+        "Best hair treatment for damaged hair",
+        "Most effective curly hair brands",
+        "Best clean shampoo without sulfates",
+        "What hair brand do hairstylists actually use?",
+        "Best scalp care routine",
+        "Affordable alternatives to Olaplex"
+      ]
+    }
+  }
+}

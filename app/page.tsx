@@ -41,6 +41,29 @@ export default function Home() {
           ? document.referrer.slice(0, 400)
           : null,
     });
+    // Prefill the audit URL from ?url=<encoded> — used by the brand
+    // landing pages (/brand/[slug]) to deep-link straight into an
+    // audit on a specific domain. We strip the query param after
+    // applying so the URL bar stays clean if the user reloads.
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const prefill = sp.get("url");
+        if (prefill) {
+          setUrl(prefill);
+          sp.delete("url");
+          const next = sp.toString();
+          window.history.replaceState(
+            {},
+            "",
+            next ? `${window.location.pathname}?${next}` : window.location.pathname
+          );
+          track("audit.url.prefilled", { url: prefill });
+        }
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   // Pro-gate modal — opens when the user attempts a 2nd+ audit (either

@@ -1,0 +1,64 @@
+{
+  "_comment": "CPG brand directory for programmatic SEO. Each entry generates /brand/<slug>. Categories must match keys in content/categories.json. Domains are the canonical brand site without www or trailing slash. Add brands here, regenerate by deploying — no code changes needed.",
+  "brands": [
+    { "slug": "casper", "name": "Casper", "domain": "casper.com", "category": "mattresses", "blurb": "Direct-to-consumer mattress brand that helped pioneer the bed-in-a-box category." },
+    { "slug": "purple", "name": "Purple", "domain": "purple.com", "category": "mattresses", "blurb": "Hyper-elastic polymer mattresses known for the grid technology and cooling profile." },
+    { "slug": "saatva", "name": "Saatva", "domain": "saatva.com", "category": "mattresses", "blurb": "Premium online mattress brand focused on luxury innerspring construction." },
+    { "slug": "tuft-and-needle", "name": "Tuft & Needle", "domain": "tuftandneedle.com", "category": "mattresses", "blurb": "Budget-friendly DTC mattress brand acquired by Serta Simmons." },
+    { "slug": "leesa", "name": "Leesa", "domain": "leesa.com", "category": "mattresses", "blurb": "Online mattress brand with a social impact program donating mattresses to shelters." },
+
+    { "slug": "glossier", "name": "Glossier", "domain": "glossier.com", "category": "beauty", "blurb": "DTC beauty brand built out of Into the Gloss with a cult millennial following." },
+    { "slug": "the-ordinary", "name": "The Ordinary", "domain": "theordinary.com", "category": "beauty", "blurb": "Ingredient-led affordable skincare brand from Deciem with viral active formulations." },
+    { "slug": "drunk-elephant", "name": "Drunk Elephant", "domain": "drunkelephant.com", "category": "beauty", "blurb": "Clean clinical skincare brand known for the suspicious six ingredient exclusion list." },
+    { "slug": "rare-beauty", "name": "Rare Beauty", "domain": "rarebeauty.com", "category": "beauty", "blurb": "Selena Gomez's makeup brand with a heavy focus on inclusive shade range." },
+    { "slug": "ilia", "name": "Ilia Beauty", "domain": "iliabeauty.com", "category": "beauty", "blurb": "Clean beauty brand known for tinted serums and skin-first makeup formulations." },
+
+    { "slug": "the-farmers-dog", "name": "The Farmer's Dog", "domain": "thefarmersdog.com", "category": "pet", "blurb": "DTC fresh dog food subscription delivered in pre-portioned meal packs." },
+    { "slug": "ollie", "name": "Ollie", "domain": "ollie.com", "category": "pet", "blurb": "Fresh dog food subscription competing with The Farmer's Dog on personalized recipes." },
+    { "slug": "chewy", "name": "Chewy", "domain": "chewy.com", "category": "pet", "blurb": "Online pet products retailer with autoship subscriptions and a notable customer service reputation." },
+    { "slug": "kong", "name": "KONG", "domain": "kongcompany.com", "category": "pet", "blurb": "Iconic dog toy brand known for the rubber Classic and treat-stuffable designs." },
+    { "slug": "open-farm", "name": "Open Farm", "domain": "openfarmpet.com", "category": "pet", "blurb": "Premium humanely-raised pet food brand with a transparent supply chain." },
+
+    { "slug": "oreo", "name": "Oreo", "domain": "oreo.com", "category": "snacks", "blurb": "America's best-selling cookie brand owned by Mondelez International." },
+    { "slug": "lays", "name": "Lay's", "domain": "lays.com", "category": "snacks", "blurb": "Frito-Lay's flagship potato chip brand with the largest chip portfolio in the US." },
+    { "slug": "sugarfina", "name": "Sugarfina", "domain": "sugarfina.com", "category": "snacks", "blurb": "Boutique candy company known for cocktail-themed gummies and curated tasting sets." },
+    { "slug": "rxbar", "name": "RXBAR", "domain": "rxbar.com", "category": "snacks", "blurb": "Whole-food protein bar brand acquired by Kellogg with the no-bs ingredient labeling." },
+    { "slug": "kind", "name": "KIND", "domain": "kindsnacks.com", "category": "snacks", "blurb": "Healthy snack bar brand built on a foundation of whole nuts and minimal processing." },
+
+    { "slug": "liquid-death", "name": "Liquid Death", "domain": "liquiddeath.com", "category": "beverages", "blurb": "Tallboy canned mountain water brand with a punk-rock marketing identity." },
+    { "slug": "olipop", "name": "Olipop", "domain": "drinkolipop.com", "category": "beverages", "blurb": "Functional prebiotic soda brand using classic flavors with a gut-health angle." },
+    { "slug": "poppi", "name": "Poppi", "domain": "drinkpoppi.com", "category": "beverages", "blurb": "Apple-cider-vinegar-based prebiotic soda brand acquired by PepsiCo." },
+    { "slug": "athletic-brewing", "name": "Athletic Brewing", "domain": "athleticbrewing.com", "category": "beverages", "blurb": "Non-alcoholic craft beer brand leading the NA category in the US." },
+    { "slug": "death-wish-coffee", "name": "Death Wish Coffee", "domain": "deathwishcoffee.com", "category": "beverages", "blurb": "Self-described world's strongest coffee brand sold direct and on Amazon." },
+
+    { "slug": "method", "name": "Method", "domain": "methodhome.com", "category": "household", "blurb": "Plant-based household cleaning products with a design-forward bottle aesthetic." },
+    { "slug": "mrs-meyers", "name": "Mrs. Meyer's", "domain": "mrsmeyers.com", "category": "household", "blurb": "Garden-inspired cleaning products owned by SC Johnson, sold widely in grocery." },
+    { "slug": "blueland", "name": "Blueland", "domain": "blueland.com", "category": "household", "blurb": "Refillable cleaning tablets brand reducing single-use plastic in the home." },
+    { "slug": "seventh-generation", "name": "Seventh Generation", "domain": "seventhgeneration.com", "category": "household", "blurb": "Plant-based cleaning and paper products with a Unilever parent and a strong sustainability story." },
+    { "slug": "branch-basics", "name": "Branch Basics", "domain": "branchbasics.com", "category": "household", "blurb": "One concentrate, dilute-to-clean brand championing simplified non-toxic cleaning." },
+
+    { "slug": "native", "name": "Native", "domain": "nativecos.com", "category": "personal-care", "blurb": "Aluminum-free deodorant brand acquired by Procter & Gamble with strong scent variety." },
+    { "slug": "dove", "name": "Dove", "domain": "dove.com", "category": "personal-care", "blurb": "Unilever's flagship personal care brand built around the Real Beauty positioning." },
+    { "slug": "dr-bronners", "name": "Dr. Bronner's", "domain": "drbronner.com", "category": "personal-care", "blurb": "Family-owned organic castile soap brand with its iconic dense label copy." },
+    { "slug": "hims", "name": "Hims", "domain": "forhims.com", "category": "personal-care", "blurb": "Men's wellness DTC brand covering hair loss, skin, sexual health, and mental health." },
+    { "slug": "billie", "name": "Billie", "domain": "mybillie.com", "category": "personal-care", "blurb": "Women's razor and body care DTC brand acquired by Edgewell." },
+
+    { "slug": "allbirds", "name": "Allbirds", "domain": "allbirds.com", "category": "apparel", "blurb": "Sustainable shoe brand built on merino wool runners and recycled materials." },
+    { "slug": "rothys", "name": "Rothy's", "domain": "rothys.com", "category": "apparel", "blurb": "DTC shoe and bag brand known for washable knit flats made from recycled plastic." },
+    { "slug": "vuori", "name": "Vuori", "domain": "vuori.com", "category": "apparel", "blurb": "Performance lifestyle apparel brand with a coastal California aesthetic." },
+    { "slug": "lululemon", "name": "Lululemon", "domain": "lululemon.com", "category": "apparel", "blurb": "Athletic apparel brand that defined the premium yoga and athleisure category." },
+    { "slug": "outdoor-voices", "name": "Outdoor Voices", "domain": "outdoorvoices.com", "category": "apparel", "blurb": "Recreation-first activewear brand known for Doing Things and the tech-shorts pivot." },
+
+    { "slug": "our-place", "name": "Our Place", "domain": "fromourplace.com", "category": "kitchen", "blurb": "DTC cookware brand built around the Always Pan multi-tasker." },
+    { "slug": "great-jones", "name": "Great Jones", "domain": "greatjonesgoods.com", "category": "kitchen", "blurb": "Cheerful enameled cast-iron and ceramic cookware brand with a strong design voice." },
+    { "slug": "made-in", "name": "Made In", "domain": "madeincookware.com", "category": "kitchen", "blurb": "Professional-grade cookware brand selling chef-quality pans directly to home cooks." },
+    { "slug": "caraway", "name": "Caraway", "domain": "carawayhome.com", "category": "kitchen", "blurb": "Non-toxic ceramic-coated cookware brand with a color-coordinated home aesthetic." },
+    { "slug": "le-creuset", "name": "Le Creuset", "domain": "lecreuset.com", "category": "kitchen", "blurb": "French enameled cast-iron heritage cookware brand founded in 1925." },
+
+    { "slug": "olaplex", "name": "Olaplex", "domain": "olaplex.com", "category": "hair-care", "blurb": "Bond-building hair treatment brand built around the patented bis-aminopropyl diglycol dimaleate." },
+    { "slug": "function-of-beauty", "name": "Function of Beauty", "domain": "functionofbeauty.com", "category": "hair-care", "blurb": "Customizable shampoo and conditioner brand with a per-customer formulation quiz." },
+    { "slug": "k18", "name": "K18", "domain": "k18hair.com", "category": "hair-care", "blurb": "Biotech hair repair brand built around a 4-minute leave-in molecular treatment." },
+    { "slug": "briogeo", "name": "Briogeo", "domain": "briogeohair.com", "category": "hair-care", "blurb": "Black-owned hair care brand with curl and scalp focus, acquired by Wella." },
+    { "slug": "ouai", "name": "OUAI", "domain": "theouai.com", "category": "hair-care", "blurb": "Jen Atkin's accessible-luxury haircare brand acquired by Procter & Gamble." }
+  ]
+}
