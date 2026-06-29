@@ -366,11 +366,12 @@ export default function Home() {
       {/* ───── HERO ───── */}
       <section className="min-h-[88vh] sm:min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-16 sm:py-20 relative">
       <div className="w-full max-w-[760px] text-center space-y-8">
-        {/* Intro pill — short, naming both acronyms so search-savvy
-            visitors recognize what we do immediately. */}
+        {/* Intro pill — outcome-based, not descriptive. Visitors should
+            read this and feel the want ("I do need that") instead of
+            categorizing the product ("oh, an audit"). */}
         <div className="anim-fade-in inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-foreground/[0.07] text-[12px] text-muted-foreground font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
-          GEO + AEO audit for DTC and CPG brands
+          Get your brand into AI answers
         </div>
 
         {/* Chedder introduces themselves — Spark at hero scale with
@@ -794,38 +795,41 @@ function AuditMock() {
   };
 
   return (
-    <svg viewBox="0 0 1000 660" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
-      {/* Header — brand left, compact score right */}
-      <g transform="translate(36, 36)">
-        <rect x="0" y="0" width="52" height="52" rx="11" fill="#0f172a" />
-        <text x="26" y="35" textAnchor="middle" fontSize="22" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
-        <text x="68" y="20" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
-        <g transform="translate(68, 32)">
+    <svg viewBox="0 0 1000 740" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
+      {/* Header — brand left, compact score right. Generous top padding
+          (44px) so the brand block isn't crammed against the chrome
+          bar above it. */}
+      <g transform="translate(44, 44)">
+        <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f172a" />
+        <text x="28" y="38" textAnchor="middle" fontSize="22" fontWeight="700" fill="#fff" fontFamily="-apple-system, Inter, sans-serif">C</text>
+        <text x="74" y="22" fontSize="20" fontWeight="700" fill="#0f172a" letterSpacing="-0.5" fontFamily="-apple-system, Inter, sans-serif">casper.com</text>
+        <g transform="translate(74, 36)">
           <rect x="0" y="0" width="78" height="18" rx="4" fill="#f1f5f9" />
           <text x="39" y="13" textAnchor="middle" fontSize="10" fontWeight="600" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">Mattresses</text>
-          <text x="86" y="13" fontSize="10.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">· 247 pages crawled · 1,830 signals</text>
+          <text x="88" y="13" fontSize="10.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">· 247 pages · 1,830 signals analyzed</text>
         </g>
-        <text x="68" y="64" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">audit started 4:12pm · finished in 58s · auto-refresh weekly</text>
+        <text x="74" y="70" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">audit started 4:12pm · finished in 58s · auto-refresh weekly</text>
       </g>
 
-      {/* Score column — gauge + delta + grade */}
-      <g transform="translate(792, 30)">
+      {/* Score column — pulled inward from the right edge and given more
+          internal spacing so gauge / grade / sparkline / delta each have
+          room to breathe. */}
+      <g transform="translate(764, 44)">
         <circle cx="34" cy="36" r="30" fill="none" stroke="#f1f5f9" strokeWidth="6" />
         <path d="M 34 6 A 30 30 0 1 1 6 54" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
         <text x="34" y="42" textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">64</text>
-        <g transform="translate(78, 18)">
+        <g transform="translate(86, 8)">
           <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
-          <text x="0" y="18" fontSize="11" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">vs Mattresses median: 71</text>
-          <g transform="translate(0, 28)">
-            <path d={`M 0 14 ${spark([55, 58, 56, 60, 59, 62, 64], 78, 14)}`.replace("M 0 14 M", "M") } fill="none" stroke="#16a34a" strokeWidth="1.5" />
-          </g>
-          <text x="0" y="68" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+9 over 6 weeks</text>
+          <text x="0" y="22" fontSize="11" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">vs Mattresses median: 71</text>
+          <path d={`${spark([55, 58, 56, 60, 59, 62, 64], 100, 16)}`} fill="none" stroke="#16a34a" strokeWidth="1.5" transform="translate(0, 38)" />
+          <text x="0" y="78" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+9 over 6 weeks</text>
         </g>
       </g>
 
-      {/* Module cards — 7 specific, slightly varied scores. Two-row grid
-          breaks the "five identical boxes" symmetry that read as AI-generated. */}
-      <g transform="translate(36, 130)">
+      {/* Module cards — pushed down from y=130 to y=170 so the 40px gap
+          between the header/score area and row 1 reads as a real section
+          break, not a tight stack. */}
+      <g transform="translate(44, 170)">
         {[
           { label: "Schema markup", score: 87, hint: "Product · Org · FAQ", x: 0, y: 0 },
           { label: "Content depth", score: 73, hint: "12 weak PDPs", x: 144, y: 0 },
@@ -874,9 +878,11 @@ function AuditMock() {
         </g>
       </g>
 
-      {/* Findings — denser, real URLs, specific impact estimates */}
-      <g transform="translate(36, 320)">
-        <rect x="0" y="0" width="928" height="316" rx="12" fill="#fff" stroke="#e2e8f0" />
+      {/* Findings — denser, real URLs, specific impact estimates. Pushed
+          down from y=320 to y=400 so module-cards row 2 (which ends at
+          y=328) has a clean 72px gutter before the findings panel. */}
+      <g transform="translate(44, 400)">
+        <rect x="0" y="0" width="912" height="320" rx="12" fill="#fff" stroke="#e2e8f0" />
         <g transform="translate(20, 24)">
           <text x="0" y="0" fontSize="13" fontWeight="700" fill="#0f172a" fontFamily="-apple-system, Inter, sans-serif">Findings · 17 total</text>
           <text x="0" y="18" fontSize="10.5" fill="#64748b" fontFamily="-apple-system, Inter, sans-serif">Sorted by estimated impact on AI citation rate</text>
