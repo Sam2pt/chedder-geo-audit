@@ -46,12 +46,18 @@ export const metadata: Metadata = {
     description:
       "When shoppers ask ChatGPT or Perplexity what to buy, does your DTC brand come up? Free audit, action plan included.",
   },
-  // Search engine verification. Google Search Console "URL prefix"
-  // property at https://chedder.2pt.ai. Emits the meta tag in <head>
-  // of every page. Don't remove even after verification succeeds —
-  // GSC will re-check periodically and de-verify if the tag is gone.
+  // Search engine verification. Each value emits the corresponding
+  // meta tag in <head>:
+  //   • google → <meta name="google-site-verification" ...>
+  //   • other.msvalidate.01 → <meta name="msvalidate.01" ...> (Bing)
+  // Both consoles re-check periodically and will de-verify the
+  // property if their tag disappears, which would silently break
+  // sitemap updates and search performance alerts. Don't remove.
   verification: {
     google: "8xywW89prKdSlcAP_01m-sqtbTu1-VnlWv4CapYmjGo",
+    other: {
+      "msvalidate.01": "97BE29403EDB6A9AB20EB6A911C72F70",
+    },
   },
   // Favicon comes from app/icon.tsx (auto-detected by Next.js).
   // OG image comes from app/opengraph-image.tsx (auto-detected).
