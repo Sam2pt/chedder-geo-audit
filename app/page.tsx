@@ -629,12 +629,12 @@ export default function Home() {
           {/* Feature grid — six cards on the dark backdrop */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {[
-              { title: "Page tags", desc: "Title, description, OG, structured data — the wrapper AI reads first." },
+              { title: "Page tags", desc: "Title, description, OG, structured data. The wrapper AI reads first." },
               { title: "Content depth", desc: "Visible content quality, AI-citability, comparison readiness." },
               { title: "Trust signals", desc: "Wikipedia, press citations, review density across the open web." },
-              { title: "AI access", desc: "GPTBot, ClaudeBot, PerplexityBot, Google-Extended — are they welcome?" },
-              { title: "Products", desc: "Product schema, pricing, availability, ratings — AI's product context." },
-              { title: "AI citations", desc: "Real prompts across ChatGPT, Perplexity, Brave — who got named, who didn't." },
+              { title: "AI access", desc: "GPTBot, ClaudeBot, PerplexityBot, Google-Extended. Welcome or blocked?" },
+              { title: "Products", desc: "Product schema, pricing, availability, ratings. The product context AI uses." },
+              { title: "AI citations", desc: "Real prompts across ChatGPT, Perplexity, Brave. Who got named, who didn't." },
             ].map((f) => (
               <div key={f.title} className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.14] transition-colors">
                 <div className="flex items-center gap-2.5 mb-2">
@@ -658,11 +658,15 @@ export default function Home() {
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center space-y-3 max-w-[620px] mx-auto mb-14 sm:mb-20">
             <div className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-coral-dark)]">
-              How Chedder works
+              Inside an audit
             </div>
             <h2 className="text-[32px] sm:text-[44px] font-semibold tracking-[-0.035em] leading-[1.08]">
-              Three things, in 60 seconds.
+              Three answers you&apos;ll have in 60 seconds.
             </h2>
+            <p className="text-[15.5px] sm:text-[16.5px] text-muted-foreground leading-[1.55] pt-2 max-w-[520px] mx-auto">
+              Paste a URL, watch it run. Walk away with a score, a gap list,
+              and a fix order ranked by what moves AI citations most.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
@@ -682,7 +686,7 @@ export default function Home() {
               {
                 variant: "celebrating" as const,
                 kicker: "03 · Fix",
-                title: "With a real action plan",
+                title: "A real action plan",
                 body: "Urgent, important, and worth-doing tasks written for brand marketers, not server administrators. Ship in a week.",
               },
             ].map((card) => (
@@ -719,10 +723,11 @@ export default function Home() {
             <Spark variant="peeking" animate size={88} />
           </div>
           <h2 className="text-[34px] sm:text-[48px] font-semibold tracking-[-0.035em] leading-[1.05]">
-            Don&apos;t be invisible when shoppers ask AI.
+            Show up when shoppers ask AI.
           </h2>
-          <p className="text-[16px] sm:text-[17px] text-muted-foreground leading-[1.55] max-w-[460px] mx-auto">
-            Run your first audit free. Sixty seconds, no signup.
+          <p className="text-[16px] sm:text-[17px] text-muted-foreground leading-[1.55] max-w-[480px] mx-auto">
+            See where you stand, what's holding you back, and exactly what to
+            ship first. Free, no signup, ready in 60 seconds.
           </p>
           <div className="pt-2">
             <button
