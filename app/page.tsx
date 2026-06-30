@@ -797,12 +797,11 @@ function AuditMock() {
         <text x="74" y="70" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">audit started 4:12pm · finished in 58s · auto-refresh weekly</text>
       </g>
 
-      {/* Score — just the gauge with the number. The grade letter was
-          duplicate info; the number alone tells you everything. */}
+      {/* Score — just the number. No gauge, no label. The big numeral
+          alone is the strongest possible read. */}
       <g transform="translate(880, 44)">
-        <circle cx="34" cy="36" r="30" fill="none" stroke="#f1f5f9" strokeWidth="6" />
-        <path d="M 34 6 A 30 30 0 1 1 6 54" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
-        <text x="34" y="42" textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">64</text>
+        <text x="60" y="56" textAnchor="end" fontSize="52" fontWeight="700" fill="#0f172a" letterSpacing="-2.5" fontFamily="-apple-system, Inter, sans-serif">64</text>
+        <text x="68" y="56" fontSize="14" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">/100</text>
       </g>
 
       {/* Module cards — pushed down from y=130 to y=170 so the 40px gap
