@@ -780,20 +780,6 @@ function ChromeBar({ url }: { url: string }) {
 
 /** Main audit dashboard — center of the mosaic. */
 function AuditMock() {
-  // Helper: sparkline path for a small trend
-  const spark = (vals: number[], w = 60, h = 18) => {
-    const max = Math.max(...vals);
-    const min = Math.min(...vals);
-    const range = Math.max(1, max - min);
-    return vals
-      .map((v, i) => {
-        const x = (i / (vals.length - 1)) * w;
-        const y = h - ((v - min) / range) * h;
-        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-      })
-      .join(" ");
-  };
-
   return (
     <svg viewBox="0 0 1000 740" className="w-full h-auto block bg-white" xmlns="http://www.w3.org/2000/svg">
       {/* Header — brand left, compact score right. Generous top padding
@@ -811,18 +797,17 @@ function AuditMock() {
         <text x="74" y="70" fontSize="10" fill="#94a3b8" fontFamily="-apple-system, Inter, sans-serif">audit started 4:12pm · finished in 58s · auto-refresh weekly</text>
       </g>
 
-      {/* Score column — pulled inward from the right edge and given more
-          internal spacing so gauge / grade / sparkline / delta each have
-          room to breathe. */}
-      <g transform="translate(764, 44)">
+      {/* Score column — minimal: gauge + grade letter. Was a noisy
+          stack (gauge, grade, comparison, sparkline, delta). Killed
+          everything except the two pieces that actually matter at a
+          glance: the score number and the grade letter beside it. */}
+      <g transform="translate(800, 44)">
         <circle cx="34" cy="36" r="30" fill="none" stroke="#f1f5f9" strokeWidth="6" />
         <path d="M 34 6 A 30 30 0 1 1 6 54" fill="none" stroke="#ff5e47" strokeWidth="6" strokeLinecap="round" />
         <text x="34" y="42" textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">64</text>
-        <g transform="translate(86, 8)">
-          <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">GRADE B</text>
-          <text x="0" y="22" fontSize="11" fill="#475569" fontFamily="-apple-system, Inter, sans-serif">vs Mattresses median: 71</text>
-          <path d={`${spark([55, 58, 56, 60, 59, 62, 64], 100, 16)}`} fill="none" stroke="#16a34a" strokeWidth="1.5" transform="translate(0, 38)" />
-          <text x="0" y="78" fontSize="10" fill="#16a34a" fontWeight="600" fontFamily="-apple-system, Inter, sans-serif">+9 over 6 weeks</text>
+        <g transform="translate(82, 24)">
+          <text x="0" y="0" fontSize="9" fontWeight="700" fill="#94a3b8" letterSpacing="1" fontFamily="-apple-system, Inter, sans-serif">GRADE</text>
+          <text x="0" y="26" fontSize="26" fontWeight="700" fill="#0f172a" letterSpacing="-1" fontFamily="-apple-system, Inter, sans-serif">B</text>
         </g>
       </g>
 
