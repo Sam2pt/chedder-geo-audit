@@ -9,6 +9,7 @@ import {
 } from "@/lib/brands";
 import { TopNav } from "@/components/top-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { MobileCtaBar } from "@/components/mobile-cta-bar";
 
 /**
  * Programmatic SEO landing page per CPG brand.
@@ -271,6 +272,9 @@ export default async function BrandPage({ params }: Params) {
       </article>
     </main>
     <SiteFooter />
+    {/* Mobile-only sticky CTA — routes to the homepage audit form
+        with this brand's domain prefilled via ?url=. */}
+    <MobileCtaBar label={`Audit ${brand.name}`} href={auditHref} />
     </div>
   );
 }

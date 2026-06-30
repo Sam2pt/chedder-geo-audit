@@ -7,6 +7,7 @@ import { UpgradeModal } from "@/components/upgrade-modal";
 import { Spark } from "@/components/spark";
 import { TopNav } from "@/components/top-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { MobileCtaBar } from "@/components/mobile-cta-bar";
 import { track, getDeviceId, getLeadEmail } from "@/lib/track";
 
 export default function Home() {
@@ -404,8 +405,10 @@ export default function Home() {
 
         {/* Input. On mobile the Analyze button stacks below the field
             so it never looks like a floating pill inside the search bar
-            at narrow widths. From sm: up, button slots inside the bar. */}
-        <form onSubmit={handleAudit} className="anim-slide-up delay-200 space-y-4">
+            at narrow widths. From sm: up, button slots inside the bar.
+            id="audit-input-section" so the mobile sticky-CTA can scroll
+            here and focus the field. */}
+        <form id="audit-input-section" onSubmit={handleAudit} className="anim-slide-up delay-200 space-y-4">
           <div className="relative group">
             {/* Single coral halo on focus — replaces the tri-color rainbow.
                 pointer-events-none so the halo never intercepts taps on
@@ -749,6 +752,11 @@ export default function Home() {
       </section>
 
       <SiteFooter />
+
+      {/* Mobile-only sticky audit CTA. Appears after the user has
+          scrolled past the hero. Scrolls back to the input + focuses
+          it so the keyboard pops up natively. */}
+      <MobileCtaBar label="Audit my brand" targetSelector="#audit-input-section" />
 
         {upgrade}
     </main>
