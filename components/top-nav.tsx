@@ -46,6 +46,7 @@ const NAV_LINKS = [
 export function TopNav({ variant = "auto" }: TopNavProps) {
   const [scrolled, setScrolled] = useState(variant === "solid");
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Solidify on scroll for the homepage "auto" variant.
   useEffect(() => {
@@ -55,6 +56,29 @@ export function TopNav({ variant = "auto" }: TopNavProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [variant]);
+
+  // Close the mobile menu when the route changes / user scrolls.
+  // (Simplest implementation: close on any scroll past 80px which means
+  // the user is clearly interacting with the page content again.)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY) > 80) setMenuOpen(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [menuOpen]);
+
+  // Body scroll lock while the mobile menu is open — keeps the
+  // backdrop from scrolling under the user's thumb mid-tap.
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [menuOpen]);
 
   // Swap "Sign in" for "My audits" once the user is authenticated.
   // /api/auth/me is cheap (server-side blob read) — fine to call on every
@@ -143,8 +167,73 @@ export function TopNav({ variant = "auto" }: TopNavProps) {
               </Link>
             </>
           )}
+
+          {/* Mobile hamburger — only shows below md. Toggles the slide-down
+              menu panel below. Hidden when signed in since the centered
+              "My audits" CTA already routes to the only place a signed-in
+              user usually wants. */}
+          {!signedIn && (
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-foreground/[0.05] transition-colors -mr-1"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {menuOpen ? (
+                  <>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="7" x2="21" y2="7" />
+                    <line x1="3" y1="17" x2="21" y2="17" />
+                  </>
+                )}
+              </svg>
+            </button>
+          )}
         </div>
       </nav>
+
+      {/* Mobile slide-down menu panel — full-width, anchored under the
+          nav bar. Shows the same links as the desktop center nav plus
+          Sign in. Tap outside the panel to dismiss via the backdrop. */}
+      {menuOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 top-[60px] bg-foreground/30 backdrop-blur-sm z-30"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden
+          />
+          <div className="md:hidden absolute inset-x-0 top-[60px] bg-white border-b border-foreground/[0.06] z-40 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.08)]">
+            <ul className="flex flex-col py-2">
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center px-6 py-3.5 text-[15px] font-medium text-foreground hover:bg-foreground/[0.03] transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href="/sign-in"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center px-6 py-3.5 text-[15px] font-medium text-foreground/70 hover:bg-foreground/[0.03] transition-colors border-t border-foreground/[0.05] mt-1 pt-4"
+                >
+                  Sign in
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </>
+      )}
     </header>
   );
 }

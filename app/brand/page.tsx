@@ -65,17 +65,17 @@ export default function BrandIndex() {
               <p className="text-[14px] text-muted-foreground mb-5">
                 {brands.length} {brands.length === 1 ? "brand" : "brands"}
               </p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <ul className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
                 {brands.map((b) => (
                   <li key={b.slug}>
                     <Link
                       href={`/brand/${b.slug}`}
-                      className="group block p-5 rounded-2xl bg-white border border-foreground/[0.06] hover:border-foreground/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all"
+                      className="group block p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-foreground/[0.06] hover:border-foreground/[0.15] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all"
                     >
-                      <p className="text-[16px] font-semibold tracking-[-0.01em] text-foreground group-hover:text-[var(--brand-coral)] transition-colors">
+                      <p className="text-[13.5px] sm:text-[16px] font-semibold tracking-[-0.01em] text-foreground group-hover:text-[var(--brand-coral)] transition-colors truncate">
                         {b.name}
                       </p>
-                      <p className="text-[12.5px] text-muted-foreground mt-1">
+                      <p className="text-[11px] sm:text-[12.5px] text-muted-foreground mt-0.5 sm:mt-1 truncate">
                         {b.domain}
                       </p>
                     </Link>

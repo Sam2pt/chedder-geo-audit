@@ -581,28 +581,32 @@ export default function Home() {
           </div>
 
           {/* Layered mosaic — three dashboards, center prominent + two
-              tilted behind. Uses CSS perspective + rotation for depth. */}
-          <div className="relative w-full aspect-[16/10] max-w-[1100px] mx-auto" style={{ perspective: "1800px" }}>
-            {/* Left tilted card — competitor comparison */}
+              tilted behind on tablet+. On mobile the tilted cards are
+              hidden entirely (unreadable at 375px and the 3D-tilt CSS
+              fights the small viewport) — just the main card stretches
+              full width without perspective. */}
+          <div className="relative w-full sm:aspect-[16/10] max-w-[1100px] mx-auto" style={{ perspective: "1800px" }}>
+            {/* Left tilted card — competitor comparison (tablet+ only) */}
             <div
-              className="absolute left-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-right"
+              className="hidden sm:block absolute left-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-right"
               style={{ transform: "rotateY(14deg) translateZ(-100px) translateX(-4%)", opacity: 0.92 }}
             >
               <ChromeBar url="chedder.2pt.ai / compare" />
               <CompareMock />
             </div>
 
-            {/* Right tilted card — prompt analysis */}
+            {/* Right tilted card — prompt analysis (tablet+ only) */}
             <div
-              className="absolute right-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-left"
+              className="hidden sm:block absolute right-0 top-[10%] w-[55%] rounded-xl bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-white/10 origin-left"
               style={{ transform: "rotateY(-14deg) translateZ(-100px) translateX(4%)", opacity: 0.92 }}
             >
               <ChromeBar url="chedder.2pt.ai / a / casper / prompts" />
               <PromptsMock />
             </div>
 
-            {/* Center main card — full audit */}
-            <div className="absolute left-1/2 top-0 w-[68%] -translate-x-1/2 rounded-xl bg-white shadow-[0_40px_100px_-15px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10 z-10">
+            {/* Center main card — relative on mobile (fills container),
+                absolute on tablet+ (positioned inside the perspective). */}
+            <div className="relative sm:absolute sm:left-1/2 sm:top-0 w-full sm:w-[68%] sm:-translate-x-1/2 rounded-xl bg-white shadow-[0_40px_100px_-15px_rgba(0,0,0,0.55)] overflow-hidden border border-white/10 z-10">
               <ChromeBar url="chedder.2pt.ai / a / casper" />
               <AuditMock />
             </div>
